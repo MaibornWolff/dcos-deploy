@@ -1,11 +1,10 @@
 # dcos-deploy
 
-dcos-deploy is a command line tool that helps you to deploy and manage groups of services and apps on [DC/OS](https://dcos.io). It acts as an orchestration engine on top of the existing tools and APIs of DC/OS to install, configure and update frameworks, marathon apps and metronome jobs. At its core is a yaml-configuration file that describes the services that you want. It will read this file and execute any changes necessary so that your DC/OS cluster reflects your desired configuration.
+dcos-deploy is a command line tool that helps you to deploy and manage groups of services and apps on [DC/OS](https://dcos.io). It acts as an orchestration engine on top of the existing DC/OS tools and APIs to install, configure and update frameworks, marathon apps and metronome jobs. It is based on a yaml-configuration file which describes the services that you want. It will read this file and execute any changes necessary so that your DC/OS cluster reflects your desired configuration.
 
-For example: To deploy a complete elasticsearch-stack on your cluster you would typically need to install the elastic framework from the universe, a kibana app, expose both to your loadbalancer and add some regular jobs for backups or cleanup. Additionally if you run elasticsearch with x-pack or searchguard installed you also need to create a public-private keypair, service-account and secret for your framework to make it work. This amounts to quite a number of steps. With dcos-deploy you just describe your entire stack in one simple yaml-file and let it do the rest. See the examples folder for more.
+For example: To deploy a complete elasticsearch stack on your cluster you would typically need to install the elasticsearch framework from the DC/OS universe, a kibana app, expose both to your loadbalancer and add some regular jobs for backups and cleanup. Additionally if you run elasticsearch with x-pack or searchguard installed you also need to create a public-private keypair, service-account and secret for your framework. This amounts to quite a number of steps. With dcos-deploy you just describe your entire stack in one simple yaml file and let dcos-deploy do the rest. See the examples folder for more.
 
 (!) This tool is under heavy development and is not yet stable enough for production environments. Use at your own risk.
-
 
 ## Features
 * Handles
