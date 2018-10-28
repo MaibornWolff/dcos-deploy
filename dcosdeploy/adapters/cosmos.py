@@ -11,6 +11,42 @@ class CosmosAdapter(object):
         self.service_url = get_base_url() + "/cosmos/service"
         self.package_url = get_base_url() + "/package"
 
+    def list_repositories(self):
+        headers = {
+            "Accept": "application/vnd.dcos.package.repository.list-response+json;charset=utf-8;version=v1",
+            "Content-Type": "application/vnd.dcos.package.repository.list-request+json;charset=utf-8;version=v1",
+        }
+        response = requests.post(self.package_url+"/repository/list", headers=headers, auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text, flush=True)
+            raise Exception("Failed to get list of package repositories")
+        return response.json()["repositories"]
+
+    def add_repository(self, name, uri, index=None):
+        headers = {
+            "Accept": "application/vnd.dcos.package.repository.add-response+json;charset=utf-8;version=v1",
+            "Content-Type": "application/vnd.dcos.package.repository.add-request+json;charset=utf-8;version=v1",
+        }
+        data = dict(name=name, uri=uri)
+        if index:
+            data["index"] = index
+        response = requests.post(self.package_url+"/repository/add", json=data, headers=headers, auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text, flush=True)
+            raise Exception("Failed to delete package repository %s" % name)
+        return True
+
+    def delete_repository(self, name):
+        headers = {
+            "Accept": "application/vnd.dcos.package.repository.delete-response+json;charset=utf-8;version=v1",
+            "Content-Type": "application/vnd.dcos.package.repository.delete-request+json;charset=utf-8;version=v1",
+        }
+        response = requests.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers, auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text, flush=True)
+            raise Exception("Failed to add package repository %s" % name)
+        return True
+
     def describe_service(self, service_name):
         headers = {
             "Accept": "application/vnd.dcos.service.describe-response+json;charset=utf-8;version=v1",

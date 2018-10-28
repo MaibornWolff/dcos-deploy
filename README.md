@@ -90,7 +90,7 @@ entityname:
     - otherentity
 ```
 
-`type` defines what kind of entity this is. Currently implemented are `marathon`, `framework`, `job`, `account`, `secret` and `cert`. See their respective sections below for details.
+`type` defines what kind of entity this is. Currently implemented are `marathon`, `framework`, `job`, `account`, `secret`, `cert` and `repository`. See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
 
@@ -179,6 +179,13 @@ permissions:
 
 One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `secret` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.mesosphere.com/1.11/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
 
+### Package repository
+`type: repository` defines a package repository. It has the following specific options:
+* `name`: name of the repository. Required. Variables can be used.
+* `uri`: uri for the repositroy. Required. Variables can be used.
+* `index`: at what index to place the repository in the repository list. 0 for beginning. Do not set for end of list.
+
+With this type you can add additional package repositories to DC/OS. You can for example use it to add the Edge-LB repositories to your EE cluster. Set the repository as a dependency for any frameworks/packages installed from it.
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.

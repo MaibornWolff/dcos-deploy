@@ -78,3 +78,9 @@ myapppassword:
   type: secret
   path: myapp/password
   value: supersecret
+
+# We add a private universe so we can install packages from it
+myuniverse:
+  name: mycorp-universe
+  uri: https://universe.mycorp/repo
+  index: 0  # We want it to be first in the list, so that any packages both in the private universe and in the official are taken from our private
