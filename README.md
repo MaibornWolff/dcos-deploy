@@ -52,7 +52,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 ## Config file syntax
 The config file is written as a yaml file. The root level consists of key/value-pairs (a dictionary). Each key represents the unique name for one entity, the value is again a dictionary with all the options for that entity.
 
-### Advanced features / meta fields
+### Meta fields
 There are some meta fields for further configuation:
 * `variables`: Define variables to be used in the rest of the file and in app definitions and package options. See the [Variables](#variables) section for more info.
 * `includes`: Structure your config further by separating parts into different files and including them. Provide a list of filenames. The include files must be structured the same way as the main file. Each entity name must be unique over the base file and all included files.
