@@ -7,18 +7,17 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 (!) This tool is under heavy development and is not yet stable enough for production environments. Use at your own risk.
 
 ## Features
-* Handles
+* Handles the following "entities":
   - DC/OS packages
   - Marathon apps
   - Metronome jobs
   - secrets
   - serviceaccounts
   - public-private-keypairs (for use in secrets)
-* For packages it handles version updates and configuration changes.
+* For DC/OS packages it supports version updates and configuration changes.
 * Handles install and update dependencies between entities (e.g. a framework is only installed after its serviceaccount is created, an app is restarted if an attached secret changes).
 * Parameterise your configuration using variables (e.g. to support different instances of a service).
-* Stateless: There is no local or remote state. Everything needed is pulled directly from the cluster.
-* No backend: dcos-deploy is a client-only tool that directly uses the existing DC/OS APIs to access your DC/OS cluster and does not need its own backend service.
+* Stateless / no backend: There is no local or remote state. Everything needed is pulled directly from the cluster: dcos-deploy is a client-only tool that directly uses the existing DC/OS APIs to access your DC/OS cluster and does not need its own backend service.
 * Uses your installed dcos-cli to figure out how to talk to your cluster. No extra configuration needed.
 * dry-run mode: Check which changes would be done.
 * partial deployment: Choose the entities to be deployed.
@@ -28,7 +27,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 ### Limitations
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
 * Can not safely detect changes in marathon apps: Due do default configuration options being added by marathon, dcos-deploy can at the moment not predict beforehand if an app will be changed.
-* Frameworks that require special configuration after installation (like Edge-LB with its pool configuration) are at the moment not supported.
+* Frameworks that require special configuration after installation (like Edge-LB with its pool configuration) are not supported at the moment.
 
 
 ## Requirements
@@ -53,7 +52,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 ## Config file syntax
 The config file is written as a yaml file. The root level consists of key/value-pairs (a dictionary). Each key represents the unique name for one entity, the value is again a dictionary with all the options for that entity.
 
-### Meta options
+### Advanced features / meta fields
 There are some meta fields for further configuation:
 * `variables`: Define variables to be used in the rest of the file and in app definitions and package options. See the [Variables](#variables) section for more info.
 * `includes`: Structure your config further by separating parts into different files and including them. Provide a list of filenames. The include files must be structured the same way as the main file. Each entity name must be unique over the base file and all included files.
