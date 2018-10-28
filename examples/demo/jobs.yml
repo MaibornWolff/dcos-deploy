@@ -1,6 +1,12 @@
+# This file is included in the main dcos.yml file.
+# Any entities defined here can use dependencies and variables from the main file and any other included files
+# includes, variables and modules can only be specified in the main file.
+
 curator:
   type: job
   only:
-    - test
+    env: test
   path: /elk/test/curator
   definition: curator.job.json
+  dependencies:
+    - elastic

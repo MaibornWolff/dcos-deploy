@@ -1,3 +1,4 @@
+# Meta definitions should always be at the top.
 variables:
   env:
     values:
@@ -7,7 +8,9 @@ variables:
     required: true
   foo:
     default: bar
+    # by default required is false
 
+# All definitions from the file jobs.yml are included in here.
 includes:
   - jobs.yml
 
@@ -27,14 +30,18 @@ router:
   marathon: elasticrouter.json
   dependencies:
     - elastic
-  except:
-    env: test
+  except:  # We do not want the test cluster to be reachable from the outside.
+    env: test  # For int and prod the router app will not be created
 
+# Here we want to create several marathon apps from a common definition.
+# myapp.json is the marathon app definition file, parameterised using variables
+# multiapp-instances.yml defines the different instances.
 multiapp:
   type: app
   _template: myapp.json
   _vars: multiapp-instances.yml
 
+# We can give rights to accounts by adding them to groups
 elastic-principal:
   type: serviceaccount
   name: elastic-principal
@@ -42,6 +49,7 @@ elastic-principal:
   groups:
     - superusers
 
+# The other way to give rights to accounts is by specifing the individual permissions
 spark-service-account:
   type: serviceaccount
   name: spark-service-account
@@ -50,19 +58,22 @@ spark-service-account:
     "dcos:mesos:master:framework:role:*":
       - create
 
+# This is an app that has dependencies on several secrets.
 myapp:
   type: app
   path: "/myapp"
   marathon: app.json
   dependencies:
-    - mappconfig:update  # dcos-deploy will restart the app if the secret changes
-    - myapppassword:update
+    - mappconfig:update  # dcos-deploy will restart the app if the secret changes even if the app itsself is not changed
+    - myapppassword  # If this secret changes the app will not be restarted as it is only a create dependency
 
+# This is a secret using the content from a file
 myappconfig:
   type: secret
   path: myapp/config
   file: myapp-config.ini
 
+# This is a secret with the value directly defined here
 myapppassword:
   type: secret
   path: myapp/password

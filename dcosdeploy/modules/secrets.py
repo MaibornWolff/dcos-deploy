@@ -1,4 +1,5 @@
 from dcosdeploy.adapters.secrets import SecretsAdapter
+from dcosdeploy.base import ConfigurationException
 
 
 class Secret(object):
@@ -16,7 +17,7 @@ class Secret(object):
 def parse_config(name, config, variables):
     path = config.get("path")
     if not path:
-        raise Exception("Path is required for secrets")
+        raise ConfigurationException("Path is required for secret '%s'" % name)
     value = config.get("value")
     file_path = config.get("file")
     path = variables.render(path)
@@ -27,6 +28,8 @@ def parse_config(name, config, variables):
         file_path = variables.render(file_path)
         with open(file_path) as secret_file:
             file_content = secret_file.read()
+    else:
+        raise ConfigurationException("Either value or file are required for secret '%s'" % name)
     return Secret(name, path, value, file_content)
 
 

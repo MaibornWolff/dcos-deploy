@@ -1,5 +1,15 @@
+# This defines the different instances to be created from the common template
+
+# default variables that are the same for all (or most) instances
 defaults:
   some: default
+
+# Each key under here defines a different instance.
+# Each instance has one or more variables. default variables can be overwritten by redefining them here.
+# For rendering the marathon app template variables from the following sources are used (by descending priority):
+# * instance specific varibles
+# * default variables from above
+# * global variables from the dcos.yml file
 instances:
   myfirstinstance:
     one: value

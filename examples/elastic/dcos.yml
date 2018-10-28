@@ -1,3 +1,22 @@
+# In this example we want to run several elasticearch clusters, one for each of the classic deployment stages (testing, integration, production).
+# The service structure will be as follows:
+# elk
+#   - test
+#     - elastic
+#     - router
+#     - kibana
+#     - curator
+#   - int
+#     - elastic
+#     - router
+#     - kibana
+#   - prod
+#     - elastic
+#     - router
+#     - kibana
+# Each environment has an elasticsearch cluster, a kibana instance and a router instance that allows access to elasticsearch via marathon-lb. Test additionally has a metronome job that could potentially clean up old data from the test cluster.
+
+# First we define a required variable that holds our stage and has to be set by the calling user. It is required so if the user does not provide it an error will be thrown.
 variables:
   env:
     values:
@@ -6,16 +25,32 @@ variables:
     - prod
     required: true
 
+# Then we define the serviceaccount to be used by the elastic framework. We use the same account for all environments so we put its secret directly under the "/elk" path. That way it is accessiable by all three elastic schedulers.
+# We give the serviceaccount superuser rights to make it easier. If we wanted we could find out the specific permissions needed and specify them.
+# !!! Giving superuser rights is potentially dangerous as anyone who can read the secret can gain full access to your cluster.
+elastic-principal:
+  type: serviceaccount
+  name: elastic-principal
+  secret: elk/principal
+  groups:
+    - superusers
+
+# Then we define the elasticsearch cluster itsself as a framework. Here we use the env variable to create one cluster for each environment.
+# We provide specific options file for each environment to specify different configurations (the test and int clusters can be significantly smaller than prod).
+# We also set the dependency for the serviceaccount which will require dcos-deploy to create the serviceaccount before creating the framework.
 elastic:
   type: framework
   path: "/elk/{{env}}/elastic"
   package:
-    name: elastic
-    version: 2.4.0-5.6.9
+    name: elastic  # This must be a package available via the official DC/OS universe or a configured private universe repository
+    version: 2.4.0-5.6.9  # This must be a version available from the universe
     options: "elastic-{{env}}.json"
   dependencies:
     - elastic-principal
 
+# This is a very simple marathon app. Its only purpose is to configure the marathon-lb using its labels to expose the elasticsearch cluster.
+# We use only one options file and use the env variable in it to give it the correct elastic url for the environment.
+# We also give it a dependency on elastic so that it will be created only after the elastic cluster has successfully started. An update dependency is not needed as the only dependent part is the elastic url which can not change.
 router:
   type: app
   path: "/elk/{{env}}/router"
@@ -23,6 +58,8 @@ router:
   dependencies:
     - elastic
 
+# Then we define kibana as a framework. Again we only use one options file and parameterizse it using our env variable.
+# We also give it a dependency on elastic so that it will be created only after the elastic cluster has successfully started. An update dependency is not needed as the only dependent part is the elastic url which can not change.
 kibana:
   type: app
   path: "/elk/{{env}}/kibana"
@@ -33,16 +70,11 @@ kibana:
   dependencies:
     - elastic
 
+# Last we define a metronome job that can regularly start a curator to clean out old elastic data.
+# We restrict this to only be created for test.
 curator:
   type: job
   only:
     env: test
   path: /elk/test/curator
   definition: curator.job.json
-
-elastic-principal:
-  type: serviceaccount
-  name: elastic-principal
-  secret: elk/principal
-  groups:
-    - superusers
