@@ -1,0 +1,35 @@
+{
+  "id": "elk.test.curator",
+  "labels": {},
+  "run": {
+    "cpus": 1,
+    "mem": 512,
+    "disk": 0,
+    "cmd": "DO SOME STUFF",
+    "env": {
+      "ELASTIC_HOST": "coordinator.elktestelastic.l4lb.thisdcos.directory:9200"
+    },
+    "placement": {
+      "constraints": []
+    },
+    "artifacts": [],
+    "maxLaunchDelay": 3600,
+    "docker": {
+      "image": "myimage"
+    },
+    "volumes": [],
+    "restart": {
+      "policy": "NEVER"
+    }
+  },
+  "schedules": [
+    {
+      "id": "default",
+      "enabled": true,
+      "cron": "8 3 * * *",
+      "timezone": "UTC",
+      "concurrencyPolicy": "ALLOW",
+      "startingDeadlineSeconds": 900
+    }
+  ]
+}

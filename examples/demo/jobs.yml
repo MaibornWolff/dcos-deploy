@@ -1,0 +1,6 @@
+curator:
+  type: job
+  only:
+    - test
+  path: /elk/test/curator
+  definition: curator.job.json

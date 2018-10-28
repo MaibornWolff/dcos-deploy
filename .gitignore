@@ -1,0 +1,9 @@
+*.pyc
+__pycache__
+*.swp
+*.idea
+*.iml
+build
+.gradle*
+dist
+dcos-deploy.spec

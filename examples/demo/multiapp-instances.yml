@@ -1,0 +1,9 @@
+defaults:
+  some: default
+instances:
+  myfirstinstance:
+    one: value
+    another: value
+  mysecondinstance:
+    one: value
+    some: notdefault

@@ -1,0 +1,29 @@
+{
+  "data_nodes": {
+    "count": 3,
+    "cpus": 2,
+    "disk": 10000,
+    "disk_type": "MOUNT",
+    "heap": {
+      "size": 12288
+    },
+    "mem": 16384
+  },
+  "coordinator_nodes": {
+    "count": 2,
+    "mem": 8192,
+    "heap": {
+      "size": 4096
+    },
+    "cpus": 2
+  },
+  "elasticsearch": {
+   },
+   "service": {
+      "name": "/elk/test/elastic",
+      "service_account": "elastic-principal",
+      "service_account_secret": "elk/principal",
+      "virtual_network_enabled": true,
+      "virtual_network_name": "dcos"
+    }
+}

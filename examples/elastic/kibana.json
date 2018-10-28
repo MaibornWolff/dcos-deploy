@@ -1,0 +1,8 @@
+{
+	"service": {
+		"name": "/elk/{{env}}/kibana",
+	},
+	"kibana": {
+		"elasticsearch_url": "http://coordinator.elk{{env}}elastic.l4lb.thisdcos.directory:9200"
+	}
+}

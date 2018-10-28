@@ -1,0 +1,38 @@
+{
+  "id": "/elk/{{env}}/router",
+  "cmd": "tail -F /dev/null",
+  "instances": 1,
+  "cpus": 0.01,
+  "mem": 16,
+  "disk": 0,
+  "backoffFactor": 1.15,
+  "backoffSeconds": 1,
+  "gpus": 0,
+  "portDefinitions": [
+    {
+      "port": 0,
+      "protocol": "tcp"
+    }
+  ],
+  "labels": {
+    "HAPROXY_GROUP": "external",
+    "HAPROXY_0_PORT": "9200",
+    "HAPROXY_0_REDIRECT_TO_HTTPS":"true",
+    "HAPROXY_0_VHOST": "elasticsearch.{{env}}.mycorp",
+    "HAPROXY_0_BACKEND_SERVER_OPTIONS": "  server elastic-coordinator coordinator.elk{{env}}elastic.l4lb.thisdcos.directory:9200"
+  },
+  "networks": [
+    {"mode": "host"}
+  ],
+  "requirePorts": false,
+  "maxLaunchDelaySeconds": 3600,
+  "killSelection": "YOUNGEST_FIRST",
+  "upgradeStrategy": {
+    "maximumOverCapacity": 1,
+    "minimumHealthCapacity": 1
+  },
+  "unreachableStrategy": {
+   "inactiveAfterSeconds": 0,
+   "expungeAfterSeconds": 0
+  }
+}

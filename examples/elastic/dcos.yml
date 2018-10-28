@@ -1,0 +1,48 @@
+variables:
+  env:
+    values:
+    - test
+    - int
+    - prod
+    required: true
+
+elastic:
+  type: framework
+  path: "/elk/{{env}}/elastic"
+  package:
+    name: elastic
+    version: 2.4.0-5.6.9
+    options: "elastic-{{env}}.json"
+  dependencies:
+    - elastic-principal
+
+router:
+  type: app
+  path: "/elk/{{env}}/router"
+  marathon: elasticrouter.json
+  dependencies:
+    - elastic
+
+kibana:
+  type: app
+  path: "/elk/{{env}}/kibana"
+  package:
+    name: kibana
+    version: 2.4.0-5.6.9
+    options: "kibana.json"
+  dependencies:
+    - elastic
+
+curator:
+  type: job
+  only:
+    env: test
+  path: /elk/test/curator
+  definition: curator.job.json
+
+elastic-principal:
+  type: serviceaccount
+  name: elastic-principal
+  secret: elk/principal
+  groups:
+    - superusers

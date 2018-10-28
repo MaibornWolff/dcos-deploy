@@ -1,0 +1,69 @@
+variables:
+  env:
+    values:
+    - test
+    - int
+    - prod
+    required: true
+  foo:
+    default: bar
+
+includes:
+  - jobs.yml
+
+elastic:
+  type: framework
+  path: "/elk/{{env}}/elastic"
+  package:
+    name: elastic
+    version: 2.4.0-5.6.9
+    options: "elastic-{{env}}.json"
+  dependencies:
+    - elastic-principal
+
+router:
+  type: app
+  path: "/elk/{{env}}/router"
+  marathon: elasticrouter.json
+  dependencies:
+    - elastic
+  except:
+    env: test
+
+multiapp:
+  type: app
+  _template: myapp.json
+  _vars: multiapp-instances.yml
+
+elastic-principal:
+  type: serviceaccount
+  name: elastic-principal
+  secret: elk/principal
+  groups:
+    - superusers
+
+spark-service-account:
+  type: serviceaccount
+  name: spark-service-account
+  secret: spark/principal
+  permissions:
+    "dcos:mesos:master:framework:role:*":
+      - create
+
+myapp:
+  type: app
+  path: "/myapp"
+  marathon: app.json
+  dependencies:
+    - mappconfig:update  # dcos-deploy will restart the app if the secret changes
+    - myapppassword:update
+
+myappconfig:
+  type: secret
+  path: myapp/config
+  file: myapp-config.ini
+
+myapppassword:
+  type: secret
+  path: myapp/password
+  value: supersecret
