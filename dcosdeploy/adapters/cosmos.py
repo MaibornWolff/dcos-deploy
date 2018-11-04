@@ -16,7 +16,7 @@ class CosmosAdapter(object):
             "Accept": "application/vnd.dcos.package.repository.list-response+json;charset=utf-8;version=v1",
             "Content-Type": "application/vnd.dcos.package.repository.list-request+json;charset=utf-8;version=v1",
         }
-        response = requests.post(self.package_url+"/repository/list", headers=headers, auth=get_auth(), verify=False)
+        response = requests.post(self.package_url+"/repository/list", json={}, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
             raise Exception("Failed to get list of package repositories")

@@ -14,6 +14,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
   - secrets
   - serviceaccounts
   - public-private-keypairs (for use in secrets)
+  - [Edge-LB](https://docs.mesosphere.com/services/edge-lb/)
 * For DC/OS packages it supports version updates and configuration changes.
 * Handles install and update dependencies between entities (e.g. a framework is only installed after its serviceaccount is created, an app is restarted if an attached secret changes).
 * Parameterise your configuration using variables (e.g. to support different instances of a service).
@@ -26,8 +27,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 
 ### Limitations
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
-* Can not safely detect changes in marathon apps: Due do default configuration options being added by marathon, dcos-deploy can at the moment not predict beforehand if an app will be changed.
-* Frameworks that require special configuration after installation (like Edge-LB with its pool configuration) are not supported at the moment.
+* Can not safely detect changes in marathon apps and edgelb pools: Due do default configuration options being added, dcos-deploy can at the moment not predict beforehand if an app or pool will be changed.
 
 
 ## Requirements
@@ -90,7 +90,16 @@ entityname:
     - otherentity
 ```
 
-`type` defines what kind of entity this is. Currently implemented are `marathon`, `framework`, `job`, `account`, `secret`, `cert` and `repository`. See their respective sections below for details.
+`type` defines what kind of entity this is. Currently implemented are
+* `marathon`
+* `framework`
+* `job`
+* `account`
+* `secret`
+* `cert`
+* `repository`
+* `edgelb`
+See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
 
@@ -134,7 +143,8 @@ For each key under `instances` dcos-deploy will create a marathon app from the t
 
 These options correspond to the parameters provided when installing a package via the dcos-cli: `dcos package install <packagename> --package-version=<version> --options=<options.json>`.
 
-During installation of a package dcos-deploy will wait until the service is completely installed (specifically it waits until the service scheduler reports `COMPLETE` for the `deploy` plan). Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`). dcos-deploy will not wait for the completion of the update as it assumes that any updates are done in a rolling-restart fashion.
+During installation of a package dcos-deploy will wait until the service is completely installed (specifically it waits until the service scheduler reports `COMPLETE` for the `deploy` plan). If you are installing Edge-LB waiting is disabled. Instead the pool update will wait until the Edge-LB API is available.
+Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`). dcos-deploy will not wait for the completion of the update as it assumes that any updates are done in a rolling-restart fashion.
 
 ### Metronome job
 `type: job` defines a metronome job. It has the following specific options:
@@ -186,6 +196,17 @@ One example usecase for this is a service secured with TLS client certificate au
 * `index`: at what index to place the repository in the repository list. 0 for beginning. Do not set for end of list.
 
 With this type you can add additional package repositories to DC/OS. You can for example use it to add the Edge-LB repositories to your EE cluster. Set the repository as a dependency for any frameworks/packages installed from it.
+
+### Edge-LB pool
+`type: edgelb` defines an edgelb pool. This can only be used on EE clusters. It has the following specific options:
+* `name`: name of the pool. Taken from pool config if not present. Variables can be used.
+* `pool`: filename to the yaml file for configuring the pool. Required. The filename itsself and the yaml file can contain variables.
+
+For configuring a pool see the [Edge-LB configuration](https://docs.mesosphere.com/services/edge-lb/1.2/pool-configuration/).
+
+For this to work you must have the edgelb package installed via the repository URLs provided by Mesosphere (use the `repository` and `package` types, there is a [complete example](examples/edgelb) available).
+At the moment dcos-deploy can not safely detect if the pool config was changed so it will always apply it. Be aware that changing certain options in the pool config (like ports or secrets) will result in a restart of the haproxy instances. Make sure you have a HA setup so that there is no downtime.
+
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.

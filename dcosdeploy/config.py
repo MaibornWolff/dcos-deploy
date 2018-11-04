@@ -13,6 +13,7 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.frameworks",
     "dcosdeploy.modules.certs",
     "dcosdeploy.modules.repositories",
+    "dcosdeploy.modules.edgelb",
 ]
 
 

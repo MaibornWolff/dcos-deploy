@@ -1,0 +1,29 @@
+apiVersion: V2
+name: lb-pool
+namespace: edgelb
+count: 2
+secrets:
+  - secret: edgelb/cert_wildcard
+    file: certwildcard
+haproxy:
+  frontends:
+    - bindPort: 443
+      bindAddress: 0.0.0.0
+      protocol: HTTPS
+      certificates:
+        - "$SECRETS/certwildcard"
+      linkBackend:
+        map:
+          - hostEq: something.mycorp
+            backend: something
+  backends:
+    - name: something
+      protocol: HTTP
+      services:
+        - marathon:
+            serviceID: "/myservice"
+          endpoint:
+            portName: web
+  stats:
+    bindPort: 9999
+    bindAddress: 0.0.0.0

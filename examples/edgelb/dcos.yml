@@ -1,0 +1,42 @@
+variables:
+  edgelb_version:
+    default: v1.2.1
+
+
+edgelb-repo:
+  type: repository
+  name: edgelb-aws
+  uri: "check-your-mesosphere-support-portal-for-the-url-for-{{edgelb_version}}"
+
+edgelb-pool-repo:
+  type: repository
+  name: edgelb-pool-aws
+  uri: "check-your-mesosphere-support-portal-for-the-url-{{edgelb_version}}"
+
+edgelb-principal:
+  type: serviceaccount
+  name: edgelb-principal
+  secret: edgelb/edgelb-secret
+  groups:
+    - superusers
+
+
+edgelb:
+  type: framework
+  path: edgelb
+  package:
+    name: edgelb
+    version: "{{edgelb_version}}"
+    options: options.json
+  dependencies:
+    - edgelb-principal
+    - edgelb-repo
+    - edgelb-pool-repo
+
+
+lb-pool:
+  type: edgelb
+  name: lb-pool
+  pool: pool.yml
+  dependencies:
+    - edgelb

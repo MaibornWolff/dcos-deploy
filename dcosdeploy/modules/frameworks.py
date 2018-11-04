@@ -1,6 +1,7 @@
 import json
 from dcosdeploy.adapters.cosmos import CosmosAdapter
 from dcosdeploy.util import compare_dicts
+from dcosdeploy.base import ConfigurationException
 
 
 class Framework(object):
@@ -27,7 +28,13 @@ def parse_config(name, config, variables):
     else:
         path = options["service"]["name"]
     package_name = package.get("name")
+    if not package_name:
+        raise ConfigurationException("package.name is required")
     package_version = package.get("version")
+    if not package_version:
+        raise ConfigurationException("package.version is required")
+    package_name = variables.render(package_name)
+    package_version = variables.render(package_version)
     return Framework(name, path, package_name, package_version, options)
 
 
@@ -45,8 +52,11 @@ class FrameworksManager(object):
         if not old_description:
             print("\tInstalling framework")
             self.api.install_package(config.service_name, config.package_name, config.package_version, config.options)
-            print("\tWaiting for deployment to finish")
-            self.api.wait_for_plan_complete(config.service_name, "deploy")
+            if config.package_name == "edgelb":
+                print("\tPackage is Edge-LB. Waiting is disabled.")
+            else:
+                print("\tWaiting for deployment to finish")
+                self.api.wait_for_plan_complete(config.service_name, "deploy")
         else:
             if old_description["package"]["version"] == config.package_version:
                 package_version = None
