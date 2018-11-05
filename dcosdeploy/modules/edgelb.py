@@ -1,5 +1,6 @@
 import time
 import yaml
+import json
 from dcosdeploy.adapters.edgelb import EdgeLbAdapter
 from dcosdeploy.base import ConfigurationException
 
@@ -21,7 +22,12 @@ def parse_config(name, config, variables):
     with open(pool_filepath) as pool_file:
         file_content = pool_file.read()
     file_content = variables.render(file_content)
-    pool_config = yaml.load(file_content)
+    if pool_filepath.lower().endswith(".yml") or pool_filepath.lower().endswith(".yaml"):
+        pool_config = yaml.load(file_content)
+    elif pool_filepath.lower().endswith(".json"):
+        pool_config = json.loads(file_content)
+    else:
+        raise ConfigurationException("Unknown file type for Edge-LB pool config file: '%s'. Must be json or yaml" % pool_filepath)
     if not name:
         name = pool_config["name"]
     return EdgeLbPool(name, pool_config)
