@@ -144,20 +144,29 @@ def _build_dependency_tree(dependencies_map, config):
     return resulting_dependencies
 
 
+def _calculate_variable_value(name, config, provided_variables):
+    if name in provided_variables:
+        return provided_variables[name]
+    env_name = config.get("from")
+    if not env_name:
+        env_name = "VAR_" + name.replace("-", "_").upper()
+    if env_name in os.environ:
+        return os.environ[env_name]
+    if "default" in config:
+        return config["default"]
+    return None
+
+
 def _read_variables(variables, provided_variables):
     resulting_variables = dict()
     for name, config in variables.items():
-        if config.get("required", False) and name not in provided_variables:
+        value = _calculate_variable_value(name, config, provided_variables)
+        if not value and config.get("required", False):
             raise ConfigurationException("Missing required variable %s" % name)
-        if name not in provided_variables:
-            if "default" in config:
-                resulting_variables[name] = config["default"]
-        else:
-            if "values" in config:
-                if provided_variables[name] not in config["values"]:
-                    raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
-                                                 % (provided_variables[name], name, ','.join(config["values"])))
-            resulting_variables[name] = provided_variables[name]
+        if "values" in config and value not in config["values"]:
+            raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
+                                         % (value, name, ','.join(config["values"])))
+        resulting_variables[name] = value
     for name, value in provided_variables.items():
         if name not in resulting_variables:
             resulting_variables[name] = value
