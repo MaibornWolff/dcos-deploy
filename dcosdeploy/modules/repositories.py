@@ -8,14 +8,14 @@ class PackageRepository(object):
         self.index = index
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     repo_name = config.get("name", name)
     repo_uri = config.get("uri")
     if not repo_uri:
         raise Exception("repositroy %s has no uri field" % name)
     repo_index = config.get("index", None)
-    repo_name = variables.render(repo_name)
-    repo_uri = variables.render(repo_uri)
+    repo_name = config_helper.render(repo_name)
+    repo_uri = config_helper.render(repo_uri)
     return PackageRepository(repo_name, repo_uri, repo_index)
 
 

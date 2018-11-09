@@ -11,21 +11,18 @@ class EdgeLbPool(object):
         self.pool_config = pool_config
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     name = config.get("name")
     if name:
-        name = variables.render(name)
+        name = config_helper.render(name)
     pool_filepath = config.get("pool")
     if not pool_filepath:
         raise ConfigurationException("Pool file is required for edgelb")
-    pool_filepath = variables.render(pool_filepath)
-    with open(pool_filepath) as pool_file:
-        file_content = pool_file.read()
-    file_content = variables.render(file_content)
+    pool_filepath = config_helper.render(pool_filepath)
     if pool_filepath.lower().endswith(".yml") or pool_filepath.lower().endswith(".yaml"):
-        pool_config = yaml.load(file_content)
+        pool_config = config_helper.read_yaml(pool_filepath, render_variables=True)
     elif pool_filepath.lower().endswith(".json"):
-        pool_config = json.loads(file_content)
+        pool_config = config_helper.read_json(pool_filepath, render_variables=True)
     else:
         raise ConfigurationException("Unknown file type for Edge-LB pool config file: '%s'. Must be json or yaml" % pool_filepath)
     if not name:

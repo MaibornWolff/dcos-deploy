@@ -1,4 +1,3 @@
-import json
 from dcosdeploy.adapters.cosmos import CosmosAdapter
 from dcosdeploy.util import compare_dicts
 from dcosdeploy.base import ConfigurationException
@@ -12,19 +11,16 @@ class Framework(object):
         self.options = options
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     path = config.get("path", None)
     package = config.get("package")
     options_path = package.get("options")
     if not options_path:
         raise Exception("Service %s has no options file" % name)
-    options_path = variables.render(options_path)
-    with open(options_path) as options_file:
-        options = options_file.read()
-    options = variables.render(options)
-    options = json.loads(options)
+    options_path = config_helper.render(options_path)
+    options = config_helper.read_json(options_path, render_variables=True)
     if path:
-        path = variables.render(path)
+        path = config_helper.render(path)
     else:
         path = options["service"]["name"]
     package_name = package.get("name")
@@ -33,8 +29,8 @@ def parse_config(name, config, variables):
     package_version = package.get("version")
     if not package_version:
         raise ConfigurationException("package.version is required")
-    package_name = variables.render(package_name)
-    package_version = variables.render(package_version)
+    package_name = config_helper.render(package_name)
+    package_version = config_helper.render(package_version)
     return Framework(name, path, package_name, package_version, options)
 
 

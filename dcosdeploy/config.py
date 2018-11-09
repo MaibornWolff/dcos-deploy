@@ -1,6 +1,9 @@
 import importlib
 import sys
+import os
+import json
 import pystache
+import yaml
 from .util import read_yaml
 from .base import ConfigurationException
 
@@ -38,11 +41,38 @@ class VariableContainer(object):
         return name in self.variables
 
 
+class ConfigHelper(object):
+    def __init__(self, variables_container, base_path):
+        self.variables_container = variables_container
+        self.base_path = base_path
+
+    def read_file(self, filename, render_variables=False):
+        filepath = os.path.abspath(os.path.join(self.base_path, filename))
+        with open(filepath) as file_obj:
+            data = file_obj.read()
+        if render_variables:
+            data = self.variables_container.render(data)
+        return data
+
+    def read_yaml(self, filename, render_variables=False):
+        return yaml.load(self.read_file(filename))
+
+    def read_json(self, filename, render_variables=False):
+        return json.loads(self.read_file(filename))
+
+    def render(self, text, extra_vars=dict()):
+        return self.variables_container.render(text, extra_vars)
+
+
 def read_config(filename, provided_variables):
-    config = read_yaml(filename)
+    abspath = os.path.abspath(filename)
+    base_path = os.path.dirname(abspath)
+    config = read_yaml(abspath)
     variables = _read_variables(config.get("variables", dict()), provided_variables)
+    config_helper = ConfigHelper(variables, base_path)
     for include in config.get("includes", list()):
-        additional_configs = read_yaml(include)
+        absolute_include_path = os.path.abspath(os.path.join(base_path, include))
+        additional_configs = read_yaml(absolute_include_path)
         for key, values in additional_configs.items():
             if key in config:
                 raise ConfigurationException("%s found in base config and include file %s" % (key, include))
@@ -51,11 +81,11 @@ def read_config(filename, provided_variables):
     additional_modules = config.get("modules", list())
     managers, modules = _init_modules(additional_modules)
     # read config sections
-    deployment_objects, dependencies = _read_config_entities(modules, variables, config)
+    deployment_objects, dependencies = _read_config_entities(modules, variables, config, config_helper)
     return deployment_objects, dependencies, managers
 
 
-def _read_config_entities(modules, variables, config):
+def _read_config_entities(modules, variables, config, config_helper):
     deployment_objects = dict()
     deployment_dependencies = dict()
     for name, entity_config in config.items():
@@ -66,14 +96,14 @@ def _read_config_entities(modules, variables, config):
         preprocess_config_func = module["preprocesser"]
         entities = [(name, entity_config)]
         if preprocess_config_func:
-            entities = preprocess_config_func(name, entity_config)
+            entities = preprocess_config_func(name, entity_config, config_helper)
         for name, entity_config in entities:
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
             if _check_conditions_apply(variables, only_restriction, except_restriction):
                 continue
             dependencies = entity_config.get("dependencies", None)
-            deployment_object = parse_config_func(name, entity_config, variables)
+            deployment_object = parse_config_func(name, entity_config, config_helper)
             if dependencies:
                 deployment_dependencies[name] = dependencies
             deployment_objects[name] = deployment_object

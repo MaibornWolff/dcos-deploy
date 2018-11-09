@@ -13,22 +13,15 @@ class MetronomeJob(object):
         return "job:"+self.name
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     path = config.get("path", None)
     job_definition_path = config.get("definition")
     if not job_definition_path:
         raise Exception("Job %s has no definition file" % name)
-    job_definition_path = variables.render(job_definition_path)
-    with open(job_definition_path) as job_definition_file:
-        job_definition = job_definition_file.read()
-    job_definition = variables.render(job_definition)
-    if "{{" in job_definition:
-        raise Exception("Unresolved variables in job definition for %s" % name)
-    job_definition = json.loads(job_definition)
+    job_definition_path = config_helper.render(job_definition_path)
+    job_definition = config_helper.read_json(job_definition_path, render_variables=True)
     if path:
-        path = variables.render(path)
-        if "{{" in path:
-            raise Exception("Unresolved variables in job path for %s" % name)
+        path = config_helper.render(path)
     else:
         path = job_definition["id"]
     return MetronomeJob(name, path, job_definition)

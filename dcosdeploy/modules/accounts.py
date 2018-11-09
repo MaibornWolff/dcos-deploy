@@ -24,16 +24,16 @@ class ServiceAccount(object):
         return "serviceaccount:"+self.name
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     path = config.get("name")
     if not path:
         raise ConfigurationException("name is required for serviceaccounts")
     secret_path = config.get("secret")
-    path = variables.render(path)
-    secret_path = variables.render(secret_path)
+    path = config_helper.render(path)
+    secret_path = config_helper.render(secret_path)
     groups = config.get("groups", list())
     permissions = config.get("permissions", dict())
-    groups = [variables.render(g) for g in groups]
+    groups = [config_helper.render(g) for g in groups]
     return ServiceAccount(name, path, secret_path, groups, permissions)
 
 

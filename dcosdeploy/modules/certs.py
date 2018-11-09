@@ -11,7 +11,7 @@ class Cert(object):
         self.hostnames = hostnames
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     cert_secret = config.get("cert_secret")
     key_secret = config.get("key_secret")
     dn = config.get("dn")
@@ -22,10 +22,10 @@ def parse_config(name, config, variables):
         raise Exception("Cert %s has no key_secret" % name)
     if not dn:
         raise Exception("Cert %s has no dn" % name)
-    cert_secret = variables.render(cert_secret)
-    key_secret = variables.render(key_secret)
-    dn = variables.render(dn)
-    hostnames = [variables.render(hn) for hn in hostnames]
+    cert_secret = config_helper.render(cert_secret)
+    key_secret = config_helper.render(key_secret)
+    dn = config_helper.render(dn)
+    hostnames = [config_helper.render(hn) for hn in hostnames]
     return Cert(name, cert_secret, key_secret, dn, hostnames)
 
 

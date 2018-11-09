@@ -1,10 +1,10 @@
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     return Dummy(name, config["test"], config.get("preprocess"))
 
 
-def preprocess_config(name, config):
+def preprocess_config(name, config, config_helper):
     if config.get("pre"):
         config["preprocess"] = True
     return [(name, config)]

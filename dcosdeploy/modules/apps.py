@@ -1,6 +1,6 @@
 import json
 from dcosdeploy.adapters.marathon import MarathonAdapter
-from dcosdeploy.util import compare_dicts, read_yaml
+from dcosdeploy.util import compare_dicts
 
 
 class MarathonApp(object):
@@ -9,10 +9,10 @@ class MarathonApp(object):
         self.app_definition = app_definition
 
 
-def preprocess_config(base_name, base_config):
+def preprocess_config(base_name, base_config, config_helper):
     if "_template" in base_config and "_vars" in base_config:
         marathon_filename = base_config["_template"]
-        config = read_yaml(base_config["_vars"])
+        config = config_helper.read_yaml(base_config["_vars"])
         defaults = config.get("defaults", dict())
         instances = config["instances"]
         for name, config in instances.items():
@@ -35,19 +35,19 @@ def preprocess_config(base_name, base_config):
     yield base_name, base_config
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     path = config.get("path", None)
     app_definition_path = config.get("marathon")
     if not app_definition_path:
         raise Exception("Service %s has no marathon app definition" % name)
     extra_vars = config.get("extra_vars", dict())
-    app_definition_path = variables.render(app_definition_path)
+    app_definition_path = config_helper.render(app_definition_path)
     with open(app_definition_path) as app_definition_file:
         app_definition = app_definition_file.read()
-    app_definition = variables.render(app_definition, extra_vars)
+    app_definition = config_helper.render(app_definition, extra_vars)
     app_definition = json.loads(app_definition)
     if path:
-        path = variables.render(path)
+        path = config_helper.render(path)
     else:
         path = app_definition["id"]
     return MarathonApp(name, path, app_definition)

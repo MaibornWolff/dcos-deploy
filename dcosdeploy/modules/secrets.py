@@ -14,20 +14,19 @@ class Secret(object):
         return "secret:"+self.name
 
 
-def parse_config(name, config, variables):
+def parse_config(name, config, config_helper):
     path = config.get("path")
     if not path:
         raise ConfigurationException("Path is required for secret '%s'" % name)
     value = config.get("value")
     file_path = config.get("file")
-    path = variables.render(path)
+    path = config_helper.render(path)
     if value:
-        value = variables.render(value)
+        value = config_helper.render(value)
         file_content = None
     elif file_path:
-        file_path = variables.render(file_path)
-        with open(file_path) as secret_file:
-            file_content = secret_file.read()
+        file_path = config_helper.render(file_path)
+        file_content = config_helper.read_file(file_path)
     else:
         raise ConfigurationException("Either value or file are required for secret '%s'" % name)
     return Secret(name, path, value, file_content)
