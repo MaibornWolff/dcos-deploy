@@ -1,4 +1,5 @@
 PyYaml==3.13
 pystache==0.5.4
 click==6.7
-requests==2.11.1
+requests==2.20.1
+minio==4.0.6

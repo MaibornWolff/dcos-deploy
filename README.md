@@ -15,6 +15,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
   - serviceaccounts
   - public-private-keypairs (for use in secrets)
   - [Edge-LB](https://docs.mesosphere.com/services/edge-lb/)
+  - [S3](https://aws.amazon.com/s3/) files
 * For DC/OS packages it supports version updates and configuration changes.
 * Handles install and update dependencies between entities (e.g. a framework is only installed after its serviceaccount is created, an app is restarted if an attached secret changes).
 * Parameterise your configuration using variables (e.g. to support different instances of a service).
@@ -99,6 +100,7 @@ entityname:
 * `cert`
 * `repository`
 * `edgelb`
+* `s3file`
 See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
@@ -206,6 +208,32 @@ For configuring a pool see the [Edge-LB configuration](https://docs.mesosphere.c
 
 For this to work you must have the edgelb package installed via the repository URLs provided by Mesosphere (use the `repository` and `package` types, there is a [complete example](examples/edgelb) available).
 At the moment dcos-deploy can not safely detect if the pool config was changed so it will always apply it. Be aware that changing certain options in the pool config (like ports or secrets) will result in a restart of the haproxy instances. Make sure you have a HA setup so that there is no downtime.
+
+### S3 File
+`type: s3file` defines a file to be uploaded to S3-compatible storage. If you are not running on AWS you can use [Minio](https://minio.io/) or any other storage service with an s3-compatible interface. This entitiy is designed to provide files for apps / services (via the fetch mechanism) that are either too big or otherwise not suited for storage as secrets (for example plugins for a service). It has the following specific options:
+* `server`:
+  * `endpoint`: endpoint of your s3-compatible storage. If you use AWS S3 set this to your region endpoint (e.g. `s3.eu-central-1.amazonaws.com`). Required. Variables can be used.
+  * `access_key`: your access key. Required. Variables can be used. For security reasons you should provide the value via environment variable. Make sure the iam user associated with these credentials has all rights for retrieving and uploading objects (`s3:Get*` and `s3:Put*`).
+  * `secret_key`: your secret access key. Required. Variables can be used. For security reasons you should provide the value via environment variable.
+* `source`: path to your file or folder to be uploaded to s3. Should be relative to the `dcos.yml` file. Required. Variables can be used.
+* `destination`:
+  * `bucket`: name of the bucket to use. Required. Variables can be used.
+  * `key`: key to store the file(s) under. Required. Variables can be used.
+* `compress`: type of compressed archive to combine the files in. Currently only supported is `zip`. Optional. Variables can be used.
+
+This entity has several modes of operation:
+* Upload a single file: `source` points to a file, `compress` is not set. The file is uploaded and `destination.key` is used as name.
+* Upload a folder: `source` points to a folder, `compress` is not set. All files and folders under `source` are recursively uploaded. `destination.key` is used as prefix.
+* Upload a folder as a zip file: `source` points to a folder, `compress: zip`. The files and folders under `source` are compressed into a zip file and uploaded. `destiation.key` is used as name of the zip file.
+
+Changes to the uploaded files are detected by comparing md5 hashsums, which are stored as metadata with the object in S3. Only changed files will be uploaded. If you try to manage files that were already uploaded some other way, on the first run they will be detected as changed (due to the missing hash value metadata) and reuploaded. For comparing hashsums for files to be uploaded in compressed form the tool will temporarily create the zip file to calculate the hashsum.
+
+For multi-file upload: If `source` does not end in a slash, the last part of the name will be used as base folder: For `source: files/foo` and `destination.key: bar`, all files will under foo be uploaded as `bar/foo/<filename>`. In contrast if `source: files/foo/`, all files will be uploaded as `bar/<filename>`.
+
+To use your S3 bucket to serve files to apps and services you must configure it for anonymous read access. For security reasons you should restrict that access to the IP range of your cluster. See the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html) for details.
+Creating and configuring the bucket is outside the scope of this tool.
+
+To make sure a marathon app that uses s3 files is made aware of changes to the uploaded files, you should set the `s3file` enitiy as an `update` dependency to the `app` entity. dcos-deploy will restart the app whenever the uploaded file changes.
 
 
 ## Deployment process

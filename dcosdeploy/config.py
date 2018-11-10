@@ -17,6 +17,7 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.certs",
     "dcosdeploy.modules.repositories",
     "dcosdeploy.modules.edgelb",
+    "dcosdeploy.modules.s3",
 ]
 
 
@@ -46,8 +47,11 @@ class ConfigHelper(object):
         self.variables_container = variables_container
         self.base_path = base_path
 
+    def abspath(self, path):
+        return os.path.abspath(os.path.join(self.base_path, path))
+
     def read_file(self, filename, render_variables=False):
-        filepath = os.path.abspath(os.path.join(self.base_path, filename))
+        filepath = self.abspath(filename)
         with open(filepath) as file_obj:
             data = file_obj.read()
         if render_variables:

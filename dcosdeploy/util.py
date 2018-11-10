@@ -1,10 +1,26 @@
+import hashlib
 import yaml
+import os
 
 
 def read_yaml(filename):
     with open(filename) as yaml_file:
         data = yaml_file.read()
     return yaml.load(data)
+
+
+def md5_hash(filename):
+    hash_md5 = hashlib.md5()
+    with open(filename, "rb") as source_file:
+        for chunk in iter(lambda: source_file.read(512*1024), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+def list_path_recursive(path):
+    for dirpath, subdirs, filenames in os.walk(path):
+        for filename in filenames:
+            yield os.path.join(dirpath, filename)
 
 
 def compare_lists(list_a, list_b, print_differences=False, path=""):
