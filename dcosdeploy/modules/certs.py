@@ -24,7 +24,8 @@ def parse_config(name, config, config_helper):
         raise Exception("Cert %s has no dn" % name)
     cert_secret = config_helper.render(cert_secret)
     key_secret = config_helper.render(key_secret)
-    dn = config_helper.render(dn)
+    for k, v in dn.items():
+        dn[k] = config_helper.render(v)
     hostnames = [config_helper.render(hn) for hn in hostnames]
     return Cert(name, cert_secret, key_secret, dn, hostnames)
 

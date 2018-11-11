@@ -6,7 +6,7 @@ class DeploymentRunner(object):
         self.already_deployed = dict()
         self.dry_deployed = dict()
         self.debug_mode = debug_mode
-        self.config, self.dependencies, self.managers = read_config(config_filename, provided_variables)
+        self.config, self.managers = read_config(config_filename, provided_variables)
 
     def run_deployment(self):
         for name, deployment_object in self.config.items():
@@ -22,19 +22,18 @@ class DeploymentRunner(object):
         if name in self.already_deployed:
             return self.already_deployed[name]
         dependency_changed = False
-        for dependency_name, dependency, dependency_type in self.dependencies.get(name, list()):
+        for dependency_name, dependency_type in config.dependencies:
+            dependency = self.config[dependency_name]
             if self.deploy(dependency_name, dependency) and dependency_type == "update":
                 dependency_changed = True
-        changed = False
-        found = False
-        for config_type, manager in self.managers.items():
-            if isinstance(config, config_type):
-                print("Deploying %s:" % name)
-                changed = manager.deploy(config, dependencies_changed=dependency_changed)
-                found = True
-                break
-        if not found:
-            print("Not yet implemented: %s" % config)
+        manager = self.managers[config.entity_type]
+        if not manager:
+            raise Exception("Could not find manager for '%s'" % config.entity_type)
+        if config.when_condition == "dependencies-changed" and not dependency_changed:
+            changed = False
+        else:
+            print("Deploying %s:" % name)
+            changed = manager.deploy(config.entity, dependencies_changed=dependency_changed)
         self.already_deployed[name] = changed
         return changed
 
@@ -55,17 +54,16 @@ class DeploymentRunner(object):
         if name in self.dry_deployed:
             return self.dry_deployed[name]
         dependency_changed = False
-        for dependency_name, dependency, dependency_type in self.dependencies.get(name, list()):
+        for dependency_name, dependency_type in config.dependencies:
+            dependency = self.config[dependency_name]
             if self.dry_deploy(dependency_name, dependency) and dependency_type == "update":
                 dependency_changed = True
-        changed = False
-        found = False
-        for config_type, manager in self.managers.items():
-            if isinstance(config, config_type):
-                changed = manager.dry_run(config, dependencies_changed=dependency_changed)
-                found = True
-                break
-        if not found:
-            print("Not yet implemented: %s" % config)
+        manager = self.managers[config.entity_type]
+        if not manager:
+            raise Exception("Could not find manager for '%s'" % config.entity_type)
+        if config.when_condition == "dependencies-changed" and not dependency_changed:
+            changed = False
+        else:
+            changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed)
         self.dry_deployed[name] = changed
         return changed

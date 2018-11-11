@@ -68,6 +68,14 @@ class ConfigHelper(object):
         return self.variables_container.render(text, extra_vars)
 
 
+class EntityContainer(object):
+    def __init__(self, entity, entity_type, dependencies, when_condition):
+        self.entity = entity
+        self.entity_type = entity_type
+        self.dependencies = dependencies
+        self.when_condition = when_condition
+
+
 def read_config(filename, provided_variables):
     abspath = os.path.abspath(filename)
     base_path = os.path.dirname(abspath)
@@ -85,13 +93,12 @@ def read_config(filename, provided_variables):
     additional_modules = config.get("modules", list())
     managers, modules = _init_modules(additional_modules)
     # read config sections
-    deployment_objects, dependencies = _read_config_entities(modules, variables, config, config_helper)
-    return deployment_objects, dependencies, managers
+    entities = _read_config_entities(modules, variables, config, config_helper)
+    return entities, managers
 
 
 def _read_config_entities(modules, variables, config, config_helper):
     deployment_objects = dict()
-    deployment_dependencies = dict()
     for name, entity_config in config.items():
         if name in ["variables", "modules", "includes"]:
             continue
@@ -104,15 +111,24 @@ def _read_config_entities(modules, variables, config, config_helper):
         for name, entity_config in entities:
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
+            when_condition = entity_config.get("when")
+            if when_condition and when_condition not in ["dependencies-updated"]:
+                raise ConfigurationException("Unknown when '%s' for '%s'" % (when_condition, name))
             if _check_conditions_apply(variables, only_restriction, except_restriction):
                 continue
-            dependencies = entity_config.get("dependencies", None)
-            deployment_object = parse_config_func(name, entity_config, config_helper)
-            if dependencies:
-                deployment_dependencies[name] = dependencies
-            deployment_objects[name] = deployment_object
-    dependencies = _build_dependency_tree(deployment_dependencies, deployment_objects)
-    return deployment_objects, dependencies
+            dependencies_config = entity_config.get("dependencies", list())
+            entity_object = parse_config_func(name, entity_config, config_helper)
+            dependencies = list()
+            for dependency in dependencies_config:
+                if dependency.count(":") > 0:
+                    dependency, dep_type = dependency.rsplit(":", 1)
+                else:
+                    dep_type = "create"
+                dependencies.append((dependency, dep_type))
+            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition)
+            deployment_objects[name] = container
+    _validate_dependencies(deployment_objects)
+    return deployment_objects
 
 
 def _init_modules(additional_modules):
@@ -123,7 +139,7 @@ def _init_modules(additional_modules):
             base_path, module_path = module_path.split(":")
             sys.path.insert(0, base_path)
         module = importlib.import_module(module_path)
-        managers[module.__config__] = module.__manager__()
+        managers[module.__config_name__] = module.__manager__()
         preprocess_config = None
         if "preprocess_config" in module.__dict__:
             preprocess_config = module.preprocess_config
@@ -131,21 +147,11 @@ def _init_modules(additional_modules):
     return managers, modules
 
 
-def _build_dependency_tree(dependencies_map, config):
-    resulting_dependencies = dict()
-    for name, string_dependencies in dependencies_map.items():
-        dependencies = list()
-        for dependency in string_dependencies:
-            if dependency.count(":") > 0:
-                dependency, dep_type = dependency.rsplit(":", 1)
-            else:
-                dep_type = "create"
-            dependency_object = config.get(dependency)
-            if not dependency_object:
-                raise Exception("Could not find %s" % dependency)
-            dependencies.append((dependency, dependency_object, dep_type))
-        resulting_dependencies[name] = dependencies
-    return resulting_dependencies
+def _validate_dependencies(entities):
+    for name, entity in entities.items():
+        for dependency, dep_type in entity.dependencies:
+            if dependency not in entities:
+                raise ConfigurationException("Unknown entity '%s' as dependency in '%s'" % (dependency, name))
 
 
 def _calculate_variable_value(name, config, provided_variables):
