@@ -18,6 +18,7 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.repositories",
     "dcosdeploy.modules.edgelb",
     "dcosdeploy.modules.s3",
+    "dcosdeploy.modules.taskexec",
 ]
 
 
@@ -112,7 +113,7 @@ def _read_config_entities(modules, variables, config, config_helper):
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
             when_condition = entity_config.get("when")
-            if when_condition and when_condition not in ["dependencies-updated"]:
+            if when_condition and when_condition not in ["dependencies-changed"]:
                 raise ConfigurationException("Unknown when '%s' for '%s'" % (when_condition, name))
             if _check_conditions_apply(variables, only_restriction, except_restriction):
                 continue

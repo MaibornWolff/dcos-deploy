@@ -101,6 +101,7 @@ entityname:
 * `repository`
 * `edgelb`
 * `s3file`
+* `taskexec`
 See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
@@ -235,6 +236,18 @@ Creating and configuring the bucket is outside the scope of this tool.
 
 To make sure a marathon app that uses s3 files is made aware of changes to the uploaded files, you should set the `s3file` enitiy as an `update` dependency to the `app` entity. dcos-deploy will restart the app whenever the uploaded file changes.
 
+### Task exec
+`type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload so to avoid restarting a service. It has the following specific options:
+* `task`: task identifier to uniquely identify the task. Can be part of a task name. Required. Variables can be used.
+* `command`: command to execute in the task. Required. Variables can be used.
+* `print`: boolean. Wether to print the output of the executed command. Optional. Defaults to false.
+
+This has the same effect as running `dcos task exec <task> <command>`.
+
+As dcos-deploy has no state it cannnot detect if this command has been run before. As such it will run this command every time `apply` is called. You must either make the command idempotent so that running it multiple does is possible without changing the result, or (recommended) add dependencies (with `:update`) to it and add `when: dependencies-changed`. That way the command will only be executed when one of its dependencies has been changed.
+
+Example for this is: Uploading configuration files to S3 and triggering a redownload of the files into the service by a command. See [examples](examples/demo) for details.
+
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.
@@ -245,7 +258,7 @@ The deployment process has some specific restrictions:
 * Options files for frameworks, apps and jobs are not verified for structural correctness. If the new file is not accepted by the API an error will be thrown.
 * For marathon apps the change detection currently does not work safely (due to implicit default options from marathon) so it will always apply the new app definition.
 * For frameworks dcos-deploy does not verify beforehand if a version update is supported by the framework. If the framework does not accept the new version an error will be thrown.
-* An already created `cert` entitiy will not be changed if the `dn` or `hostnames` fields change.
+* An already created `cert` entity will not be changed if the `dn` or `hostnames` fields change.
 * Dependencies must be explicitly defined in the `dcos.yml`. Implicit dependencies (like a secret referenced in a marathon app) that are not explicitly stated are not honored by dcos-deploy.
 
 

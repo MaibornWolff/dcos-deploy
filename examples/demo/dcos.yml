@@ -84,3 +84,28 @@ myuniverse:
   name: mycorp-universe
   uri: https://universe.mycorp/repo
   index: 0  # We want it to be first in the list, so that any packages both in the private universe and in the official are taken from our private
+
+
+
+# We configure some files to be uploaded to S3. The files will be reuploaded if they change.
+myconfigfiles:
+  type: s3file
+  source: serviceconfig/
+  server:
+    endpoint: s3.eu-central-1.amazonaws.com
+    access_key: foo
+    secret_key: foosecret
+  destination:
+    bucket: mycorp-fileserver
+    key: dcos/serviceconfig-files
+
+# Assumption: You have an app with name myservice that has a bash script download_files_and_reload_service.sh in its container
+# that downloads the files from s3 and tells the service to reload the files.
+configreload:
+  type: taskexec
+  task: myservice
+  command: bash ./download_files_and_reload_service.sh
+  print: true
+  when: dependencies-changed
+  dependencies:
+    - myconfigfiles:update  # Must be an update dependency so every change to the file will trigger an execution of the command
