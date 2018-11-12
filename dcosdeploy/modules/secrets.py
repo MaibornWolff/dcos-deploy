@@ -10,9 +10,6 @@ class Secret(object):
         self.file_content = file_content
         self.dependencies = list()
 
-    def full_path(self):
-        return "secret:"+self.name
-
 
 def parse_config(name, config, config_helper):
     path = config.get("path")
@@ -59,7 +56,7 @@ class SecretsManager(object):
             print("\tSecret created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         exists = config.path in self.api.list_secrets()
         if not exists:
             print("Would create secret %s" % config.path)

@@ -1,3 +1,4 @@
+from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.ca import CAAdapter
 from dcosdeploy.adapters.secrets import SecretsAdapter
 
@@ -17,11 +18,11 @@ def parse_config(name, config, config_helper):
     dn = config.get("dn")
     hostnames = config.get("hostnames", list())
     if not cert_secret:
-        raise Exception("Cert %s has no cert_secret" % name)
+        raise ConfigurationException("Cert %s has no cert_secret" % name)
     if not key_secret:
-        raise Exception("Cert %s has no key_secret" % name)
+        raise ConfigurationException("Cert %s has no key_secret" % name)
     if not dn:
-        raise Exception("Cert %s has no dn" % name)
+        raise ConfigurationException("Cert %s has no dn" % name)
     cert_secret = config_helper.render(cert_secret)
     key_secret = config_helper.render(key_secret)
     for k, v in dn.items():
@@ -65,7 +66,7 @@ class CertsManager(object):
             print("\tFinished")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:

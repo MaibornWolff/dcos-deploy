@@ -27,14 +27,16 @@ class TaskExecManager(object):
         self.api = MesosAdapter()
 
     def deploy(self, config, dependencies_changed=False):
+        print("\tRunning command")
         parent_container_id, slave_id = self.api.get_container_id_and_slave_id_for_task(config.task)
         result = self.api.launch_nested_container(slave_id, parent_container_id, config.command.split(" "))
         if config.print_output:
             print(result)
+        print("\tFinished.")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
-        print("Would run command %s in task %s" % (config.command, config.task))
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+        print("Would run command '%s' in task '%s'" % (config.command, config.task))
         return True
 
 

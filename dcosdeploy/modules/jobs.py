@@ -1,4 +1,4 @@
-import json
+from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.metronome import MetronomeAdapter
 from dcosdeploy.util import compare_dicts
 
@@ -9,15 +9,12 @@ class MetronomeJob(object):
         self.job_id = job_id
         self.job_definition = job_definition
 
-    def full_path(self):
-        return "job:"+self.name
-
 
 def parse_config(name, config, config_helper):
     path = config.get("path", None)
     job_definition_path = config.get("definition")
     if not job_definition_path:
-        raise Exception("Job %s has no definition file" % name)
+        raise ConfigurationException("Job %s has no definition file" % name)
     job_definition_path = config_helper.render(job_definition_path)
     job_definition = config_helper.read_json(job_definition_path, render_variables=True)
     if path:
@@ -47,7 +44,7 @@ class JobsManager(object):
             print("\tCreated job.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         if not self.api.does_job_exist(config.job_id):
             print("Would create job %s" % config.job_id)
             return True

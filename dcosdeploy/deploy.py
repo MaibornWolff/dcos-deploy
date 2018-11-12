@@ -64,6 +64,6 @@ class DeploymentRunner(object):
         if config.when_condition == "dependencies-changed" and not dependency_changed:
             changed = False
         else:
-            changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed)
+            changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed, debug=self.debug_mode)
         self.dry_deployed[name] = changed
         return changed

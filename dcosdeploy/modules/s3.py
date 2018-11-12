@@ -18,7 +18,7 @@ class S3File(object):
     def __init__(self, server, bucket, files, compress):
         self.server = server
         self.bucket = bucket
-        self.files = files  # list of (s3_key, local_filename)
+        self.files = files  # list of (s3_key, local_filename) or (key, list of (filename, path in zip))
         self.compress = compress
 
 
@@ -42,6 +42,18 @@ def parse_config(name, config, config_helper):
         raise ConfigurationException("Field 'destination.key' is required for s3file '%s'" % name)
     key = config_helper.render(key)
 
+    compress = config.get("compress")
+    if compress:
+        compress = config_helper.render(compress)
+        if compress != "zip":
+            raise ConfigurationException("Compression '%s' is not supported for s3file `%s`" % (compress, name))
+
+    files = _collect_files(name, source, key, compress, config_helper)
+    server = _parse_server_config(name, server, config_helper)
+    return S3File(server, bucket, files, compress)
+
+
+def _parse_server_config(name, server, config_helper):
     endpoint = server.get("endpoint")
     if not endpoint:
         raise ConfigurationException("Field 'server.endpoint' is required for s3file '%s'" % name)
@@ -54,12 +66,10 @@ def parse_config(name, config, config_helper):
     if not secret_key:
         raise ConfigurationException("Field 'server.secret_key' is required for s3file '%s'" % name)
     secret_key = config_helper.render(secret_key)
-    compress = config.get("compress")
-    if compress:
-        compress = config_helper.render(compress)
-        if compress != "zip":
-            raise ConfigurationException("Compression '%s' is not supported for s3file `%s`" % (compress, name))
+    return S3Server(endpoint, access_key, secret_key)
 
+
+def _collect_files(name, source, key, compress, config_helper):
     abspath = config_helper.abspath(source)
     if not os.path.exists(abspath):
         raise ConfigurationException("source '%s' does not exist in filesystem for s3file '%s'" % (source, name))
@@ -92,9 +102,7 @@ def parse_config(name, config, config_helper):
                 files.append((s3_key, filename))
         else:
             files = [(key, abspath)]
-
-    server = S3Server(endpoint, access_key, secret_key)
-    return S3File(server, bucket, files, compress)
+    return files
 
 
 class S3FilesManager(object):

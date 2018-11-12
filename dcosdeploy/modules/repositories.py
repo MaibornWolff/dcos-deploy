@@ -1,3 +1,4 @@
+from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.cosmos import CosmosAdapter
 
 
@@ -12,7 +13,7 @@ def parse_config(name, config, config_helper):
     repo_name = config.get("name", name)
     repo_uri = config.get("uri")
     if not repo_uri:
-        raise Exception("repositroy %s has no uri field" % name)
+        raise ConfigurationException("repositroy %s has no uri field" % name)
     repo_index = config.get("index", None)
     repo_name = config_helper.render(repo_name)
     repo_uri = config_helper.render(repo_uri)

@@ -1,6 +1,4 @@
 import time
-import yaml
-import json
 from dcosdeploy.adapters.edgelb import EdgeLbAdapter
 from dcosdeploy.base import ConfigurationException
 
@@ -57,7 +55,7 @@ class EdgeLbPoolsManager(object):
             print("\tPool created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         if not self.api.ping():
             print("Would create pool %s" % config.name)
             return True

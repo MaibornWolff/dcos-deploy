@@ -1,4 +1,5 @@
 import json
+from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.marathon import MarathonAdapter
 from dcosdeploy.util import compare_dicts
 
@@ -39,7 +40,7 @@ def parse_config(name, config, config_helper):
     path = config.get("path", None)
     app_definition_path = config.get("marathon")
     if not app_definition_path:
-        raise Exception("Service %s has no marathon app definition" % name)
+        raise ConfigurationException("Service %s has no marathon app definition" % name)
     extra_vars = config.get("extra_vars", dict())
     app_definition_path = config_helper.render(app_definition_path)
     with open(app_definition_path) as app_definition_file:
@@ -68,7 +69,7 @@ class MarathonAppsManager(object):
             print("\tFinished")
         return changed
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         app_state = self.api.get_app_state(config.app_id)
         if not app_state:
             print("Would create marathon app %s" % config.app_id)
