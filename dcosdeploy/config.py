@@ -60,10 +60,10 @@ class ConfigHelper(object):
         return data
 
     def read_yaml(self, filename, render_variables=False):
-        return yaml.load(self.read_file(filename))
+        return yaml.load(self.read_file(filename, render_variables))
 
     def read_json(self, filename, render_variables=False):
-        return json.loads(self.read_file(filename))
+        return json.loads(self.read_file(filename, render_variables))
 
     def render(self, text, extra_vars=dict()):
         return self.variables_container.render(text, extra_vars)
@@ -158,6 +158,8 @@ def _validate_dependencies(entities):
 def _calculate_variable_value(name, config, provided_variables):
     if name in provided_variables:
         return provided_variables[name]
+    if not isinstance(config, dict):
+        return config
     env_name = config.get("from")
     if not env_name:
         env_name = "VAR_" + name.replace("-", "_").upper()
@@ -171,6 +173,8 @@ def _calculate_variable_value(name, config, provided_variables):
 def _read_variables(variables, provided_variables):
     resulting_variables = dict()
     for name, config in variables.items():
+        if not config:
+            config = dict()
         value = _calculate_variable_value(name, config, provided_variables)
         if not value and config.get("required", False):
             raise ConfigurationException("Missing required variable %s" % name)

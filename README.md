@@ -82,7 +82,7 @@ Variables can be used via [Mustache](http://mustache.github.io/) templates in mo
 Each entity has the same structure and some common options:
 ```
 entityname:
-  type: marathon
+  type: foo
   only:
     var1: foo
   except:
@@ -92,7 +92,7 @@ entityname:
 ```
 
 `type` defines what kind of entity this is. Currently implemented are
-* `marathon`
+* `app`
 * `framework`
 * `job`
 * `account`
@@ -109,7 +109,7 @@ See their respective sections below for details.
 `dependencies` takes a list of entity names that this entity depends on. Optionally the dependency type can be provided. Currently supported are `create` (default) and `update`. They can be defined by adding a colon after the entity name and then the type (e.g. `otherentity:create`). A `create` dependency is only honored during creation time of an entity and means that the entity will only be created after all its dependencies have been successfully created (e.g. a service account for a framework). An update dependency extends the `create` dependency and is currently only honored by the `marathon` module. If during an apply-operation a dependency of a marathon app is changed (e.g. a secret) and the app has no changes it will be restarted.
 
 ### Marathon app
-`type: marathon` defines a marathon app. It has the following specific options:
+`type: app` defines a marathon app. It has the following specific options:
 * `path`: id of the app. If not specified the `id` field of the marathon app definition is used. Variables can be used.
 * `marathon`: path to the marathon app definition json file. Required. Variables can be used in the path and in the json file itsself.
 * `extra_vars`: key/value-pairs of of extra variables and values to be used when rendering the app definition file.
@@ -117,7 +117,7 @@ See their respective sections below for details.
 If you want to start several apps from the same basic app definition, there is a meta option to allow this:
 ```
 mymultiapp:
-  type: marathon
+  type: app
   _template: marathon.json
   _vars: mymultiapp.yml
 ```

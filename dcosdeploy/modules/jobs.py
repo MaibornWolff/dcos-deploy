@@ -20,7 +20,7 @@ def parse_config(name, config, config_helper):
     if path:
         path = config_helper.render(path)
     else:
-        path = job_definition["id"]
+        path = "/"+job_definition["id"].replace(".", "/")
     return MetronomeJob(name, path, job_definition)
 
 
