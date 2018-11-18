@@ -12,13 +12,13 @@ class DeploymentRunner(object):
         for name, deployment_object in self.config.items():
             self.deploy(name, deployment_object)
 
-    def run_partial_deployment(self, only):
+    def run_partial_deployment(self, only, force=False):
         deployment_object = self.config.get(only)
         if not deployment_object:
             raise Exception("Could not find %s" % only)
-        self.deploy(only, deployment_object)
+        self.deploy(only, deployment_object, force=force)
 
-    def deploy(self, name, config):
+    def deploy(self, name, config, force=False):
         if name in self.already_deployed:
             return self.already_deployed[name]
         dependency_changed = False
@@ -26,6 +26,8 @@ class DeploymentRunner(object):
             dependency = self.config[dependency_name]
             if self.deploy(dependency_name, dependency) and dependency_type == "update":
                 dependency_changed = True
+        if force:
+            dependency_changed = True
         manager = self.managers[config.entity_type]
         if not manager:
             raise Exception("Could not find manager for '%s'" % config.entity_type)
@@ -44,13 +46,13 @@ class DeploymentRunner(object):
                 changed = True
         return changed
 
-    def partial_dry_run(self, only):
+    def partial_dry_run(self, only, force=False):
         deployment_object = self.config.get(only)
         if not deployment_object:
             raise Exception("Could not find %s" % only)
-        return self.dry_deploy(only, deployment_object)
+        return self.dry_deploy(only, deployment_object, force=force)
 
-    def dry_deploy(self, name, config):
+    def dry_deploy(self, name, config, force=False):
         if name in self.dry_deployed:
             return self.dry_deployed[name]
         dependency_changed = False
@@ -58,6 +60,8 @@ class DeploymentRunner(object):
             dependency = self.config[dependency_name]
             if self.dry_deploy(dependency_name, dependency) and dependency_type == "update":
                 dependency_changed = True
+        if force:
+            dependency_changed = True
         manager = self.managers[config.entity_type]
         if not manager:
             raise Exception("Could not find manager for '%s'" % config.entity_type)

@@ -15,15 +15,16 @@ def dcosdeploy():
 @click.option("--dry-run", "-d", help="Only check what would be done", is_flag=True)
 @click.option("--yes", help="Do deployment without asking", is_flag=True)
 @click.option("--debug", help="Enable debug logging", is_flag=True)
-def apply(config_file, var, only, dry_run, yes, debug):
+@click.option("--force", help="Forces deployment of entity provided with --only", is_flag=True)
+def apply(config_file, var, only, dry_run, yes, debug, force):
     provided_variables = get_variables(var)
     if not config_file:
         config_file = "dcos.yml"
     runner = DeploymentRunner(config_file, provided_variables, debug)
     if only:
-        if runner.partial_dry_run(only) and not dry_run:
+        if runner.partial_dry_run(only, force=force) and not dry_run:
             if yes or click.confirm("Do you want to apply these changes?", default=False):
-                runner.run_partial_deployment(only)
+                runner.run_partial_deployment(only, force=force)
             else:
                 print("Not doing anything")
     else:
