@@ -11,6 +11,8 @@ class MarathonAdapter(object):
         self.marathon_url = get_base_url() + "/service/marathon/v2"
 
     def get_app_state(self, app_id):
+        if not app_id[0] == "/":
+            app_id = "/" + app_id
         response = requests.get(self.marathon_url+"/apps%s/?embed=app.counts" % app_id, auth=get_auth(), verify=False)
         if not response.ok:
             if response.status_code == 404:

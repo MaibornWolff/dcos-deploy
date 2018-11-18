@@ -43,8 +43,7 @@ def parse_config(name, config, config_helper):
         raise ConfigurationException("Service %s has no marathon app definition" % name)
     extra_vars = config.get("extra_vars", dict())
     app_definition_path = config_helper.render(app_definition_path)
-    with open(app_definition_path) as app_definition_file:
-        app_definition = app_definition_file.read()
+    app_definition = config_helper.read_file(app_definition_path)
     app_definition = config_helper.render(app_definition, extra_vars)
     app_definition = json.loads(app_definition)
     if path:

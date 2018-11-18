@@ -7,6 +7,7 @@ import yaml
 from .util import read_yaml
 from .base import ConfigurationException
 
+META_NAMES = ["variables", "modules", "includes"]
 
 STANDARD_MODULES = [
     "dcosdeploy.modules.accounts",
@@ -44,8 +45,10 @@ class VariableContainer(object):
 
 
 class ConfigHelper(object):
-    def __init__(self, variables_container, base_path):
+    def __init__(self, variables_container):
         self.variables_container = variables_container
+
+    def set_base_path(self, base_path):
         self.base_path = base_path
 
     def abspath(self, path):
@@ -79,33 +82,47 @@ class EntityContainer(object):
 
 def read_config(filename, provided_variables):
     abspath = os.path.abspath(filename)
-    base_path = os.path.dirname(abspath)
-    config = read_yaml(abspath)
-    variables = _read_variables(config.get("variables", dict()), provided_variables)
-    config_helper = ConfigHelper(variables, base_path)
-    for include in config.get("includes", list()):
-        absolute_include_path = os.path.abspath(os.path.join(base_path, include))
-        additional_configs = read_yaml(absolute_include_path)
-        for key, values in additional_configs.items():
-            if key in config:
-                raise ConfigurationException("%s found in base config and include file %s" % (key, include))
-            config[key] = values
+    config_files = [abspath]
+    idx = 0
+    entities = dict()
+    variables_dicts = list()
+    additional_modules = list()
+
+    while idx < len(config_files):
+        config_filename = config_files[idx]
+        config_basepath = os.path.dirname(config_filename)
+        config = read_yaml(config_filename)
+        variables = config.get("variables", dict())
+        variables_dicts.append(variables)
+        for include in config.get("includes", list()):
+            absolute_include_path = os.path.abspath(os.path.join(config_basepath, include))
+            config_files.append(absolute_include_path)
+        additional_modules.extend(config.get("modules", list()))
+        for key, values in config.items():
+            if key in META_NAMES:
+                continue
+            if key in entities:
+                raise ConfigurationException("%s found in several files" % key)
+            entities[key] = values
+            entities[key]["_basepath"] = config_basepath
+        idx += 1
+
+    variables = _read_variables(variables_dicts, provided_variables)
+    config_helper = ConfigHelper(variables)
     # init managers
-    additional_modules = config.get("modules", list())
     managers, modules = _init_modules(additional_modules)
     # read config sections
-    entities = _read_config_entities(modules, variables, config, config_helper)
+    entities = _read_config_entities(modules, variables, entities, config_helper)
     return entities, managers
 
 
 def _read_config_entities(modules, variables, config, config_helper):
     deployment_objects = dict()
     for name, entity_config in config.items():
-        if name in ["variables", "modules", "includes"]:
-            continue
         module = modules[entity_config["type"]]
         parse_config_func = module["parser"]
         preprocess_config_func = module["preprocesser"]
+        config_helper.set_base_path(entity_config["_basepath"])
         entities = [(name, entity_config)]
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
@@ -160,7 +177,7 @@ def _calculate_variable_value(name, config, provided_variables):
         return provided_variables[name]
     if not isinstance(config, dict):
         return config
-    env_name = config.get("from")
+    env_name = config.get("env")
     if not env_name:
         env_name = "VAR_" + name.replace("-", "_").upper()
     if env_name in os.environ:
@@ -170,18 +187,19 @@ def _calculate_variable_value(name, config, provided_variables):
     return None
 
 
-def _read_variables(variables, provided_variables):
+def _read_variables(variables_dicts, provided_variables):
     resulting_variables = dict()
-    for name, config in variables.items():
-        if not config:
-            config = dict()
-        value = _calculate_variable_value(name, config, provided_variables)
-        if not value and config.get("required", False):
-            raise ConfigurationException("Missing required variable %s" % name)
-        if "values" in config and value not in config["values"]:
-            raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
-                                         % (value, name, ','.join(config["values"])))
-        resulting_variables[name] = value
+    for variables in variables_dicts:
+        for name, config in variables.items():
+            if not config:
+                config = dict()
+            value = _calculate_variable_value(name, config, provided_variables)
+            if not value and config.get("required", False):
+                raise ConfigurationException("Missing required variable %s" % name)
+            if "values" in config and value not in config["values"]:
+                raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
+                                             % (value, name, ','.join(config["values"])))
+            resulting_variables[name] = value
     for name, value in provided_variables.items():
         if name not in resulting_variables:
             resulting_variables[name] = value
