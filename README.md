@@ -74,9 +74,51 @@ variables:
       - bar
       - baz
     default: bar
+  var4:
+    env: MY_VAR4  # Variables can also be read from the environment
+    required: True
 ```
 
 Variables can be used via [Mustache](http://mustache.github.io/) templates in most options and in marathon app definitions and package options. See `examples/elastic` for usage examples. You can not use variables in entity names or outside option strings (ground rule: the yaml file must be syntactically correct without mustache template rendering).
+
+### Encryption
+dcos-deploy supports encrypting files so that sensitive information is not stored unencrypted. Files are symmetricly encrypted using [Fernet](https://cryptography.io/en/latest/fernet/) (AES-128) from the python [cryptography](https://cryptography.io/en/latest/) library.
+In most places where you provide a filename (at the moment not possible with `s3file` or includes) you can use encrypted files by using the following syntax as filename: `vault:<encryption-key>:<filename-to-encrypted-file>`.
+You should use a variable for the encryption key.
+
+Example:
+```
+variables:
+  encryption_key:
+    env: ENCRYPTION_KEY
+    required: True
+
+servicepasswords:
+  type: secret
+  path: /myservice/passwords
+  file: vault:{{encryption_key}}:servicepasswords.encrypted
+```
+
+dcos-deploy has several util commands that help you in creating encrypted files:
+* `dcos-deploy vault generate-key`: Generates a new key that you can use for encrypting files
+* `dcos-deploy vault encrypt`: Encrypts a file using a given key
+* `dcos-deploy vault decrypt`: Decrypts a file using a given key
+
+Example usage:
+```
+$ echo "supersecret" > servicepasswords
+$ dcos-deploy vault generate-key
+Your new key: 6htLemxXcEXnahVl1aZI6Aa3TXIHmbE8abtibC2iO6c=
+Keep this safe.
+$ export ENCRYPTION_KEY="6htLemxXcEXnahVl1aZI6Aa3TXIHmbE8abtibC2iO6c="
+$ dcos-deploy vault encrypt -i servicepasswords -o servicepasswords.encrypted -e ENCRYPTION_KEY
+$ cat servicepasswords.encrypted
+gAAAAABb9rkSdEqT1xn0w5G5ipjPH6Vd5TsUfDLAWnN7I8FXTOPK6t1tMUstm8nA_yiA6SV5B1Blxj1h-xqCl8VqqbH7D7RF9Q==
+$ dcos-deploy vault decrypt -i servicepasswords.encrypted -o servicepasswords.clear -e ENCRYPTION_KEY
+$ cat servicepasswords.clear
+supersecret
+```
+
 
 ### Entity
 Each entity has the same structure and some common options:

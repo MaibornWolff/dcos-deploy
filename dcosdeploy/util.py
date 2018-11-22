@@ -1,12 +1,27 @@
 import hashlib
-import yaml
 import os
+import yaml
+from cryptography.fernet import Fernet
 
 
 def read_yaml(filename):
     with open(filename) as yaml_file:
         data = yaml_file.read()
     return yaml.load(data)
+
+
+def generate_key():
+    return Fernet.generate_key().decode("utf-8")
+
+
+def encrypt_data(key, content):
+    fernet = Fernet(key.encode("utf-8"))
+    return fernet.encrypt(content.encode("utf-8")).decode("utf-8")
+
+
+def decrypt_data(key, content):
+    fernet = Fernet(key.encode("utf-8"))
+    return fernet.decrypt(content.encode("utf-8")).decode("utf-8")
 
 
 def md5_hash(filename):

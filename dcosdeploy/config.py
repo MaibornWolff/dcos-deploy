@@ -4,7 +4,7 @@ import os
 import json
 import pystache
 import yaml
-from .util import read_yaml
+from .util import read_yaml, decrypt_data
 from .base import ConfigurationException
 
 META_NAMES = ["variables", "modules", "includes"]
@@ -55,9 +55,15 @@ class ConfigHelper(object):
         return os.path.abspath(os.path.join(self.base_path, path))
 
     def read_file(self, filename, render_variables=False):
+        if filename.startswith("vault:"):
+            _, key, filename = filename.split(":", 2)
+        else:
+            key = None
         filepath = self.abspath(filename)
         with open(filepath) as file_obj:
             data = file_obj.read()
+        if key:
+            data = decrypt_data(key, data)
         if render_variables:
             data = self.variables_container.render(data)
         return data
