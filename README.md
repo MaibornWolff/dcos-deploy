@@ -159,6 +159,7 @@ Any change in the options file or in the package version will trigger an update 
 * `path`: path for the secret. Required. Variables can be used.
 * `value`: Value for the secret. Variables can be used. Either this or `file` is required.
 * `file`: Path to a file. The content of the file will be used as value for the secret. Either this or `value` is required.
+* `render`: Wether to render the file content with mustache. Use if your file contains variables. Boolean. Defaults to False.
 
 ### Serviceaccount
 `type: serviceaccount` defines a serviceaccount. This can only be used on EE clusters. It has the following specific options:

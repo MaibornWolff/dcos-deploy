@@ -17,13 +17,14 @@ def parse_config(name, config, config_helper):
         raise ConfigurationException("Path is required for secret '%s'" % name)
     value = config.get("value")
     file_path = config.get("file")
+    render = config.get("render", False)
     path = config_helper.render(path)
     if value:
         value = config_helper.render(value)
         file_content = None
     elif file_path:
         file_path = config_helper.render(file_path)
-        file_content = config_helper.read_file(file_path)
+        file_content = config_helper.read_file(file_path, render_variables=render)
     else:
         raise ConfigurationException("Either value or file are required for secret '%s'" % name)
     return Secret(name, path, value, file_content)
