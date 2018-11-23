@@ -217,10 +217,17 @@ def _check_conditions_apply(variables, restriction_only, restriction_except):
         for var, value in restriction_only.items():
             if not variables.has(var):
                 return True
-            if variables.get(var) != value:
+            if isinstance(value, list):
+                if variables.get(var) not in value:
+                    return True
+            elif variables.get(var) != value:
                 return True
     if restriction_except:
         for var, value in restriction_except.items():
-            if variables.has(var) and variables.get(var) == value:
-                return True
+            if variables.has(var):
+                if isinstance(value, list):
+                    if variables.get(var) in value:
+                        return True
+                elif variables.get(var) == value:
+                    return True
     return False

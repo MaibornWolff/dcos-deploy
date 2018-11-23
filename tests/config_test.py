@@ -24,18 +24,49 @@ MARATHON_VARIABLES_APP_DEF = """
 }
 """
 
-MARATHON_ONLY = """
+DUMMY_ONLY = """
+modules:
+  - "./:dummy_module"
 test1:
-  type: app
+  type: dummy
+  test: test1
   only:
     env: prod
 """
 
-MARATHON_EXCEPT = """
+DUMMY_ONLY_LIST = """
+modules:
+  - "./:dummy_module"
 test1:
-  type: app
+  type: dummy
+  test: test1
+  only:
+    env:
+      - int
+      - prod
+"""
+
+
+DUMMY_EXCEPT = """
+modules:
+  - "./:dummy_module"
+test1:
+  type: dummy
+  test: test1
   except:
     env: test
+"""
+
+DUMMY_EXCEPT_LIST = """
+modules:
+  - "./:dummy_module"
+test1:
+  type: dummy
+  test: test1
+  except:
+    env:
+     - test
+     - int
 """
 
 CUSTOM_MODULE = """
@@ -89,12 +120,28 @@ class ConfigTest(unittest.TestCase):
         self.assertEqual(config["test1"].entity.app_definition, {"id": "/hello/test", "cmd": "echo test"})
 
     def test_only(self):
-        config, managers = read_config_mocked_open(dict(env="test"), MARATHON_ONLY)
+        config, managers = read_config_mocked_open(dict(env="test"), DUMMY_ONLY)
         self.assertTrue("test1" not in config)
+        config, managers = read_config_mocked_open(dict(env="prod"), DUMMY_ONLY)
+        self.assertTrue("test1" in config)
+
+    def test_only_list(self):
+        config, managers = read_config_mocked_open(dict(env="test"), DUMMY_ONLY_LIST)
+        self.assertTrue("test1" not in config)
+        config, managers = read_config_mocked_open(dict(env="int"), DUMMY_ONLY_LIST)
+        self.assertTrue("test1" in config)
 
     def test_except(self):
-        config, managers = read_config_mocked_open(dict(env="test"), MARATHON_EXCEPT)
+        config, managers = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT)
         self.assertTrue("test1" not in config)
+        config, managers = read_config_mocked_open(dict(env="int"), DUMMY_EXCEPT)
+        self.assertTrue("test1" in config)
+
+    def test_except_list(self):
+        config, managers = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT_LIST)
+        self.assertTrue("test1" not in config)
+        config, managers = read_config_mocked_open(dict(env="prod"), DUMMY_EXCEPT_LIST)
+        self.assertTrue("test1" in config)
 
     def test_custom_module(self):
         config, managers = read_config_mocked_open(dict(), CUSTOM_MODULE)
