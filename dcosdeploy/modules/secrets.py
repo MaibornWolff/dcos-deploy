@@ -70,7 +70,11 @@ class SecretsManager(object):
         else:
             raise Exception("Specified neither value nor file_content for secret")
         if changed:
-            print("Would update secret %s" % config.path)
+            if debug:
+                print("Would update secret %s from %s to %s" % (config.path, content, config.file_content))
+            else:
+                print("Would update secret %s" % config.path)
+        return changed
 
 
 __config__ = Secret

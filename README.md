@@ -83,7 +83,7 @@ Variables can be used via [Mustache](http://mustache.github.io/) templates in mo
 
 ### Encryption
 dcos-deploy supports encrypting files so that sensitive information is not stored unencrypted. Files are symmetricly encrypted using [Fernet](https://cryptography.io/en/latest/fernet/) (AES-128) from the python [cryptography](https://cryptography.io/en/latest/) library.
-In most places where you provide a filename (at the moment not possible with `s3file` or includes) you can use encrypted files by using the following syntax as filename: `vault:<encryption-key>:<filename-to-encrypted-file>`.
+In most places where you provide a filename (at the moment not possible with `s3file`) you can use encrypted files by using the following syntax as filename: `vault:<encryption-key>:<filename-to-encrypted-file>`.
 You should use a variable for the encryption key.
 
 Example:
@@ -118,6 +118,8 @@ $ dcos-deploy vault decrypt -i servicepasswords.encrypted -o servicepasswords.cl
 $ cat servicepasswords.clear
 supersecret
 ```
+
+To use encrypted files with includes make sure that the variable for the encryption key is either defined in the file itsself or in an included file that is read before the encrypted one.
 
 
 ### Entity

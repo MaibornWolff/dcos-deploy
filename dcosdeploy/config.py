@@ -4,7 +4,7 @@ import os
 import json
 import pystache
 import yaml
-from .util import read_yaml, decrypt_data
+from .util import decrypt_data
 from .base import ConfigurationException
 
 META_NAMES = ["variables", "modules", "includes"]
@@ -88,21 +88,29 @@ class EntityContainer(object):
 
 def read_config(filename, provided_variables):
     abspath = os.path.abspath(filename)
-    config_files = [abspath]
+    config_files = [(abspath, None)]
     idx = 0
     entities = dict()
-    variables_dicts = list()
+    variables = dict()
     additional_modules = list()
 
     while idx < len(config_files):
-        config_filename = config_files[idx]
+        config_filename, encryption_key = config_files[idx]
         config_basepath = os.path.dirname(config_filename)
-        config = read_yaml(config_filename)
-        variables = config.get("variables", dict())
-        variables_dicts.append(variables)
+        with open(config_filename) as config_file:
+            config = config_file.read()
+        if encryption_key:
+            encryption_key = pystache.render(encryption_key, variables)
+            config = decrypt_data(encryption_key, config)
+        config = yaml.load(config)
+        variables = {**variables, **_parse_variables(config.get("variables", dict()), provided_variables)}
         for include in config.get("includes", list()):
+            if include.startswith("vault:"):
+                _, key, include = include.split(":", 2)
+            else:
+                key = None
             absolute_include_path = os.path.abspath(os.path.join(config_basepath, include))
-            config_files.append(absolute_include_path)
+            config_files.append((absolute_include_path, key))
         additional_modules.extend(config.get("modules", list()))
         for key, values in config.items():
             if key in META_NAMES:
@@ -113,7 +121,7 @@ def read_config(filename, provided_variables):
             entities[key]["_basepath"] = config_basepath
         idx += 1
 
-    variables = _read_variables(variables_dicts, provided_variables)
+    variables = _finalize_variables(variables, provided_variables)
     config_helper = ConfigHelper(variables)
     # init managers
     managers, modules = _init_modules(additional_modules)
@@ -193,23 +201,26 @@ def _calculate_variable_value(name, config, provided_variables):
     return None
 
 
-def _read_variables(variables_dicts, provided_variables):
+def _parse_variables(variables, provided_variables):
     resulting_variables = dict()
-    for variables in variables_dicts:
-        for name, config in variables.items():
-            if not config:
-                config = dict()
-            value = _calculate_variable_value(name, config, provided_variables)
-            if not value and config.get("required", False):
-                raise ConfigurationException("Missing required variable %s" % name)
-            if "values" in config and value not in config["values"]:
-                raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
-                                             % (value, name, ','.join(config["values"])))
-            resulting_variables[name] = value
+    for name, config in variables.items():
+        if not config:
+            config = dict()
+        value = _calculate_variable_value(name, config, provided_variables)
+        if not value and config.get("required", False):
+            raise ConfigurationException("Missing required variable %s" % name)
+        if "values" in config and value not in config["values"]:
+            raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
+                                         % (value, name, ','.join(config["values"])))
+        resulting_variables[name] = value
+    return resulting_variables
+
+
+def _finalize_variables(calculated_variables, provided_variables):
     for name, value in provided_variables.items():
-        if name not in resulting_variables:
-            resulting_variables[name] = value
-    return VariableContainer(resulting_variables)
+        if name not in calculated_variables:
+            calculated_variables[name] = value
+    return VariableContainer(calculated_variables)
 
 
 def _check_conditions_apply(variables, restriction_only, restriction_except):

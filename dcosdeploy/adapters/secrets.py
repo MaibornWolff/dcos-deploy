@@ -25,7 +25,10 @@ class SecretsAdapter(object):
         if not response.ok:
             print(response.text)
             raise Exception("Failed to get secret")
-        return response.text
+        if response.headers.get("Content-Type") == "application/json":
+            return response.json()["value"]
+        else:
+            return response.text
 
     def write_secret(self, name, value=None, file_content=None, update=True):
         """Write a secret, set either value or file_content but not both."""
