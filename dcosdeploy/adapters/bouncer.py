@@ -48,8 +48,16 @@ class BouncerAdapter(object):
             print(response.text)
             raise Exception("Error occured when adding user to group")
 
-    def add_permission_to_user(self, user_name, permission):
-        pass
+    def add_permission_to_user(self, user_name, rid, action):
+        rid = rid.replace("/", r"%252F")
+        response = requests.put(self.base_url+r"/acls/%s/users/%s/%s" % (rid, user_name, action), auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text)
+            raise Exception("Error occured when adding permission to user")
 
-    def remove_permission_from_user(self, user_name, permission):
-        pass
+    def remove_permission_from_user(self, user_name, rid, action):
+        rid = rid.replace("/", r"%252F")
+        response = requests.delete(self.base_url+"/acls/%s/users/%s/%s" % (rid, user_name, action), auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text)
+            raise Exception("Error occured when removing permission from user")

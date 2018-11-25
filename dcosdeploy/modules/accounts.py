@@ -86,14 +86,11 @@ class AccountsManager(object):
         # Update permissions
         print("\tUpdating permissions")
         for rid, actions in existing_permissions.items():
-            if rid not in config.permissions:
-                self.bouncer.remove_permission_from_user(config.path, rid)
-                changed = True
-            else:
-                for action in actions:
-                    if action not in config.permissions[rid]:
-                        self.bouncer.remove_permission_from_user(config.path, rid, action)
-                        changed = True
+            target_actions = config.permissions.get(rid, list())
+            for action in actions:
+                if action not in target_actions:
+                    self.bouncer.remove_permission_from_user(config.path, rid, action)
+                    changed = True
         for rid, actions in config.permissions.items():
             for action in actions:
                 if action not in existing_permissions.get(rid, list()):
