@@ -1,7 +1,7 @@
 import json
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.marathon import MarathonAdapter
-from dcosdeploy.util import compare_dicts
+from dcosdeploy.util import compare_dicts, print_if
 
 
 class MarathonApp(object):
@@ -57,15 +57,15 @@ class MarathonAppsManager(object):
     def __init__(self):
         self.api = MarathonAdapter()
 
-    def deploy(self, config, dependencies_changed=False):
-        print("\tStarting deployment...")
+    def deploy(self, config, dependencies_changed=False, silent=False):
+        print_if(not silent, "\tStarting deployment...")
         changed = self.api.deploy_app(config.app_definition, True)
         if not changed and dependencies_changed:
-            print("\tNo change in app config. Restarting app...")
+            print_if(not silent, "\tNo change in app config. Restarting app...")
             self.api.restart_app(config.app_id, True)
-            print("\tRestart finished")
+            print_if(not silent, "\tRestart finished")
         else:
-            print("\tFinished")
+            print_if(not silent, "\tFinished")
         return changed
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

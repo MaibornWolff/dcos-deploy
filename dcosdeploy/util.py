@@ -99,3 +99,8 @@ def compare_dicts(config_a, config_b, print_differences=False, path=""):
                     print("%s: %s != %s" % (path, value_a, value_b))
                 return False
     return True
+
+
+def print_if(cond, text):
+    if cond:
+        print(text)

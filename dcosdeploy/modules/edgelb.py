@@ -1,6 +1,7 @@
 import time
 from dcosdeploy.adapters.edgelb import EdgeLbAdapter
 from dcosdeploy.base import ConfigurationException
+from dcosdeploy.util import print_if
 
 
 class EdgeLbPool(object):
@@ -32,27 +33,27 @@ class EdgeLbPoolsManager(object):
     def __init__(self):
         self.api = EdgeLbAdapter()
 
-    def deploy(self, config, dependencies_changed=False):
+    def deploy(self, config, dependencies_changed=False, silent=False):
         if not self.api.ping():
-            print("\tEdgeLB api not yet available. Waiting ...")
+            print_if(not silent, "\tEdgeLB api not yet available. Waiting ...")
             waiting = 0
             while not self.api.ping():
                 time.sleep(10)
                 waiting += 1
                 if waiting > 12:
-                    print("\tCould not reach edgelb api. Giving up")
+                    print_if(not silent, "\tCould not reach edgelb api. Giving up")
                     raise Exception("EdgeLB api not available.")
         exists = config.name in self.api.get_pools()
         if exists:
             # TODO: Check for changes
-            print("\tUpdating pool")
+            print_if(not silent, "\tUpdating pool")
             self.api.update_pool(config.pool_config)
-            print("\tPool updated.")
+            print_if(not silent, "\tPool updated.")
             return True
         else:
-            print("\tCreating pool")
+            print_if(not silent, "\tCreating pool")
             self.api.create_pool(config.pool_config)
-            print("\tPool created.")
+            print_if(not silent, "\tPool created.")
             return True
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

@@ -1,4 +1,5 @@
 from dcosdeploy.base import ConfigurationException
+from dcosdeploy.util import print_if
 from dcosdeploy.adapters.ca import CAAdapter
 from dcosdeploy.adapters.secrets import SecretsAdapter
 
@@ -40,30 +41,23 @@ class CertsManager(object):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:
-            if not silent:
-                print("\tSecrets already exist. Not doing anything.")
+            print_if(not silent, "\tSecrets already exist. Not doing anything.")
             return False
         if cert_secret and not key_secret:
-            if not silent:
-                print("\tDeleting existing secret %s" % config.cert_secret)
+            print_if(not silent, "\tDeleting existing secret %s" % config.cert_secret)
             self.secrets.delete_secret(config.cert_secret)
         if not cert_secret and key_secret:
-            if not silent:
-                print("\tDeleting existing secret %s" % config.key_secret)
+            print_if(not silent, "\tDeleting existing secret %s" % config.key_secret)
             self.secrets.delete_secret(config.key_secret)
 
-        if not silent:
-            print("\tGenerating private key")
+        print_if(not silent, "\tGenerating private key")
         csr, private_key = self.ca.generate_key(config.dn, config.hostnames)
-        if not silent:
-            print("\tSigning csr")
+        print_if(not silent, "\tSigning csr")
         cert = self.ca.sign_csr(csr, config.hostnames)
-        if not silent:
-            print("\tCreating secrets")
+        print_if(not silent, "\tCreating secrets")
         self.secrets.write_secret(config.key_secret, file_content=private_key, update=False)
         self.secrets.write_secret(config.cert_secret, file_content=cert, update=False)
-        if not silent:
-            print("\tFinished")
+        print_if(not silent, "\tFinished")
         return True
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

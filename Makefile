@@ -11,9 +11,14 @@ test:
 	@python3 -m unittest discover -s tests -p "*_test.py"
 
 binary:
-	pyinstaller dcos-deploy.py -F -n dcos-deploy \
+	@pyinstaller dcos-deploy -F -n dcos-deploy \
 	--hidden-import dcosdeploy.modules.accounts \
-	--hidden-import dcosdeploy.modules.certs \
-	--hidden-import dcosdeploy.modules.jobs \
 	--hidden-import dcosdeploy.modules.secrets \
-	--hidden-import dcosdeploy.modules.services
+	--hidden-import dcosdeploy.modules.jobs \
+	--hidden-import dcosdeploy.modules.apps \
+	--hidden-import dcosdeploy.modules.frameworks \
+	--hidden-import dcosdeploy.modules.certs \
+	--hidden-import dcosdeploy.modules.repositories \
+	--hidden-import dcosdeploy.modules.edgelb \
+	--hidden-import dcosdeploy.modules.s3 \
+	--hidden-import dcosdeploy.modules.taskexec

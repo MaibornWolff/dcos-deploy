@@ -1,5 +1,5 @@
 from dcosdeploy.adapters.cosmos import CosmosAdapter
-from dcosdeploy.util import compare_dicts
+from dcosdeploy.util import compare_dicts, print_if
 from dcosdeploy.base import ConfigurationException
 
 
@@ -38,28 +38,28 @@ class FrameworksManager(object):
     def __init__(self):
         self.api = CosmosAdapter()
 
-    def deploy(self, config, dependencies_changed=False):
+    def deploy(self, config, dependencies_changed=False, silent=False):
         changed = self.dry_run(config, dependencies_changed=False, print_changes=False)
         if not changed:
-            print("\tConfig unchanged.")
+            print_if(not silent, "\tConfig unchanged.")
             return
         old_description = self.api.describe_service(config.service_name)
         package_version = config.package_version
         if not old_description:
-            print("\tInstalling framework")
+            print_if(not silent, "\tInstalling framework")
             self.api.install_package(config.service_name, config.package_name, config.package_version, config.options)
             if config.package_name == "edgelb":
-                print("\tPackage is Edge-LB. Waiting is disabled.")
+                print_if(not silent, "\tPackage is Edge-LB. Waiting is disabled.")
             else:
-                print("\tWaiting for deployment to finish")
+                print_if(not silent, "\tWaiting for deployment to finish")
                 self.api.wait_for_plan_complete(config.service_name, "deploy")
         else:
             if old_description["package"]["version"] == config.package_version:
                 package_version = None
-            print("\tUpdating framework")
+            print_if(not silent, "\tUpdating framework")
             self.api.update_service(config.service_name, package_version, config.options)
             # Do not wait for completion after update, assume update is done in rolling fashion
-        print("\tFinished")
+        print_if(not silent, "\tFinished")
         return changed
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

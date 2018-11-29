@@ -1,7 +1,7 @@
 import os
 from dcosdeploy.adapters.s3 import S3FileAdapter
 from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import md5_hash, list_path_recursive
+from dcosdeploy.util import md5_hash, list_path_recursive, print_if
 
 
 TMP_COMPRESS_NAME = "tmpcompressedfile"
@@ -115,14 +115,14 @@ class S3FilesManager(object):
                 self._compress_zip(config.files[1])
                 hash = md5_hash(TMP_COMPRESS_NAME)
                 if self.api.compare_file(config.server, config.bucket, config.files[0], hash):
-                    print("\tNothing changed")
+                    print_if(not silent, "\tNothing changed")
                     return False
                 else:
-                    print("\tUploading file to %s" % config.files[0])
+                    print_if(not silent, "\tUploading file to %s" % config.files[0])
                     with open(TMP_COMPRESS_NAME, "rb") as source_file:
                         file_stat = os.stat(TMP_COMPRESS_NAME)
                         self.api.upload_file(config.server, config.bucket, config.files[0], source_file, file_stat.st_size, hash)
-                        print("\tUploaded file to %s" % config.files[0])
+                        print_if(not silent, "\tUploaded file to %s" % config.files[0])
                     return True
             finally:
                 os.remove(TMP_COMPRESS_NAME)
@@ -132,13 +132,13 @@ class S3FilesManager(object):
                 hash = md5_hash(filename)
                 if not self.api.compare_file(config.server, config.bucket, key, hash):
                     changed = True
-                    print("\tUploading file to %s" % key)
+                    print_if(not silent, "\tUploading file to %s" % key)
                     with open(filename, "rb") as source_file:
                         file_stat = os.stat(filename)
                         self.api.upload_file(config.server, config.bucket, key, source_file, file_stat.st_size, hash)
-                        print("\tUploaded file to %s" % key)
+                        print_if(not silent, "\tUploaded file to %s" % key)
             if not changed:
-                print("\tNothing changed")
+                print_if(not silent, "\tNothing changed")
             return changed
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

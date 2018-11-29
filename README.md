@@ -29,6 +29,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 ### Limitations
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
 * Can not safely detect changes in marathon apps and edgelb pools: Due do default configuration options being added, dcos-deploy can at the moment not predict beforehand if an app or pool will be changed.
+* Frameworks/packages with more complicated update procedures (like Edge-LB) are at the moment not supported.
 
 
 ## Requirements

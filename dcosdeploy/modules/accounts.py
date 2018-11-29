@@ -2,6 +2,7 @@ import subprocess
 import os
 import json
 from dcosdeploy.base import ConfigurationException
+from dcosdeploy.util import print_if
 from dcosdeploy.adapters.bouncer import BouncerAdapter
 from dcosdeploy.adapters.secrets import SecretsAdapter
 
@@ -35,19 +36,19 @@ def parse_config(name, config, config_helper):
 
 
 def generate_keypair():
-    res = subprocess.run("dcos security org service-accounts keypair private-key.pem public-key.pem".split(" "), shell=False)
-    if res.returncode != 0:
+    try:
+        res = subprocess.run("dcos security org service-accounts keypair private-key.pem public-key.pem".split(" "), shell=False)
+        if res.returncode != 0:
+            raise Exception("Error when creating keypair: %s" % res.stderr)
+        with open(PRIVATE_KEY) as private_file:
+            private_key = private_file.read()
+        with open(PUBLIC_KEY) as public_file:
+            public_key = public_file.read()
+        return private_key, public_key
+    finally:
         os.remove(PRIVATE_KEY)
         os.remove(PUBLIC_KEY)
-        raise Exception("Error when creating keypair: %s" % res.stderr)
-    with open(PRIVATE_KEY) as private_file:
-        private_key = private_file.read()
-    with open(PUBLIC_KEY) as public_file:
-        public_key = public_file.read()
-    os.remove(PRIVATE_KEY)
-    os.remove(PUBLIC_KEY)
-    return private_key, public_key
-
+        
 
 class AccountsManager(object):
     def __init__(self):
@@ -63,17 +64,17 @@ class AccountsManager(object):
         ca_secret = json.dumps(dict(login_endpoint=LOGIN_ENDPOINT, private_key=private_key, scheme="RS256", uid=path))
         self.secrets.write_secret(secret, ca_secret, update=False)
 
-    def deploy(self, config, dependencies_changed=False):
+    def deploy(self, config, dependencies_changed=False, silent=False):
         changed = False
         if not self.does_serviceaccount_exist(config.path):
-            print("\tCreating serviceaccount")
+            print_if(not silent, "\tCreating serviceaccount")
             self.create_serviceaccount(config.path, config.secret)
             changed = True
         else:
-            print("\tServiceaccount already exists. Not creating it.")
+            print_if(not silent, "\tServiceaccount already exists. Not creating it.")
         existing_groups = self.bouncer.get_groups_for_user(config.path)
         existing_permissions = self.bouncer.get_permissions_for_user(config.path)
-        print("\tUpdating groups")
+        print_if(not silent, "\tUpdating groups")
         # Update groups
         for group in existing_groups:
             if group not in config.groups:
@@ -84,7 +85,7 @@ class AccountsManager(object):
                 self.bouncer.add_user_to_group(config.path, group)
                 changed = True
         # Update permissions
-        print("\tUpdating permissions")
+        print_if(not silent, "\tUpdating permissions")
         for rid, actions in existing_permissions.items():
             target_actions = config.permissions.get(rid, list())
             for action in actions:

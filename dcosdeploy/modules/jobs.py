@@ -1,6 +1,6 @@
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.metronome import MetronomeAdapter
-from dcosdeploy.util import compare_dicts
+from dcosdeploy.util import compare_dicts, print_if
 
 
 class MetronomeJob(object):
@@ -28,20 +28,20 @@ class JobsManager(object):
     def __init__(self):
         self.api = MetronomeAdapter()
 
-    def deploy(self, config, dependencies_changed=False):
+    def deploy(self, config, dependencies_changed=False, silent=False):
         if self.api.does_job_exist(config.job_id):
             existing_job_definition = self.api.get_job(config.job_id)
             if not self.compare_job_definitions(existing_job_definition, config.job_definition):
-                print("\tUpdating existing job")
+                print_if(not silent, "\tUpdating existing job")
                 self.api.update_job(config.job_definition)
-                print("\tUpdated job.")
+                print_if(not silent, "\tUpdated job.")
                 return True
-            print("\tJob already exists. No update needed.")
+            print_if(not silent, "\tJob already exists. No update needed.")
             return False
         else:
-            print("\tCreating job")
+            print_if(not silent, "\tCreating job")
             self.api.create_job(config.job_definition)
-            print("\tCreated job.")
+            print_if(not silent, "\tCreated job.")
             return True
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

@@ -1,5 +1,6 @@
 from dcosdeploy.adapters.secrets import SecretsAdapter
 from dcosdeploy.base import ConfigurationException
+from dcosdeploy.util import print_if
 
 
 class Secret(object):
@@ -34,7 +35,7 @@ class SecretsManager(object):
     def __init__(self):
         self.api = SecretsAdapter()
 
-    def deploy(self, config, dependencies_changed=False):
+    def deploy(self, config, dependencies_changed=False, silent=False):
         exists = config.path in self.api.list_secrets()
         if exists:
             content = self.api.get_secret(config.path)
@@ -45,16 +46,16 @@ class SecretsManager(object):
             else:
                 raise Exception("Specified neither value nor file_content for secret")
             if not changed:
-                print("\tSecret already exists. No update needed.")
+                print_if(not silent, "\tSecret already exists. No update needed.")
                 return False
-            print("\tUpdating secret")
+            print_if(not silent, "\tUpdating secret")
             self.api.write_secret(config.path, config.value, config.file_content, update=exists)
-            print("\tSecret updated.")
+            print_if(not silent, "\tSecret updated.")
             return True
         else:
-            print("\tCreating secret")
+            print_if(not silent, "\tCreating secret")
             self.api.write_secret(config.path, config.value, config.file_content, update=exists)
-            print("\tSecret created.")
+            print_if(not silent, "\tSecret created.")
             return True
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):

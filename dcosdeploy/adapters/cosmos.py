@@ -98,7 +98,7 @@ class CosmosAdapter(object):
         return status
 
     def _get_plan_status(self, service_name, plan):
-        response = requests.get(get_base_url()+"/service" + service_name + "v1/plans/%s" % plan, auth=get_auth(), verify=False)
+        response = requests.get(get_base_url()+"/service" + service_name + "/v1/plans/%s" % plan, auth=get_auth(), verify=False)
         if response.ok:
             return response.json()["status"]
         else:

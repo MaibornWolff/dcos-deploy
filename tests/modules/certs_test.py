@@ -1,33 +1,21 @@
 import unittest
 from unittest import mock
-
-
-SIMPLE_YAML = """
-mycert:
-  type: cert
-  cert_secret: myapp/admin_cert
-  key_secret: myapp/admin_key
-  dn: CN=admin
-  hostnames:
-    - admin.myapp
-    - admin2.myapp
-"""
+from dcosdeploy.config import ConfigHelper, VariableContainer
 
 
 @mock.patch("dcosdeploy.auth.get_base_url", lambda: "/bla")
 class CertsTest(unittest.TestCase):
-    def ignore_test_config_parse(self):
-        from dcosdeploy.config import read_config
-        with mock.patch('builtins.open', mock.mock_open(read_data=SIMPLE_YAML)):
-            parsed_config, dependencies, managers = read_config("dcos-test.yaml", dict())
-        self.assertTrue("cert:mycert" in parsed_config)
-        cert = parsed_config["cert:mycert"]
+    def test_config_parse(self):
+        from dcosdeploy.modules.certs import parse_config
+        config_helper = ConfigHelper(VariableContainer(dict()))
+        params = dict(cert_secret="myapp/admin_cert", key_secret="myapp/admin_key", dn=dict(CN="admin"), hostnames=["admin.myapp", "admin2.myapp"])
+        cert = parse_config("mycert", params, config_helper)
         self.assertEqual("myapp/admin_cert", cert.cert_secret)
         self.assertEqual("myapp/admin_key", cert.key_secret)
-        self.assertEqual("CN=admin", cert.dn)
+        self.assertEqual("admin", cert.dn["CN"])
         self.assertCountEqual(("admin.myapp", "admin2.myapp"), cert.hostnames)
 
-    def ignore_test_existing_cert(self):
+    def test_existing_cert(self):
         from dcosdeploy.modules.certs import Cert, CertsManager
         cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list())
         from dcosdeploy.adapters.secrets import SecretsAdapter
@@ -35,7 +23,7 @@ class CertsTest(unittest.TestCase):
         m.side_effect = [True, True]
         with mock.patch.object(SecretsAdapter, 'get_secret', m):
             certs = CertsManager()
-            self.assertFalse(certs.deploy(cert))
+            self.assertFalse(certs.deploy(cert, silent=True))
 
     @mock.patch("dcosdeploy.modules.certs.CAAdapter")
     @mock.patch("dcosdeploy.modules.certs.SecretsAdapter")

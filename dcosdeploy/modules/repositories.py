@@ -1,4 +1,5 @@
 from dcosdeploy.base import ConfigurationException
+from dcosdeploy.util import print_if
 from dcosdeploy.adapters.cosmos import CosmosAdapter
 
 
@@ -28,18 +29,14 @@ class PackageRepositoriesManager(object):
         repo = self._get_repo(config.name)
         if repo:
             if repo["uri"] != config.uri:
-                if not silent:
-                    print("\tURIs do not match. Deleting old repository")
+                print_if(not silent, "\tURIs do not match. Deleting old repository")
                 self.api.delete_repository(config.name)
             else:
-                if not silent:
-                    print("\tNothing changed.")
+                print_if(not silent, "\tNothing changed.")
                 return False
-        if not silent:
-            print("\tAdding repository")
+        print_if(not silent, "\tAdding repository")
         self.api.add_repository(config.name, config.uri, config.index)
-        if not silent:
-            print("\tFinished")
+        print_if(not silent, "\tFinished")
         return True
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
