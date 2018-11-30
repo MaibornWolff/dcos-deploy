@@ -1,10 +1,8 @@
 import os
+from io import BytesIO
 from dcosdeploy.adapters.s3 import S3FileAdapter
 from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import md5_hash, list_path_recursive, print_if
-
-
-TMP_COMPRESS_NAME = "tmpcompressedfile"
+from dcosdeploy.util import md5_hash, md5_hash_bytes, list_path_recursive, print_if
 
 
 class S3Server(object):
@@ -111,29 +109,28 @@ class S3FilesManager(object):
 
     def deploy(self, config, dependencies_changed=False, silent=False):
         if config.compress:
-            try:
-                self._compress_zip(config.files[1])
-                hash = md5_hash(TMP_COMPRESS_NAME)
-                if self.api.compare_file(config.server, config.bucket, config.files[0], hash):
-                    print_if(not silent, "\tNothing changed")
-                    return False
-                else:
-                    print_if(not silent, "\tUploading file to %s" % config.files[0])
-                    with open(TMP_COMPRESS_NAME, "rb") as source_file:
-                        file_stat = os.stat(TMP_COMPRESS_NAME)
-                        self.api.upload_file(config.server, config.bucket, config.files[0], source_file, file_stat.st_size, hash)
-                        print_if(not silent, "\tUploaded file to %s" % config.files[0])
-                    return True
-            finally:
-                os.remove(TMP_COMPRESS_NAME)
+            zip_obj = self._compress_zip(config.files[1])
+            size = zip_obj.tell()
+            zip_obj.seek(0)
+            hash = md5_hash_bytes(zip_obj)
+            if self.api.files_equal(config.server, config.bucket, config.files[0], hash):
+                print_if(not silent, "\tNothing changed")
+                return False
+            else:
+                print_if(not silent, "\tUploading file to %s" % config.files[0])
+                zip_obj.seek(0)
+                self.api.upload_file(config.server, config.bucket, config.files[0], zip_obj, size, hash)
+                print_if(not silent, "\tUploaded file to %s" % config.files[0])
+                return True
         else:
             changed = False
             for key, filename in config.files:
-                hash = md5_hash(filename)
-                if not self.api.compare_file(config.server, config.bucket, key, hash):
-                    changed = True
-                    print_if(not silent, "\tUploading file to %s" % key)
-                    with open(filename, "rb") as source_file:
+                with open(filename, "rb") as source_file:
+                    hash = md5_hash_bytes(source_file)
+                    source_file.seek(0)
+                    if not self.api.files_equal(config.server, config.bucket, key, hash):
+                        changed = True
+                        print_if(not silent, "\tUploading file to %s" % key)
                         file_stat = os.stat(filename)
                         self.api.upload_file(config.server, config.bucket, key, source_file, file_stat.st_size, hash)
                         print_if(not silent, "\tUploaded file to %s" % key)
@@ -143,29 +140,34 @@ class S3FilesManager(object):
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         if config.compress:
-            try:
-                self._compress_zip(config.files[1])
-                return self._dry_run_single_file(config.server, config.bucket, config.files[0], TMP_COMPRESS_NAME)
-            finally:
-                os.remove(TMP_COMPRESS_NAME)
+            zip_obj = self._compress_zip(config.files[1])
+            zip_obj.seek(0)
+            hash = md5_hash_bytes(zip_obj)
+            if not self.api.files_equal(config.server, config.bucket, config.files[0], hash):
+                print("Would upload file to %s" % config.files[0])
+                return True
+            else:
+                return False
+        changed = False
         for key, filename in config.files:
-            changed = False
             if self._dry_run_single_file(config.server, config.bucket, key, filename):
                 changed = True
         return changed
 
     def _dry_run_single_file(self, server, bucket, key, filename):
         hash = md5_hash(filename)
-        if not self.api.compare_file(server, bucket, key, hash):
+        if not self.api.files_equal(server, bucket, key, hash):
             print("Would upload file to %s" % key)
             return True
         return False
 
     def _compress_zip(self, files):
         from zipfile import ZipFile, ZIP_DEFLATED
-        with ZipFile(TMP_COMPRESS_NAME, "w", compression=ZIP_DEFLATED) as zip_file:
+        zip_object = BytesIO()
+        with ZipFile(zip_object, "w", compression=ZIP_DEFLATED) as zip_file:
             for local_path, arcname in files:
                 zip_file.write(local_path, arcname)
+        return zip_object
 
 
 __config__ = S3File

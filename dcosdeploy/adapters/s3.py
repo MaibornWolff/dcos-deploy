@@ -6,7 +6,7 @@ class S3FileAdapter(object):
     def __init__(self):
         pass
 
-    def compare_file(self, server, bucket, key, hash):
+    def files_equal(self, server, bucket, key, hash):
         """Returns true if the file in the bucket exists and has the same hash as the provided one"""
         client = self._init_client(server)
         try:

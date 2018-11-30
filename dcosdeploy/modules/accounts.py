@@ -1,14 +1,14 @@
-import subprocess
 import os
 import json
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import serialization
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.util import print_if
 from dcosdeploy.adapters.bouncer import BouncerAdapter
 from dcosdeploy.adapters.secrets import SecretsAdapter
+from dcosdeploy.adapters.ca import CAAdapter
 
 
-PRIVATE_KEY = "private-key.pem"
-PUBLIC_KEY = "public-key.pem"
 LOGIN_ENDPOINT = "https://leader.mesos/acs/api/v1/auth/login"
 
 
@@ -33,36 +33,29 @@ def parse_config(name, config, config_helper):
     permissions = config.get("permissions", dict())
     groups = [config_helper.render(g) for g in groups]
     return ServiceAccount(name, path, secret_path, groups, permissions)
-
-
-def generate_keypair():
-    try:
-        res = subprocess.run("dcos security org service-accounts keypair private-key.pem public-key.pem".split(" "), shell=False)
-        if res.returncode != 0:
-            raise Exception("Error when creating keypair: %s" % res.stderr)
-        with open(PRIVATE_KEY) as private_file:
-            private_key = private_file.read()
-        with open(PUBLIC_KEY) as public_file:
-            public_key = public_file.read()
-        return private_key, public_key
-    finally:
-        os.remove(PRIVATE_KEY)
-        os.remove(PUBLIC_KEY)
         
 
 class AccountsManager(object):
     def __init__(self):
         self.bouncer = BouncerAdapter()
         self.secrets = SecretsAdapter()
+        self.ca = CAAdapter()
 
     def does_serviceaccount_exist(self, path):
         return self.bouncer.get_account(path) is not None
 
     def create_serviceaccount(self, path, secret):
-        private_key, public_key = generate_keypair()
+        private_key, public_key = self.generate_keypair()
         self.bouncer.create_account(path, "", public_key)
-        ca_secret = json.dumps(dict(login_endpoint=LOGIN_ENDPOINT, private_key=private_key, scheme="RS256", uid=path))
-        self.secrets.write_secret(secret, ca_secret, update=False)
+        cert_secret = json.dumps(dict(login_endpoint=LOGIN_ENDPOINT, private_key=private_key, scheme="RS256", uid=path))
+        self.secrets.write_secret(secret, cert_secret, update=False)
+
+    def generate_keypair(self, size=2048):
+        _, private_key_string = self.ca.generate_key({}, size=size)
+        private_key = serialization.load_pem_private_key(private_key_string.encode("utf-8"), password=None, backend=default_backend())
+        public_key = private_key.public_key()
+        public_key_string = public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode("utf-8")
+        return private_key_string, public_key_string
 
     def deploy(self, config, dependencies_changed=False, silent=False):
         changed = False

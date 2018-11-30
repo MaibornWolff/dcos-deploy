@@ -32,6 +32,14 @@ def md5_hash(filename):
     return hash_md5.hexdigest()
 
 
+def md5_hash_bytes(bytes_obj):
+    hash_md5 = hashlib.md5()
+    for chunk in iter(lambda: bytes_obj.read(512*1024), b""):
+        hash_md5.update(chunk)
+    return hash_md5.hexdigest()
+
+
+
 def list_path_recursive(path):
     for dirpath, subdirs, filenames in os.walk(path):
         for filename in filenames:
