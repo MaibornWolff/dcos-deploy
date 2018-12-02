@@ -25,7 +25,7 @@ def parse_config(name, config, config_helper):
         file_content = None
     elif file_path:
         file_path = config_helper.render(file_path)
-        file_content = config_helper.read_file(file_path, render_variables=render)
+        file_content = config_helper.read_file(file_path, render_variables=render, as_binary=not render)
     else:
         raise ConfigurationException("Either value or file are required for secret '%s'" % name)
     return Secret(name, path, value, file_content)
@@ -42,6 +42,8 @@ class SecretsManager(object):
             if config.value:
                 changed = content != config.value
             elif config.file_content:
+                if isinstance(config.file_content, str):
+                    content = content.decode("utf-8")
                 changed = content != config.file_content
             else:
                 raise Exception("Specified neither value nor file_content for secret")
@@ -67,6 +69,8 @@ class SecretsManager(object):
         if config.value:
             changed = content != config.value
         elif config.file_content:
+            if isinstance(config.file_content, str):
+                content = content.decode("utf-8")
             changed = content != config.file_content
         else:
             raise Exception("Specified neither value nor file_content for secret")

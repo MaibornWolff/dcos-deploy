@@ -54,13 +54,16 @@ class ConfigHelper(object):
     def abspath(self, path):
         return os.path.abspath(os.path.join(self.base_path, path))
 
-    def read_file(self, filename, render_variables=False):
+    def read_file(self, filename, render_variables=False, as_binary=False):
         if filename.startswith("vault:"):
             _, key, filename = filename.split(":", 2)
         else:
             key = None
         filepath = self.abspath(filename)
-        with open(filepath) as file_obj:
+        mode = "r"
+        if as_binary:
+            mode = "rb"
+        with open(filepath, mode) as file_obj:
             data = file_obj.read()
         if key:
             data = decrypt_data(key, data)

@@ -15,13 +15,25 @@ def generate_key():
 
 
 def encrypt_data(key, content):
+    is_str_data = isinstance(content, str)
+    if is_str_data:
+        content = content.encode("utf-8")
     fernet = Fernet(key.encode("utf-8"))
-    return fernet.encrypt(content.encode("utf-8")).decode("utf-8")
+    encrypted_data = fernet.encrypt(content)
+    if is_str_data:
+        encrypted_data = encrypted_data.decode("utf-8")
+    return encrypted_data
 
 
 def decrypt_data(key, content):
+    is_str_data = isinstance(content, str)
+    if is_str_data:
+        content = content.encode("utf-8")
     fernet = Fernet(key.encode("utf-8"))
-    return fernet.decrypt(content.encode("utf-8")).decode("utf-8")
+    decrypted_data = fernet.decrypt(content)
+    if is_str_data:
+        decrypted_data = decrypted_data.decode("utf-8")
+    return decrypted_data
 
 
 def md5_hash(filename):

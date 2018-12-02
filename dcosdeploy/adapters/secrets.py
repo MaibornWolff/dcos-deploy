@@ -5,15 +5,17 @@ from dcosdeploy.auth import get_base_url, get_auth
 class SecretsAdapter(object):
     def __init__(self):
         self.base_url = get_base_url() + "/secrets/v1/"
+        self._cache_secrets_list = None
 
     def list_secrets(self):
         """Retrive a list of secrets names"""
-        response = requests.get(self.base_url + "secret/default/?list=true", auth=get_auth(), verify=False)
-        if not response.ok:
-            print(response.text)
-            raise Exception("Failed to list secrets")
-        data = response.json()["array"]
-        return data
+        if not self._cache_secrets_list:
+            response = requests.get(self.base_url + "secret/default/?list=true", auth=get_auth(), verify=False)
+            if not response.ok:
+                print(response.text)
+                raise Exception("Failed to list secrets")
+            self._cache_secrets_list = response.json()["array"]
+        return self._cache_secrets_list
 
     def get_secret(self, name):
         """Get value of a specific secret"""
@@ -28,7 +30,7 @@ class SecretsAdapter(object):
         if response.headers.get("Content-Type") == "application/json":
             return response.json()["value"]
         else:
-            return response.text
+            return response.content
 
     def write_secret(self, name, value=None, file_content=None, update=True):
         """Write a secret, set either value or file_content but not both."""
