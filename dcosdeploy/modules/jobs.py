@@ -1,6 +1,6 @@
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.metronome import MetronomeAdapter
-from dcosdeploy.util import compare_dicts, print_if
+from dcosdeploy.util import compare_dicts, print_if, update_dict_with_defaults
 
 
 class MetronomeJob(object):
@@ -31,7 +31,7 @@ class JobsManager(object):
     def deploy(self, config, dependencies_changed=False, silent=False):
         if self.api.does_job_exist(config.job_id):
             existing_job_definition = self.api.get_job(config.job_id)
-            if not self.compare_job_definitions(existing_job_definition, config.job_definition):
+            if not self.compare_job_definitions(config.job_definition, existing_job_definition):
                 print_if(not silent, "\tUpdating existing job")
                 self.api.update_job(config.job_definition)
                 print_if(not silent, "\tUpdated job.")
@@ -49,17 +49,39 @@ class JobsManager(object):
             print("Would create job %s" % config.job_id)
             return True
         existing_job_definition = self.api.get_job(config.job_id)
-        changed = not self.compare_job_definitions(existing_job_definition, config.job_definition, debug)
+        changed = not self.compare_job_definitions(config.job_definition, existing_job_definition, debug)
         if changed:
             print("Would update job %s" % config.job_id)
         return changed
 
-    def compare_job_definitions(self, old_job_definition, new_job_definition, debug=False):
-        if "schedules" in old_job_definition:
-            for schedule in old_job_definition["schedules"]:
+    def compare_job_definitions(self, local_definition, remote_definition, debug=False):
+        local_definition, remote_definition = _normalize_definitions(local_definition, remote_definition)
+        if "schedules" in remote_definition:
+            for schedule in remote_definition["schedules"]:
                 if "nextRunAt" in schedule:
                     del schedule["nextRunAt"]
-        return compare_dicts(old_job_definition, new_job_definition, print_differences=debug)
+        return compare_dicts(local_definition, remote_definition, print_differences=debug)
+
+
+_run_defaults = dict(
+    artifacts=[],
+    cmd="",
+    disk=0,
+)
+
+_docker_defaults = dict(
+    forcePullImage=False,
+    parameters=[],
+    privileged=False
+)
+
+
+def _normalize_definitions(local_definition, remote_definition):
+    local_run = local_definition["run"]
+    update_dict_with_defaults(local_run, _run_defaults)
+    if "docker" in local_run:
+        update_dict_with_defaults(local_run["docker"], _docker_defaults)
+    return local_definition, remote_definition
 
 
 __config__ = MetronomeJob

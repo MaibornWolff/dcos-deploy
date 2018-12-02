@@ -7,15 +7,16 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 (!) This tool is under heavy development and is not yet stable enough for production environments. Use at your own risk.
 
 ## Features
+
 * Handles the following "entities":
-  - DC/OS packages
-  - Marathon apps
-  - Metronome jobs
-  - secrets
-  - serviceaccounts
-  - public-private-keypairs (for use in secrets)
-  - [Edge-LB](https://docs.mesosphere.com/services/edge-lb/)
-  - [S3](https://aws.amazon.com/s3/) files
+  * DC/OS packages
+  * Marathon apps
+  * Metronome jobs
+  * secrets
+  * serviceaccounts
+  * public-private-keypairs (for use in secrets)
+  * [Edge-LB](https://docs.mesosphere.com/services/edge-lb/)
+  * [S3](https://aws.amazon.com/s3/) files
 * For DC/OS packages it supports version updates and configuration changes.
 * Handles install and update dependencies between entities (e.g. a framework is only installed after its serviceaccount is created, an app is restarted if an attached secret changes).
 * Parameterise your configuration using variables (e.g. to support different instances of a service).
@@ -28,19 +29,22 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 
 ### Limitations
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
-* Can not safely detect changes in marathon apps and edgelb pools: Due do default configuration options being added, dcos-deploy can at the moment not predict beforehand if an app or pool will be changed.
 * Frameworks/packages with more complicated update procedures (like Edge-LB) are at the moment not supported.
 
 
 ## Requirements
-* Python >= 3.5
-* dcos-cli installed and connected to your cluster
-* See `requirements.txt` for needed python modules
-* Tested with DC/OS 1.11 EE
+* A DC/OS cluster (dcos-deploy has been tested with DC/OS 1.11 EE)
+* dcos-cli installed  and connected to your cluster (to verify it works run `dcos node` and it should display a list of nodes in your cluster)
 
+If you want to run it from source, aditionally you need:
+* Python >= 3.5
+* Python modules from `requirements.txt`
 
 ## Installation
-* Clone this github repository to your system.
+Binaries are available for download from the Releases page. Just copy it into a folder inside your path and make it excutable.
+
+If you want to try out current master, you can run it from source:
+* Clone this github repository to your system
 * Install all requirements (optional: use a virtualenv to keep your system clean)
 * Optional: Create a symlink of dcos-deploy to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
 
@@ -181,6 +185,8 @@ instances:
 ```
 For each key under `instances` dcos-deploy will create a marathon app from the template file specialized with the variables provided.
 
+If not defined marathon will add a number of default fields to an app definition. dcos-deploy tries to detect these defaults and exclude them when checking for changes between the local definition and the one known to marathon. This is rather complex as these default values partly depend on several modes (network, container type, etc.). If you find a case where dcos-deploy falesly reports a change please open an issue at the github project and attach your app definition and the definition reported by marathon (via `dcos marathon app show <app-id>`).
+
 ### Framework
 `type: framework` defines a DC/OS framework. It has the following specific options:
 * `path`: name of the framework. If not specified the `service.name` field of the package options are used. Variables can be used.
@@ -302,7 +308,6 @@ There is no guaranteed order of execution. Only that any defined dependencies wi
 The deployment process has some specific restrictions:
 * Names/paths/ids may not be changed.
 * Options files for frameworks, apps and jobs are not verified for structural correctness. If the new file is not accepted by the API an error will be thrown.
-* For marathon apps the change detection currently does not work safely (due to implicit default options from marathon) so it will always apply the new app definition.
 * For frameworks dcos-deploy does not verify beforehand if a version update is supported by the framework. If the framework does not accept the new version an error will be thrown.
 * An already created `cert` entity will not be changed if the `dn` or `hostnames` fields change.
 * Dependencies must be explicitly defined in the `dcos.yml`. Implicit dependencies (like a secret referenced in a marathon app) that are not explicitly stated are not honored by dcos-deploy.

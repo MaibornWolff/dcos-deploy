@@ -1,7 +1,8 @@
 import json
+from copy import deepcopy
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.marathon import MarathonAdapter
-from dcosdeploy.util import compare_dicts, print_if
+from dcosdeploy.util import compare_dicts, print_if, update_dict_with_defaults
 
 
 class MarathonApp(object):
@@ -73,18 +74,127 @@ class MarathonAppsManager(object):
         if not app_state:
             print("Would create marathon app %s" % config.app_id)
             return True
-        changed = not self.compare_app_definitions(app_state, config.app_definition, debug)
+        changed = not self.compare_app_definitions(config.app_definition, app_state, debug)
         if changed:
-            print("Would possibly update marathon app %s" % config.app_id)
+            print("Would update marathon app %s" % config.app_id)
         elif dependencies_changed:
             print("Would restart marathon app %s" % config.app_id)
         return changed
 
-    def compare_app_definitions(self, old_definition, new_definition, debug=False):
-        for key in ["version", "lastTaskFailure", "tasks", "tasksHealthy", "tasksUnhealthy", "versionInfo", "deployments", "tasksRunning", "tasksStaged", "executor"]:
-            if key in old_definition:
-                del old_definition[key]
-        return compare_dicts(old_definition, new_definition, print_differences=debug)
+    def compare_app_definitions(self, local_definition, remote_definition, debug=False):
+        local_definition = deepcopy(local_definition)
+        for key in ["version", "lastTaskFailure", "tasks", "tasksHealthy", "tasksUnhealthy", "versionInfo", "deployments", "tasksRunning", "tasksStaged"]:
+            if key in remote_definition:
+                del remote_definition[key]
+        local_definition, remote_definition = _normalize_app_definition(local_definition, remote_definition)
+        return compare_dicts(local_definition, remote_definition, print_differences=debug)
+
+
+
+_app_defaults = dict(
+    backoffFactor=1.15,
+    backoffSeconds=1,
+    cmd="",
+    constraints=[],
+    env={},
+    executor="",
+    fetch=[],
+    healthChecks=[],
+    disk=0,
+    gpus=0,
+    killSelection="YOUNGEST_FIRST",
+    labels={},
+    maxLaunchDelaySeconds=3600,
+    requirePorts=False,
+    unreachableStrategy={
+        "expungeAfterSeconds": 0,
+        "inactiveAfterSeconds": 0
+    },
+    upgradeStrategy={
+        "maximumOverCapacity": 1,
+        "minimumHealthCapacity": 1
+    },
+    networks=[
+        {"mode": "host"}
+    ],
+    container={
+        "type": "MESOS",
+        "volumes": []
+    },
+)
+
+_docker_defaults = dict(
+    parameters=[],
+    privileged=False,
+    forcePullImage=False,
+)
+
+_health_check_defaults = dict(
+    delaySeconds=15,
+    gracePeriodSeconds=300,
+    intervalSeconds=60,
+    ipProtocol="IPv4",
+    maxConsecutiveFailures=3,
+    protocol="HTTP",
+    timeoutSeconds=20,
+)
+
+def _normalize_app_definition(local_definition, remote_definition):
+    update_dict_with_defaults(local_definition, _app_defaults)
+    update_dict_with_defaults(remote_definition, _app_defaults)
+    if local_definition["id"][0] != "/":
+        local_definition["id"] = "/" + local_definition["id"]
+    if "docker" in local_definition["container"]:
+        update_dict_with_defaults(local_definition["container"]["docker"], _docker_defaults)
+    
+    if "portDefinitions" in remote_definition and "portDefinitions" not in local_definition:
+        if len(remote_definition["portDefinitions"]) > 0:
+            local_definition["portDefinitions"] = [{'protocol': 'tcp', 'port': 0, 'name': 'default'}]
+        else:
+            local_definition["portDefinitions"] = []
+    local_container = local_definition["container"]
+    remote_container = remote_definition["container"]
+    if "portMappings" in remote_container and "portMappings" not in local_container:
+        local_container["portMappings"] = [{
+            "containerPort": 0,
+            "labels": {},
+            "name": "default",
+            "protocol": "tcp",
+            "servicePort": 0
+        }]
+        
+    for local_mapping, remote_mapping in zip(local_definition["container"].get("portMappings", list()),
+                                             remote_definition["container"].get("portMappings", list())):
+        if local_mapping.get("servicePort", 0) == 0:
+            if "servicePort" in local_mapping:
+                del local_mapping["servicePort"]
+            del remote_mapping["servicePort"]
+        local_mapping.setdefault("protocol", "tcp")
+        if "hostPort" in remote_mapping and "hostPort" not in local_mapping:
+            local_mapping["hostPort"] = 0
+    for local_def, remote_def in zip(local_definition.get("portDefinitions", list()), remote_definition.get("portDefinitions", list())):
+        if local_def.get("port", 0) == 0:
+            if "port" in local_def:
+                del local_def["port"]
+            del remote_def["port"]
+        local_def.setdefault("protocol", "tcp")
+        if "hostPort" in remote_def and "hostPort" not in local_def:
+            local_def["hostPort"] = 0
+    for health_check in local_definition["healthChecks"]:
+        update_dict_with_defaults(health_check, _health_check_defaults)
+    
+    has_local_persistent_volume = False
+    for volume in local_container["volumes"]:
+        if "persistent" in volume:
+            has_local_persistent_volume = True
+            volume["persistent"].setdefault("constraints", [])
+            volume["persistent"].setdefault("type", "root")
+    if has_local_persistent_volume:
+        residency = local_definition.setdefault("residency", dict())
+        residency.setdefault("relaunchEscalationTimeoutSeconds", 3600)
+        residency.setdefault("taskLostBehavior", "WAIT_FOREVER")
+
+    return local_definition, remote_definition
 
 
 __config__ = MarathonApp
