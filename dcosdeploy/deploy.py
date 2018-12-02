@@ -3,8 +3,8 @@ from .config import read_config
 
 class DeploymentRunner(object):
     def __init__(self, config_filename, provided_variables, debug_mode):
-        self.already_deployed = dict()
-        self.dry_deployed = dict()
+        self.already_deployed = dict()  # entitiy-name -> changed
+        self.dry_deployed = dict()  # entity-name -> changed
         self.debug_mode = debug_mode
         self.config, self.managers = read_config(config_filename, provided_variables)
 
@@ -69,5 +69,7 @@ class DeploymentRunner(object):
             changed = False
         else:
             changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed, debug=self.debug_mode)
+        if not changed and not force:
+            self.already_deployed[name] = False
         self.dry_deployed[name] = changed
         return changed
