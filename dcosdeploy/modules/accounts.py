@@ -1,12 +1,11 @@
-import os
 import json
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.util import print_if
 from dcosdeploy.adapters.bouncer import BouncerAdapter
 from dcosdeploy.adapters.secrets import SecretsAdapter
-from dcosdeploy.adapters.ca import CAAdapter
 
 
 LOGIN_ENDPOINT = "https://leader.mesos/acs/api/v1/auth/login"
@@ -33,13 +32,12 @@ def parse_config(name, config, config_helper):
     permissions = config.get("permissions", dict())
     groups = [config_helper.render(g) for g in groups]
     return ServiceAccount(name, path, secret_path, groups, permissions)
-        
+
 
 class AccountsManager(object):
     def __init__(self):
         self.bouncer = BouncerAdapter()
         self.secrets = SecretsAdapter()
-        self.ca = CAAdapter()
 
     def does_serviceaccount_exist(self, path):
         return self.bouncer.get_account(path) is not None
@@ -51,11 +49,14 @@ class AccountsManager(object):
         self.secrets.write_secret(secret, cert_secret, update=False)
 
     def generate_keypair(self, size=2048):
-        _, private_key_string = self.ca.generate_key({}, size=size)
-        private_key = serialization.load_pem_private_key(private_key_string.encode("utf-8"), password=None, backend=default_backend())
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=size, backend=default_backend())
+        private_key_string = private_key.private_bytes(encoding=serialization.Encoding.PEM,
+                                                       format=serialization.PrivateFormat.PKCS8,
+                                                       encryption_algorithm=serialization.NoEncryption())
         public_key = private_key.public_key()
-        public_key_string = public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode("utf-8")
-        return private_key_string, public_key_string
+        public_key_string = public_key.public_bytes(serialization.Encoding.PEM,
+                                                    serialization.PublicFormat.SubjectPublicKeyInfo)
+        return private_key_string.decode("utf-8"), public_key_string.decode("utf-8")
 
     def deploy(self, config, dependencies_changed=False, silent=False):
         changed = False

@@ -37,6 +37,9 @@ def _read_config_from_toml():
     matches = re.findall(r"dcos_url = \"(\S+)\"", data)
     if matches:
         _base_url = matches[0]
+        # Remove slash from end of URL as adapters assume no slash
+        if _base_url[-1] == "/":
+            _base_url = _base_url[:-1]
 
 
 class StaticTokenAuth(AuthBase):

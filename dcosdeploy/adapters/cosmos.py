@@ -92,13 +92,17 @@ class CosmosAdapter(object):
             time.sleep(40)
         while wait_time < timeout:
             status = self._get_plan_status(service_name, plan)
-            if status != "COMPLETE":
+            if status == "COMPLETE":
+                break
+            else:
                 time.sleep(20)
                 wait_time += 20
         return status
 
     def _get_plan_status(self, service_name, plan):
-        response = requests.get(get_base_url()+"/service" + service_name + "/v1/plans/%s" % plan, auth=get_auth(), verify=False)
+        if service_name[0] == "/":
+            service_name = service_name[1:]
+        response = requests.get(get_base_url()+"/service/" + service_name + "/v1/plans/%s" % plan, auth=get_auth(), verify=False)
         if response.ok:
             return response.json()["status"]
         else:
