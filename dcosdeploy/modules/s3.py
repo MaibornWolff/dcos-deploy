@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from dcosdeploy.adapters.s3 import S3FileAdapter
 from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import md5_hash, md5_hash_bytes, list_path_recursive, print_if
+from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, print_if
 
 
 class S3Server(object):
@@ -112,16 +112,11 @@ class S3FilesManager(object):
             zip_obj = self._compress_zip(config.files[1])
             size = zip_obj.tell()
             zip_obj.seek(0)
-            hash = md5_hash_bytes(zip_obj)
-            if self.api.files_equal(config.server, config.bucket, config.files[0], hash):
-                print_if(not silent, "\tNothing changed")
-                return False
-            else:
-                print_if(not silent, "\tUploading file to %s" % config.files[0])
-                zip_obj.seek(0)
-                self.api.upload_file(config.server, config.bucket, config.files[0], zip_obj, size, hash)
-                print_if(not silent, "\tUploaded file to %s" % config.files[0])
-                return True
+            hash = self._hash_for_file_list(config.files[1])
+            print_if(not silent, "\tUploading file to %s" % config.files[0])
+            self.api.upload_file(config.server, config.bucket, config.files[0], zip_obj, size, hash)
+            print_if(not silent, "\tUploaded file to %s" % config.files[0])
+            return True
         else:
             changed = False
             for key, filename in config.files:
@@ -140,9 +135,7 @@ class S3FilesManager(object):
 
     def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
         if config.compress:
-            zip_obj = self._compress_zip(config.files[1])
-            zip_obj.seek(0)
-            hash = md5_hash_bytes(zip_obj)
+            hash = self._hash_for_file_list(config.files[1])
             if not self.api.files_equal(config.server, config.bucket, config.files[0], hash):
                 print("Would upload file to %s" % config.files[0])
                 return True
@@ -161,11 +154,18 @@ class S3FilesManager(object):
             return True
         return False
 
+    def _hash_for_file_list(self, files):
+        hash_list = list()
+        for local_path, arcname in sorted(files, key=lambda i: i[1]):
+            hash_list.append("%s %s" % (arcname, md5_hash(local_path)))
+        hash_str = ','.join(hash_list)
+        return md5_hash_str(hash_str.encode("utf-8"))
+
     def _compress_zip(self, files):
         from zipfile import ZipFile, ZIP_DEFLATED
         zip_object = BytesIO()
         with ZipFile(zip_object, "w", compression=ZIP_DEFLATED) as zip_file:
-            for local_path, arcname in files:
+            for local_path, arcname in sorted(files, key=lambda i: i[1]):
                 zip_file.write(local_path, arcname)
         return zip_object
 

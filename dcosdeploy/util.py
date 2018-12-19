@@ -51,6 +51,11 @@ def md5_hash_bytes(bytes_obj):
     return hash_md5.hexdigest()
 
 
+def md5_hash_str(string_data):
+    hash_md5 = hashlib.md5()
+    hash_md5.update(string_data)
+    return hash_md5.hexdigest()
+
 
 def list_path_recursive(path):
     for dirpath, subdirs, filenames in os.walk(path):
@@ -102,7 +107,7 @@ def compare_dicts(config_a, config_b, print_differences=False, path=""):
                 if key not in keys_a:
                     print("%s: %s missing in local" % (path, key))
         equal = False
-    
+
     for key in keys_a:
         value_a = config_a[key]
         value_b = config_b.get(key, None)
@@ -132,7 +137,7 @@ def update_dict_with_defaults(dct, default_dct):
             dct[k] = v
         elif isinstance(v, dict) and isinstance(dct[k], dict):
             update_dict_with_defaults(dct[k], v)
-        
+
 
 
 def print_if(cond, text):

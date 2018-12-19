@@ -79,7 +79,7 @@ class MarathonAppsManager(object):
             print("Would update marathon app %s" % config.app_id)
         elif dependencies_changed:
             print("Would restart marathon app %s" % config.app_id)
-        return changed
+        return changed or dependencies_changed
 
     def compare_app_definitions(self, local_definition, remote_definition, debug=False):
         local_definition = deepcopy(local_definition)
@@ -88,7 +88,6 @@ class MarathonAppsManager(object):
                 del remote_definition[key]
         local_definition, remote_definition = _normalize_app_definition(local_definition, remote_definition)
         return compare_dicts(local_definition, remote_definition, print_differences=debug)
-
 
 
 _app_defaults = dict(
@@ -139,6 +138,7 @@ _health_check_defaults = dict(
     timeoutSeconds=20,
 )
 
+
 def _normalize_app_definition(local_definition, remote_definition):
     update_dict_with_defaults(local_definition, _app_defaults)
     update_dict_with_defaults(remote_definition, _app_defaults)
@@ -146,7 +146,7 @@ def _normalize_app_definition(local_definition, remote_definition):
         local_definition["id"] = "/" + local_definition["id"]
     if "docker" in local_definition["container"]:
         update_dict_with_defaults(local_definition["container"]["docker"], _docker_defaults)
-    
+
     if "portDefinitions" in remote_definition and "portDefinitions" not in local_definition:
         if len(remote_definition["portDefinitions"]) > 0:
             local_definition["portDefinitions"] = [{'protocol': 'tcp', 'port': 0, 'name': 'default'}]
@@ -162,7 +162,7 @@ def _normalize_app_definition(local_definition, remote_definition):
             "protocol": "tcp",
             "servicePort": 0
         }]
-        
+
     for local_mapping, remote_mapping in zip(local_definition["container"].get("portMappings", list()),
                                              remote_definition["container"].get("portMappings", list())):
         if local_mapping.get("servicePort", 0) == 0:
@@ -182,7 +182,7 @@ def _normalize_app_definition(local_definition, remote_definition):
             local_def["hostPort"] = 0
     for health_check in local_definition["healthChecks"]:
         update_dict_with_defaults(health_check, _health_check_defaults)
-    
+
     has_local_persistent_volume = False
     for volume in local_container["volumes"]:
         if "persistent" in volume:
