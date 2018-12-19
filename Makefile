@@ -1,5 +1,5 @@
 
-.PHONY: clean test binary
+.PHONY: clean test binary dist release-pypi
 .DEFAULT_GOAL := test
 
 clean:
@@ -22,3 +22,9 @@ binary:
 	--hidden-import dcosdeploy.modules.edgelb \
 	--hidden-import dcosdeploy.modules.s3 \
 	--hidden-import dcosdeploy.modules.taskexec
+
+dist:
+	@python3 setup.py sdist
+
+release-pypi:
+	@twine upload -r pypi dist/dcos-deploy-*.tar.gz

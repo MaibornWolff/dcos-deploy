@@ -1,0 +1,2 @@
+pyinstaller==3.4
+twine==1.12.1

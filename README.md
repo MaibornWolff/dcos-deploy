@@ -4,7 +4,7 @@ dcos-deploy is a command line tool that helps you to deploy and manage groups of
 
 For example: To deploy a complete elasticsearch stack on your cluster you would typically need to install the elasticsearch framework from the DC/OS universe, a kibana app, expose both to your loadbalancer and add some regular jobs for backups and cleanup. Additionally if you run elasticsearch with x-pack or searchguard installed you also need to create a public-private keypair, service-account and secret for your framework. This amounts to quite a number of steps. With dcos-deploy you just describe your entire stack in one simple yaml file and let dcos-deploy do the rest. See the examples folder for more.
 
-(!) This tool is under heavy development and is not yet stable enough for production environments. Use at your own risk.
+(!) This tool is under heavy development. Use in production environments at your own risk.
 
 ## Features
 
@@ -29,11 +29,11 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 
 ### Limitations
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
-* Frameworks/packages with more complicated update procedures (like Edge-LB) are at the moment not supported.
+* Frameworks/packages with more complicated update procedures (like Edge-LB) are at the moment not fully supported.
 
 
 ## Requirements
-* A DC/OS cluster (dcos-deploy has been tested with DC/OS 1.11 EE)
+* A DC/OS cluster with version >= 1.11 (for features like secrets an EE cluster is needed)
 * dcos-cli installed  and connected to your cluster (to verify it works run `dcos node` and it should display a list of nodes in your cluster)
 
 If you want to run it from source, aditionally you need:
@@ -41,13 +41,15 @@ If you want to run it from source, aditionally you need:
 * Python modules from `requirements.txt`
 
 ## Installation
-Binaries are available for download from the Releases page. Just copy it into a folder inside your path and make it excutable.
-
-If you want to try out current master, you can run it from source:
-* Clone this github repository to your system
-* Install all requirements (optional: use a virtualenv to keep your system clean)
-* Optional: Create a symlink of dcos-deploy to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
-
+There are several ways to install dcos-deploy:
+* Binary
+  * Download the binary for your system from the Releases page
+  * Make the file executable and copy it into a folder inside your path
+* Install from pypi (`pip install dcos-deploy`)
+* Run from source
+  * Clone this github repository to your system (for a stable release checkout a release tag)
+  * Install all requirements from `requirements.txt` (optional: use a virtualenv to keep your system clean)
+  * Optional: Create a symlink of `dcos-deploy` to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
 
 ## Usage
 * Create your `dcos.yml` (start from scratch or use one of the examples). You should separate your stack into groups and create a `dcos.yml` for each of them (e.g. one for all hdfs related services, one for all elastic related and so on) to keep the complexity manageable.
@@ -314,7 +316,6 @@ The deployment process has some specific restrictions:
 
 
 ## Roadmap
-* Provide binaries for all plattforms
 * Add as package to the Mesosphere universe for easy installation as a module for the dcos-cli
 * Support more DC/OS services like Edge-LB
 * Better and documented plugin support
