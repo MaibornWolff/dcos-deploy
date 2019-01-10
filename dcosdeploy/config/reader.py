@@ -4,8 +4,10 @@ import os
 import json
 import pystache
 import yaml
-from .util import decrypt_data
-from .base import ConfigurationException
+from ..util import decrypt_data
+from ..base import ConfigurationException
+from .variables import VariableContainerBuilder
+
 
 META_NAMES = ["variables", "modules", "includes"]
 
@@ -21,27 +23,6 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.s3",
     "dcosdeploy.modules.taskexec",
 ]
-
-
-class VariableContainer(object):
-    def __init__(self, variables):
-        self.variables = variables
-
-    def render(self, text, extra_vars=dict()):
-        if extra_vars:
-            variables = {**self.variables, **extra_vars}
-        else:
-            variables = self.variables
-        result_text = pystache.render(text, variables)
-        if result_text.count("{{"):
-            raise ConfigurationException("Unresolved variable")
-        return result_text
-
-    def get(self, name):
-        return self.variables.get(name)
-
-    def has(self, name):
-        return name in self.variables
 
 
 class ConfigHelper(object):
@@ -94,7 +75,7 @@ def read_config(filename, provided_variables):
     config_files = [(abspath, None)]
     idx = 0
     entities = dict()
-    variables = dict()
+    variables = VariableContainerBuilder(provided_variables)
     additional_modules = list()
 
     while idx < len(config_files):
@@ -103,15 +84,16 @@ def read_config(filename, provided_variables):
         with open(config_filename) as config_file:
             config = config_file.read()
         if encryption_key:
-            encryption_key = pystache.render(encryption_key, variables)
+            encryption_key = variables.render_value(encryption_key)
             config = decrypt_data(encryption_key, config)
         config = yaml.load(config)
-        variables = {**variables, **_parse_variables(config.get("variables", dict()), provided_variables)}
+        variables.add_variables(config_basepath, config.get("variables", dict()))
         for include in config.get("includes", list()):
             if include.startswith("vault:"):
                 _, key, include = include.split(":", 2)
             else:
                 key = None
+            include = variables.render_value(include)
             absolute_include_path = os.path.abspath(os.path.join(config_basepath, include))
             config_files.append((absolute_include_path, key))
         additional_modules.extend(config.get("modules", list()))
@@ -124,7 +106,7 @@ def read_config(filename, provided_variables):
             entities[key]["_basepath"] = config_basepath
         idx += 1
 
-    variables = _finalize_variables(variables, provided_variables)
+    variables = variables.build()
     config_helper = ConfigHelper(variables)
     # init managers
     managers, modules = _init_modules(additional_modules)
@@ -187,43 +169,6 @@ def _validate_dependencies(entities):
         for dependency, dep_type in entity.dependencies:
             if dependency not in entities:
                 raise ConfigurationException("Unknown entity '%s' as dependency in '%s'" % (dependency, name))
-
-
-def _calculate_variable_value(name, config, provided_variables):
-    if name in provided_variables:
-        return provided_variables[name]
-    if not isinstance(config, dict):
-        return config
-    env_name = config.get("env")
-    if not env_name:
-        env_name = "VAR_" + name.replace("-", "_").upper()
-    if env_name in os.environ:
-        return os.environ[env_name]
-    if "default" in config:
-        return config["default"]
-    return None
-
-
-def _parse_variables(variables, provided_variables):
-    resulting_variables = dict()
-    for name, config in variables.items():
-        if not config:
-            config = dict()
-        value = _calculate_variable_value(name, config, provided_variables)
-        if not value and config.get("required", False):
-            raise ConfigurationException("Missing required variable %s" % name)
-        if "values" in config and value not in config["values"]:
-            raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
-                                         % (value, name, ','.join(config["values"])))
-        resulting_variables[name] = value
-    return resulting_variables
-
-
-def _finalize_variables(calculated_variables, provided_variables):
-    for name, value in provided_variables.items():
-        if name not in calculated_variables:
-            calculated_variables[name] = value
-    return VariableContainer(calculated_variables)
 
 
 def _check_conditions_apply(variables, restriction_only, restriction_except):

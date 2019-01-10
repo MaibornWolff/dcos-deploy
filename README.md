@@ -84,6 +84,9 @@ variables:
   var4:
     env: MY_VAR4  # Variables can also be read from the environment
     required: True
+  var5:
+    file: myvalue.txt  # The value of the variable will be the content of the file. Can be useful to provide longer values
+    encode: base64  # This will encode the value using base64. Some DC/OS frameworks have config options that require base64-encoded values. Using this option the value can be kept in clear-text and will be automatically encoded by dcos-deploy when rendering the options file for the framework.
 ```
 
 Variables can be used via [Mustache](http://mustache.github.io/) templates in most options and in marathon app definitions and package options. See `examples/elastic` for usage examples. You can not use variables in entity names or outside option strings (ground rule: the yaml file must be syntactically correct without mustache template rendering).
