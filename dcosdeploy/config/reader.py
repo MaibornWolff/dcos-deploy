@@ -117,6 +117,7 @@ def read_config(filename, provided_variables):
 
 def _read_config_entities(modules, variables, config, config_helper):
     deployment_objects = dict()
+    excluded_entities = list()
     for name, entity_config in config.items():
         module = modules[entity_config["type"]]
         parse_config_func = module["parser"]
@@ -131,7 +132,8 @@ def _read_config_entities(modules, variables, config, config_helper):
             when_condition = entity_config.get("when")
             if when_condition and when_condition not in ["dependencies-changed"]:
                 raise ConfigurationException("Unknown when '%s' for '%s'" % (when_condition, name))
-            if _check_conditions_apply(variables, only_restriction, except_restriction):
+            if _entity_should_be_excluded(variables, only_restriction, except_restriction):
+                excluded_entities.append(name)
                 continue
             dependencies_config = entity_config.get("dependencies", list())
             entity_object = parse_config_func(name, entity_config, config_helper)
@@ -144,7 +146,7 @@ def _read_config_entities(modules, variables, config, config_helper):
                 dependencies.append((dependency, dep_type))
             container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition)
             deployment_objects[name] = container
-    _validate_dependencies(deployment_objects)
+    _validate_dependencies(deployment_objects, excluded_entities)
     return deployment_objects
 
 
@@ -164,14 +166,16 @@ def _init_modules(additional_modules):
     return managers, modules
 
 
-def _validate_dependencies(entities):
+def _validate_dependencies(entities, excluded_entities):
     for name, entity in entities.items():
-        for dependency, dep_type in entity.dependencies:
+        # Remove all dependencies for entities that were excluded (based on only/except restrictions)
+        entity.dependencies = [dep for dep in entity.dependencies if dep[0] not in excluded_entities]
+        for dependency, _ in entity.dependencies:
             if dependency not in entities:
                 raise ConfigurationException("Unknown entity '%s' as dependency in '%s'" % (dependency, name))
 
 
-def _check_conditions_apply(variables, restriction_only, restriction_except):
+def _entity_should_be_excluded(variables, restriction_only, restriction_except):
     if restriction_only:
         for var, value in restriction_only.items():
             if not variables.has(var):
