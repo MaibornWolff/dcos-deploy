@@ -115,7 +115,7 @@ def compare_dicts(config_a, config_b, print_differences=False, path=""):
             continue
         if type(value_a) != type(value_b):
             if print_differences:
-                print("%s: Types differ for %s" % (path, key))
+                print("%s: Types differ for %s: %s vs %s" % (path, key, type(value_a), type(value_b)))
             equal = False
         if isinstance(value_a, list):
             if not compare_lists(value_a, value_b, print_differences=print_differences, path=path+"/"+key):

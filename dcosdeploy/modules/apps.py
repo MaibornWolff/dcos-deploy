@@ -172,6 +172,8 @@ def _normalize_app_definition(local_definition, remote_definition):
         local_mapping.setdefault("protocol", "tcp")
         if "hostPort" in remote_mapping and "hostPort" not in local_mapping:
             local_mapping["hostPort"] = 0
+        if "labels" not in local_mapping:
+            local_mapping["labels"] = dict()
     for local_def, remote_def in zip(local_definition.get("portDefinitions", list()), remote_definition.get("portDefinitions", list())):
         if local_def.get("port", 0) == 0:
             if "port" in local_def:
