@@ -2,7 +2,7 @@ import os
 from io import BytesIO
 from dcosdeploy.adapters.s3 import S3FileAdapter
 from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, print_if
+from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, print_if, compare_text
 
 
 class S3Server(object):
@@ -136,23 +136,63 @@ class S3FilesManager(object):
     def dry_run(self, config, dependencies_changed=False, debug=False):
         if config.compress:
             hash = self._hash_for_file_list(config.files[1])
-            if not self.api.files_equal(config.server, config.bucket, config.files[0], hash):
+            files_equal = self.api.files_equal(config.server, config.bucket, config.files[0], hash)
+            if files_equal is None:
                 print("Would upload file to %s" % config.files[0])
+                return True
+            elif not files_equal:
+                if debug:
+                    print("Would upload file to %s. Changes:" % config.files[0])
+                    self._print_diffs_for_zip(self.api.get_file(config.server, config.bucket, config.files[0]), config.files[1])
+                else:
+                    print("Would upload file to %s due to changes" % config.files[0])
                 return True
             else:
                 return False
-        changed = False
-        for key, filename in config.files:
-            if self._dry_run_single_file(config.server, config.bucket, key, filename):
-                changed = True
-        return changed
+        else:
+            changed = False
+            for key, filename in config.files:
+                if self._dry_run_single_file(config.server, config.bucket, key, filename, debug):
+                    changed = True
+            return changed
 
-    def _dry_run_single_file(self, server, bucket, key, filename):
+    def _dry_run_single_file(self, server, bucket, key, filename, debug):
         hash = md5_hash(filename)
-        if not self.api.files_equal(server, bucket, key, hash):
+        files_equal = self.api.files_equal(server, bucket, key, hash)
+        if files_equal is None:
             print("Would upload file to %s" % key)
             return True
+        elif not files_equal:
+            if debug:
+                print("Would upload file to %s. Changes:" % key)
+                server_file_content = self.api.get_file(server, bucket, key)
+                with open(filename, "r") as local_file:
+                    local_file_content = local_file.read()
+                print(compare_text(server_file_content, local_file_content))
+            else:
+                print("Would upload file to %s due to changes" % key)
+            return True
         return False
+
+    def _print_diffs_for_zip(self, remote_file, files):
+        from zipfile import ZipFile
+        with ZipFile(BytesIO(remote_file), "r") as zip_file:
+            local_files = dict(map(lambda tup: (tup[1], tup[0]), files))
+            for name in zip_file.namelist():
+                if name not in local_files:
+                    print("  %s will be deleted" % name)
+                else:
+                    with zip_file.open(name, "r") as remote_file:
+                        remote_file_content = remote_file.read()
+                    with open(local_files[name], "r") as local_file:
+                        local_file_content = local_file.read()
+                    diff = compare_text(remote_file_content, local_file_content)
+                    if diff:
+                        print("  %s changed:" % name)
+                        print(diff)
+            for name in local_files.keys():
+                if name not in zip_file.namelist():
+                    print("  %s will be added" % name)
 
     def _hash_for_file_list(self, files):
         hash_list = list()

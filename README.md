@@ -280,6 +280,7 @@ At the moment dcos-deploy can not safely detect if the pool config was changed s
 * `compress`: type of compressed archive to combine the files in. Currently only supported is `zip`. Optional. Variables can be used.
 
 This entity has several modes of operation:
+
 * Upload a single file: `source` points to a file, `compress` is not set. The file is uploaded and `destination.key` is used as name.
 * Upload a folder: `source` points to a folder, `compress` is not set. All files and folders under `source` are recursively uploaded. `destination.key` is used as prefix.
 * Upload a folder as a zip file: `source` points to a folder, `compress: zip`. The files and folders under `source` are compressed into a zip file and uploaded. `destiation.key` is used as name of the zip file.
@@ -291,7 +292,9 @@ For multi-file upload: If `source` does not end in a slash, the last part of the
 To use your S3 bucket to serve files to apps and services you must configure it for anonymous read access. For security reasons you should restrict that access to the IP range of your cluster. See the [AWS S3 documentation](https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html) for details.
 Creating and configuring the bucket is outside the scope of this tool.
 
-To make sure a marathon app that uses s3 files is made aware of changes to the uploaded files, you should set the `s3file` enitiy as an `update` dependency to the `app` entity. dcos-deploy will restart the app whenever the uploaded file changes.
+To make sure a marathon app that uses s3 files is made aware of changes to the uploaded files, you should set the `s3file` entity as an `update` dependency to the `app` entity. dcos-deploy will restart the app whenever the uploaded file changes.
+
+If you run `apply` with `--debug` dcosdeploy will download already existing files from s3 and print the differences between the local and remote version in the unified diff format. So only use `--debug` for textual files.
 
 ### Task exec
 `type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload so to avoid restarting a service. It has the following specific options:

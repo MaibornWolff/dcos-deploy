@@ -70,7 +70,19 @@ def compare_dicts(left, right):
     right_str = json.dumps(right, indent=2, sort_keys=True)
     diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
     if diff:
-        return "    " + '\n    '.join(list(diff))
+        return "    " + '\n    '.join(diff)
+    else:
+        return None
+
+
+def compare_text(left, right):
+    if not isinstance(left, str):
+        left = left.decode("utf-8")
+    if not isinstance(right, str):
+        right = right.decode("utf-8")
+    diff = list(difflib.unified_diff(left.splitlines(), right.splitlines(), lineterm=''))
+    if diff:
+        return "    " + '\n    '.join(diff)
     else:
         return None
 

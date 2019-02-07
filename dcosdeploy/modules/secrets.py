@@ -1,7 +1,6 @@
-import difflib
 from dcosdeploy.adapters.secrets import SecretsAdapter
 from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if
+from dcosdeploy.util import print_if, compare_text
 
 
 class Secret(object):
@@ -78,14 +77,8 @@ class SecretsManager(object):
         if changed:
             if debug:
                 new_content = config.file_content if config.file_content else config.value
-                content = content
-                if not isinstance(new_content, str):
-                    new_content = new_content.decode("utf-8")
-                if not isinstance(content, str):
-                    content = content.decode("utf-8")
                 print("Would update secret %s:" % config.path)
-                diff = difflib.unified_diff(content.splitlines(), new_content.splitlines(), lineterm='')
-                print("    " + '\n    '.join(list(diff)))
+                print(compare_text(content, new_content))
             else:
                 print("Would update secret %s" % config.path)
         return changed
