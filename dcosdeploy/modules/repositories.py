@@ -39,14 +39,15 @@ class PackageRepositoriesManager(object):
         print_if(not silent, "\tFinished")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         repo = self._get_repo(config.name)
         if not repo:
-            if print_changes:
-                print("Would add repository %s" % config.name)
+            print("Would add repository %s" % config.name)
             return True
         elif repo["uri"] != config.uri:
-            if print_changes:
+            if debug:
+                print("Would change URI of repository %s from %s to %s" % (config.name, repo["uri"], config.uri))
+            else:
                 print("Would change URI of repository %s" % config.name)
             return True
         else:

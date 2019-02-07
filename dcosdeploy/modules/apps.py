@@ -69,25 +69,29 @@ class MarathonAppsManager(object):
             print_if(not silent, "\tFinished")
         return changed
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         app_state = self.api.get_app_state(config.app_id)
         if not app_state:
             print("Would create marathon app %s" % config.app_id)
             return True
-        changed = not self.compare_app_definitions(config.app_definition, app_state, debug)
-        if changed:
-            print("Would update marathon app %s" % config.app_id)
+        diff = self.compare_app_definitions(config.app_definition, app_state)
+        if diff:
+            if debug:
+                print("Would update marathon app %s:" % config.app_id)
+                print(diff)
+            else:
+                print("Would update marathon app %s" % config.app_id)
         elif dependencies_changed:
             print("Would restart marathon app %s" % config.app_id)
-        return changed or dependencies_changed
+        return diff or dependencies_changed
 
-    def compare_app_definitions(self, local_definition, remote_definition, debug=False):
+    def compare_app_definitions(self, local_definition, remote_definition):
         local_definition = deepcopy(local_definition)
         for key in ["version", "lastTaskFailure", "tasks", "tasksHealthy", "tasksUnhealthy", "versionInfo", "deployments", "tasksRunning", "tasksStaged"]:
             if key in remote_definition:
                 del remote_definition[key]
         local_definition, remote_definition = _normalize_app_definition(local_definition, remote_definition)
-        return compare_dicts(local_definition, remote_definition, print_differences=debug)
+        return compare_dicts(remote_definition, local_definition)
 
 
 _app_defaults = dict(

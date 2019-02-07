@@ -36,7 +36,7 @@ class TaskExecManager(object):
         print_if(not silent, "\tFinished.")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         print("Would run command '%s' in task '%s'" % (config.command, config.task))
         return True
 

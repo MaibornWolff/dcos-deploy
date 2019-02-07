@@ -44,23 +44,27 @@ class JobsManager(object):
             print_if(not silent, "\tCreated job.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         if not self.api.does_job_exist(config.job_id):
             print("Would create job %s" % config.job_id)
             return True
         existing_job_definition = self.api.get_job(config.job_id)
-        changed = not self.compare_job_definitions(config.job_definition, existing_job_definition, debug)
-        if changed:
-            print("Would update job %s" % config.job_id)
-        return changed
+        diff = self.compare_job_definitions(config.job_definition, existing_job_definition)
+        if diff:
+            if debug:
+                print("Would update job %s:" % config.job_id)
+                print(diff)
+            else:
+                print("Would update job %s" % config.job_id)
+        return diff is not None
 
-    def compare_job_definitions(self, local_definition, remote_definition, debug=False):
+    def compare_job_definitions(self, local_definition, remote_definition):
         local_definition, remote_definition = _normalize_definitions(local_definition, remote_definition)
         if "schedules" in remote_definition:
             for schedule in remote_definition["schedules"]:
                 if "nextRunAt" in schedule:
                     del schedule["nextRunAt"]
-        return compare_dicts(local_definition, remote_definition, print_differences=debug)
+        return compare_dicts(local_definition, remote_definition)
 
 
 _run_defaults = dict(

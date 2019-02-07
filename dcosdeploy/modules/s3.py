@@ -133,7 +133,7 @@ class S3FilesManager(object):
                 print_if(not silent, "\tNothing changed")
             return changed
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         if config.compress:
             hash = self._hash_for_file_list(config.files[1])
             if not self.api.files_equal(config.server, config.bucket, config.files[0], hash):

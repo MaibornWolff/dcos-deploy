@@ -39,10 +39,6 @@ class FrameworksManager(object):
         self.api = CosmosAdapter()
 
     def deploy(self, config, dependencies_changed=False, silent=False):
-        changed = self.dry_run(config, dependencies_changed=False, print_changes=False)
-        if not changed:
-            print_if(not silent, "\tConfig unchanged.")
-            return
         old_description = self.api.describe_service(config.service_name)
         package_version = config.package_version
         if not old_description:
@@ -60,24 +56,26 @@ class FrameworksManager(object):
             self.api.update_service(config.service_name, package_version, config.options)
             # Do not wait for completion after update, assume update is done in rolling fashion
         print_if(not silent, "\tFinished")
-        return changed
+        return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         description = self.api.describe_service(config.service_name)
         if not description:
-            if print_changes:
-                print("Would install %s" % config.service_name)
+            print("Would install %s" % config.service_name)
             return True
         old_options = description["userProvidedOptions"]
-        options_equal = compare_dicts(config.options, old_options, print_differences=debug)
+        options_diff = compare_dicts(config.options, old_options)
         version_equal = description["package"]["version"] == config.package_version
         if not version_equal:
-            if print_changes:
+            if debug:
                 print("Would update %s from %s to %s" % (config.service_name, description["package"]["version"], config.package_version))
-        elif not options_equal:
-            if print_changes:
+        if options_diff:
+            if debug:
+                print("Would change config of %s:" % config.service_name)
+                print(options_diff)
+            else:
                 print("Would change config of %s" % config.service_name)
-        return not options_equal or not version_equal
+        return options_diff or not version_equal
 
 
 __config__ = Framework

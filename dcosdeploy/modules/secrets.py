@@ -1,3 +1,4 @@
+import difflib
 from dcosdeploy.adapters.secrets import SecretsAdapter
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.util import print_if
@@ -60,7 +61,7 @@ class SecretsManager(object):
             print_if(not silent, "\tSecret created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         exists = config.path in self.api.list_secrets()
         if not exists:
             print("Would create secret %s" % config.path)
@@ -76,7 +77,15 @@ class SecretsManager(object):
             raise Exception("Specified neither value nor file_content for secret")
         if changed:
             if debug:
-                print("Would update secret %s from %s to %s" % (config.path, content, config.file_content))
+                new_content = config.file_content if config.file_content else config.value
+                content = content
+                if not isinstance(new_content, str):
+                    new_content = new_content.decode("utf-8")
+                if not isinstance(content, str):
+                    content = content.decode("utf-8")
+                print("Would update secret %s:" % config.path)
+                diff = difflib.unified_diff(content.splitlines(), new_content.splitlines(), lineterm='')
+                print("    " + '\n    '.join(list(diff)))
             else:
                 print("Would update secret %s" % config.path)
         return changed

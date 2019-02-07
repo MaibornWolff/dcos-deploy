@@ -55,6 +55,6 @@ class RepositoriesTest(unittest.TestCase):
         from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
         repo = PackageRepository(name="foo", uri="bar", index=None)
         manager = PackageRepositoriesManager()
-        result = manager.dry_run(repo, print_changes=False)
+        result = manager.dry_run(repo)
         # then
         self.assertFalse(result)

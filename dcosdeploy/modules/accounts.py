@@ -93,7 +93,7 @@ class AccountsManager(object):
                     changed = True
         return changed
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         if not self.does_serviceaccount_exist(config.path):
             print("Would create serviceaccount %s" % config.path)
             return True

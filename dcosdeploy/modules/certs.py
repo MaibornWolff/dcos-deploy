@@ -60,7 +60,7 @@ class CertsManager(object):
         print_if(not silent, "\tFinished")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:

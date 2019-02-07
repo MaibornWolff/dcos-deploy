@@ -45,23 +45,17 @@ class EdgeLbPoolsManager(object):
                     raise Exception("EdgeLB api not available.")
         exists = config.name in self.api.get_pools()
         if exists:
-            existing_pool_config = self.api.get_pool(config.name)
-            local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)
-            if not compare_dicts(local_pool_config, existing_pool_config):
-                print_if(not silent, "\tUpdating pool")
-                self.api.update_pool(config.pool_config)
-                print_if(not silent, "\tPool updated.")
-                return True
-            else:
-                print_if(not silent, "\tNothing changed")
-                return False
+            print_if(not silent, "\tUpdating pool")
+            self.api.update_pool(config.pool_config)
+            print_if(not silent, "\tPool updated.")
+            return True
         else:
             print_if(not silent, "\tCreating pool")
             self.api.create_pool(config.pool_config)
             print_if(not silent, "\tPool created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, print_changes=True, debug=False):
+    def dry_run(self, config, dependencies_changed=False, debug=False):
         if not self.api.ping():
             print("Could not reach api-server. Would probably create pool %s" % config.name)
             return True
@@ -71,8 +65,13 @@ class EdgeLbPoolsManager(object):
             return True
         existing_pool_config = self.api.get_pool(config.name)
         local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)
-        if not compare_dicts(local_pool_config, existing_pool_config, print_differences=debug):
-            print("Would update pool %s" % config.name)
+        diff = compare_dicts(local_pool_config, existing_pool_config)
+        if diff:
+            if debug:
+                print("Would update pool %s:" % config.name)
+                print(diff)
+            else:
+                print("Would update pool %s" % config.name)
             return True
         else:
             return False
