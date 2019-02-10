@@ -4,6 +4,10 @@ import subprocess
 from requests.auth import AuthBase
 
 
+ENV_BASE_URL = "DCOS_BASE_URL"
+ENV_AUTH_TOKEN = "DCOS_AUTH_TOKEN"
+
+
 def _get_dcos_url_from_cli():
     res = subprocess.run(["dcos", "config", "show", "core.dcos_url"], shell=False, stdout=subprocess.PIPE)
     return res.stdout.strip().decode("utf-8")
@@ -42,6 +46,13 @@ def _read_config_from_toml():
             _base_url = _base_url[:-1]
 
 
+def _read_config_from_env():
+    global _base_url, _auth
+    if ENV_BASE_URL and ENV_AUTH_TOKEN in os.environ:
+        _base_url = os.environ.get(ENV_BASE_URL)
+        _auth = StaticTokenAuth(os.environ.get(ENV_AUTH_TOKEN))
+
+
 class StaticTokenAuth(AuthBase):
     def __init__(self, token):
         self.token = token
@@ -58,16 +69,20 @@ _auth = None
 def get_base_url():
     global _base_url
     if not _base_url:
-        _read_config_from_toml()
+        _read_config_from_env()
         if not _base_url:
-            _base_url = _get_dcos_url_from_cli()
+            _read_config_from_toml()
+            if not _base_url:
+                _base_url = _get_dcos_url_from_cli()
     return _base_url
 
 
 def get_auth():
     global _auth
     if not _auth:
-        _read_config_from_toml()
+        _read_config_from_env()
         if not _auth:
-            _auth = StaticTokenAuth(_get_dcos_token_from_cli())
+            _read_config_from_toml()
+            if not _auth:
+                _auth = StaticTokenAuth(_get_dcos_token_from_cli())
     return _auth

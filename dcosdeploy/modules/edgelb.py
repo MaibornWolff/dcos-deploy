@@ -65,7 +65,7 @@ class EdgeLbPoolsManager(object):
             return True
         existing_pool_config = self.api.get_pool(config.name)
         local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)
-        diff = compare_dicts(local_pool_config, existing_pool_config)
+        diff = compare_dicts(existing_pool_config, local_pool_config)
         if diff:
             if debug:
                 print("Would update pool %s:" % config.name)

@@ -64,7 +64,7 @@ class FrameworksManager(object):
             print("Would install %s" % config.service_name)
             return True
         old_options = description["userProvidedOptions"]
-        options_diff = compare_dicts(config.options, old_options)
+        options_diff = compare_dicts(old_options, config.options)
         version_equal = description["package"]["version"] == config.package_version
         if not version_equal:
             if debug:

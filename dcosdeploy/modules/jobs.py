@@ -30,14 +30,10 @@ class JobsManager(object):
 
     def deploy(self, config, dependencies_changed=False, silent=False):
         if self.api.does_job_exist(config.job_id):
-            existing_job_definition = self.api.get_job(config.job_id)
-            if not self.compare_job_definitions(config.job_definition, existing_job_definition):
-                print_if(not silent, "\tUpdating existing job")
-                self.api.update_job(config.job_definition)
-                print_if(not silent, "\tUpdated job.")
-                return True
-            print_if(not silent, "\tJob already exists. No update needed.")
-            return False
+            print_if(not silent, "\tUpdating existing job")
+            self.api.update_job(config.job_definition)
+            print_if(not silent, "\tUpdated job.")
+            return True
         else:
             print_if(not silent, "\tCreating job")
             self.api.create_job(config.job_definition)
@@ -64,7 +60,7 @@ class JobsManager(object):
             for schedule in remote_definition["schedules"]:
                 if "nextRunAt" in schedule:
                     del schedule["nextRunAt"]
-        return compare_dicts(local_definition, remote_definition)
+        return compare_dicts(remote_definition, local_definition)
 
 
 _run_defaults = dict(

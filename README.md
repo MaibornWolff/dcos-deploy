@@ -56,6 +56,8 @@ There are several ways to install dcos-deploy:
 * Run `dcos-deploy apply`.
 * See `dcos-deploy apply --help` for all options.
 
+By default dcos-deploy will use the authentication information from the dcos-cli, so make sure you are logged in (verify by running `dcos node`, if it works you should see a list of nodes in your cluster). If you want to run dcos-deploy without the dcos-cli installed, you must provide the necessary information via the environment variables `DCOS_BASE_URL` (set this to the public ur of your master) and `DCOS_AUTH_TOKEN` (set this to a valid auth token).
+
 
 ## Config file syntax
 The config file is written as a yaml file. The root level consists of key/value-pairs (a dictionary). Each key represents the unique name for one entity, the value is again a dictionary with all the options for that entity.
