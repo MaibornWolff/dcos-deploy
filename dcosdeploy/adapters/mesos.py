@@ -49,18 +49,9 @@ class MesosAdapter(object):
 
     def get_container_id_and_slave_id_for_task(self, name):
         state = self._get_master_state()
-        parent_container_id = None
-        slave_id = None
-        for framework in state["frameworks"]:
-            for task in framework["tasks"]:
-                if task["state"] == "TASK_RUNNING" and name in task["id"]:
-                    if parent_container_id:
-                        raise Exception("Task identifier '%s' is not unique" % (name))
-                    slave_id = task["slave_id"]
-                    for state in task["statuses"]:
-                        if state["state"] == "TASK_RUNNING":
-                            parent_container_id = state["container_status"]["container_id"]
-                            break
+        parent_container_id, slave_id = _find_task(state["frameworks"], name, exact_match=True)
+        if not parent_container_id:
+            parent_container_id, slave_id = _find_task(state["frameworks"], name, exact_match=False)
         return parent_container_id, slave_id
 
     def _get_master_state(self):
@@ -69,3 +60,20 @@ class MesosAdapter(object):
             return response.json()
         else:
             raise Exception("Failed to get mesos master state: %s" % response.text)
+
+
+def _find_task(frameworks, name, exact_match=False):
+    parent_container_id = None
+    slave_id = None
+    for framework in frameworks:
+        for task in framework["tasks"]:
+            # split(".") is done to only get the name part of marathon tasks
+            if task["state"] == "TASK_RUNNING" and (name == task["id"].split(".")[0] if exact_match else name in task["id"]):
+                if parent_container_id:
+                    raise Exception("Task identifier '%s' is not unique" % name)
+                slave_id = task["slave_id"]
+                for state in task["statuses"]:
+                    if state["state"] == "TASK_RUNNING":
+                        parent_container_id = state["container_status"]["container_id"]
+                        break
+    return parent_container_id, slave_id

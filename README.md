@@ -299,14 +299,14 @@ To make sure a marathon app that uses s3 files is made aware of changes to the u
 If you run `apply` with `--debug` dcosdeploy will download already existing files from s3 and print the differences between the local and remote version in the unified diff format. So only use `--debug` for textual files.
 
 ### Task exec
-`type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload so to avoid restarting a service. It has the following specific options:
+`type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload as to avoid restarting a service. It has the following specific options:
 * `task`: task identifier to uniquely identify the task. Can be part of a task name. Required. Variables can be used.
 * `command`: command to execute in the task. Required. Variables can be used.
 * `print`: boolean. Wether to print the output of the executed command. Optional. Defaults to false.
 
 This has the same effect as running `dcos task exec <task> <command>`.
 
-As dcos-deploy has no state it cannnot detect if this command has been run before. As such it will run this command every time `apply` is called. You must either make the command idempotent so that running it multiple does is possible without changing the result, or (recommended) add dependencies (with `:update`) to it and add `when: dependencies-changed`. That way the command will only be executed when one of its dependencies has been changed.
+As dcos-deploy has no state it cannnot detect if this command has been run before. As such it will run this command every time `apply` is called. You must either make the command idempotent so that running it multiple times is possible without changing the result, or (recommended) add dependencies (with `:update`) to it and add `when: dependencies-changed`. That way the command will only be executed when one of its dependencies has been changed.
 
 Example for this is: Uploading configuration files to S3 and triggering a redownload of the files into the service by a command. See [examples](examples/demo) for details.
 
