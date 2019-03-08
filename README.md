@@ -93,6 +93,19 @@ variables:
 
 Variables can be used via [Mustache](http://mustache.github.io/) templates in most options and in marathon app definitions and package options. See `examples/elastic` for usage examples. You can not use variables in entity names or outside option strings (ground rule: the yaml file must be syntactically correct without mustache template rendering).
 
+### Global config
+To specifiy an attribute for all entities of a specific type you can define it in the global config. The config for a specific entity will be merged with the global config for the corresponding type.
+
+Example:
+```
+global:
+  s3file:
+    server:
+      endpoint: "{{s3_endpoint}}"
+      access_key: "{{s3_access_key}}"
+      secret_key: "{{s3_secret_key}}"
+```
+
 ### Encryption
 dcos-deploy supports encrypting files so that sensitive information is not stored unencrypted. Files are symmetricly encrypted using [Fernet](https://cryptography.io/en/latest/fernet/) (AES-128) from the python [cryptography](https://cryptography.io/en/latest/) library.
 In most places where you provide a filename (at the moment not possible with `s3file`) you can use encrypted files by using the following syntax as filename: `vault:<encryption-key>:<filename-to-encrypted-file>`.
@@ -108,8 +121,26 @@ variables:
 servicepasswords:
   type: secret
   path: /myservice/passwords
-  file: vault:{{encryption_key}}:servicepasswords.encrypted
+  file: "vault:{{encryption_key}}:servicepasswords.encrypted"
 ```
+
+You can also specify the encryption key in the global config to avoid writing it for every occurence:
+```
+variables:
+  encryption_key:
+    env: ENCRYPTION_KEY
+    required: True
+
+global:
+  vault:
+    key: "{{encryption_key}}"
+
+servicepasswords:
+  type: secret
+  path: /myservice/passwords
+  file: vault::servicepasswords.encrypted
+```
+
 
 dcos-deploy has several util commands that help you in creating encrypted files:
 * `dcos-deploy vault generate-key`: Generates a new key that you can use for encrypting files

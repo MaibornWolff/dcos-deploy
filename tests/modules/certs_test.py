@@ -7,7 +7,7 @@ from dcosdeploy.config import ConfigHelper, VariableContainer
 class CertsTest(unittest.TestCase):
     def test_config_parse(self):
         from dcosdeploy.modules.certs import parse_config
-        config_helper = ConfigHelper(VariableContainer(dict()))
+        config_helper = ConfigHelper(VariableContainer(dict()), None)
         params = dict(cert_secret="myapp/admin_cert", key_secret="myapp/admin_key", dn=dict(CN="admin"), hostnames=["admin.myapp", "admin2.myapp"])
         cert = parse_config("mycert", params, config_helper)
         self.assertEqual("myapp/admin_cert", cert.cert_secret)

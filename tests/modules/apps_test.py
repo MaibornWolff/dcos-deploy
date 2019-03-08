@@ -16,7 +16,7 @@ class AppsTest(unittest.TestCase):
     def test_template_instances(self):
         from dcosdeploy.modules.apps import parse_config, preprocess_config, MarathonApp
         variables = VariableContainer(dict())
-        config_helper = ConfigHelper(variables)
+        config_helper = ConfigHelper(variables, None)
         config_helper.set_base_path(".")
         open_mock = mock.mock_open(read_data=VARS_YAML)
         open_mock.side_effect = [open_mock.return_value, mock.mock_open(read_data='{"id": "/hello/{{hello}}"}').return_value]

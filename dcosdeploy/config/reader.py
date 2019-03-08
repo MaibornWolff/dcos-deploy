@@ -4,12 +4,13 @@ import os
 import json
 import pystache
 import yaml
-from ..util import decrypt_data
+from ..util import decrypt_data, update_dict_with_defaults
 from ..base import ConfigurationException
 from .variables import VariableContainerBuilder
 
 
-META_NAMES = ["variables", "modules", "includes"]
+META_NAMES = ["variables", "modules", "includes", "global"]
+DUMMY_GLOBAL_ENCRYPTION_KEY = "__global__"
 
 STANDARD_MODULES = [
     "dcosdeploy.modules.accounts",
@@ -26,8 +27,9 @@ STANDARD_MODULES = [
 
 
 class ConfigHelper(object):
-    def __init__(self, variables_container):
+    def __init__(self, variables_container, global_config):
         self.variables_container = variables_container
+        self.global_config = global_config
 
     def set_base_path(self, base_path):
         self.base_path = base_path
@@ -37,7 +39,13 @@ class ConfigHelper(object):
 
     def read_file(self, filename, render_variables=False, as_binary=False):
         if filename.startswith("vault:"):
-            _, key, filename = filename.split(":", 2)
+            if filename.startswith("vault::"):
+                if not self.global_config or "vault" not in self.global_config or "key" not in self.global_config["vault"]:
+                    raise ConfigurationException("vault definition without key but no key is defined in global config: %s" % filename)
+                _, filename = filename.split("::", 1)
+                key = self.variables_container.render(self.global_config["vault"]["key"])
+            else:
+                _, key, filename = filename.split(":", 2)
         else:
             key = None
         filepath = self.abspath(filename)
@@ -75,6 +83,7 @@ def read_config(filename, provided_variables):
     config_files = [(abspath, None)]
     idx = 0
     entities = dict()
+    global_config = dict()
     variables = VariableContainerBuilder(provided_variables)
     additional_modules = list()
 
@@ -84,19 +93,37 @@ def read_config(filename, provided_variables):
         with open(config_filename) as config_file:
             config = config_file.read()
         if encryption_key:
+            if encryption_key == DUMMY_GLOBAL_ENCRYPTION_KEY:
+                if not global_config or "vault" not in global_config or "key" not in global_config["vault"]:
+                    raise ConfigurationException("vault definition without key but no key is defined in global config: %s" % config_filename)
+                encryption_key = global_config["vault"]["key"]
             encryption_key = variables.render_value(encryption_key)
             config = decrypt_data(encryption_key, config)
         config = yaml.load(config)
+        # Read variables
         variables.add_variables(config_basepath, config.get("variables", dict()))
+        # Read global config
+        if "global" in config:
+            if global_config:
+                raise ConfigurationException("Only one global configuration can exist")
+            global_config = config["global"]
+        # Read includes
         for include in config.get("includes", list()):
             if include.startswith("vault:"):
-                _, key, include = include.split(":", 2)
+                if include.startswith("vault::"):
+                    _, include = include.split("::", 1)
+                    key = DUMMY_GLOBAL_ENCRYPTION_KEY
+                else:
+                    _, key, include = include.split(":", 2)
             else:
                 key = None
             include = variables.render_value(include)
             absolute_include_path = os.path.abspath(os.path.join(config_basepath, include))
-            config_files.append((absolute_include_path, key))
+            if (absolute_include_path, key) not in config_files:
+                config_files.append((absolute_include_path, key))
+        # Read extra modules
         additional_modules.extend(config.get("modules", list()))
+        # Read entities
         for key, values in config.items():
             if key in META_NAMES:
                 continue
@@ -107,19 +134,20 @@ def read_config(filename, provided_variables):
         idx += 1
 
     variables = variables.build()
-    config_helper = ConfigHelper(variables)
+    config_helper = ConfigHelper(variables, global_config)
     # init managers
     managers, modules = _init_modules(additional_modules)
     # read config sections
-    entities = _read_config_entities(modules, variables, entities, config_helper)
+    entities = _read_config_entities(modules, variables, entities, config_helper, global_config)
     return entities, managers
 
 
-def _read_config_entities(modules, variables, config, config_helper):
+def _read_config_entities(modules, variables, config, config_helper, global_config):
     deployment_objects = dict()
     excluded_entities = list()
     for name, entity_config in config.items():
-        module = modules[entity_config["type"]]
+        entity_type = entity_config["type"]
+        module = modules[entity_type]
         parse_config_func = module["parser"]
         preprocess_config_func = module["preprocesser"]
         config_helper.set_base_path(entity_config["_basepath"])
@@ -127,6 +155,8 @@ def _read_config_entities(modules, variables, config, config_helper):
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
         for name, entity_config in entities:
+            if entity_type in global_config:
+                update_dict_with_defaults(entity_config, global_config[entity_type])
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
             when_condition = entity_config.get("when")
