@@ -224,7 +224,7 @@ Any change in the options file or in the package version will trigger an update 
 * `name`: Name of the serviceaccount. Required. Variables can be used.
 * `secret`: Path to use for the secret that contains the private key associated with the account. Required. Variables can be used.
 * `groups`: List of groups the account should be added to. Optional. Variables can be used.
-* `permissions`: Permissions to give to the account. Dictionary. Key is the name of the permission, value is a list of actions to allow. Variables are not supported.
+* `permissions`: Permissions to give to the account. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables are not supported.
 
 This entity equates to the steps required to create a serviceaccount for a framework as described in the [DC/OS documentation](https://docs.mesosphere.com/1.12/security/ent/service-auth/custom-service-auth/).
 Any groups or permissions not specified in the config are removed from the account during the update process.
