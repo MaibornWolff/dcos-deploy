@@ -235,7 +235,7 @@ If not defined marathon will add a number of default fields to an app definition
 
 These options correspond to the parameters provided when installing a package via the dcos-cli: `dcos package install <packagename> --package-version=<version> --options=<options.json>`.
 
-During installation of a package dcos-deploy will wait until the service is completely installed (specifically it waits until the service scheduler reports `COMPLETE` for the `deploy` plan). If you are installing Edge-LB waiting is disabled. Instead the pool update will wait until the Edge-LB API is available.
+During installation of a package dcos-deploy will wait until the framework is installed. If the framework exposes the standard plan API (like all frameworks based on the [Mesosphere SDK](https://github.com/mesosphere/dcos-commons/), e.g. elastic, hdfs or kafka) dcos-deploy will also wait (with a timeout of 10 minutes) until the deploy-plan is complete.
 Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`). dcos-deploy will not wait for the completion of the update as it assumes that any updates are done in a rolling-restart fashion.
 
 ### Metronome job

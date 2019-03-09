@@ -1,4 +1,6 @@
+import time
 from dcosdeploy.adapters.cosmos import CosmosAdapter
+from dcosdeploy.adapters.marathon import MarathonAdapter
 from dcosdeploy.util import compare_dicts, print_if
 from dcosdeploy.base import ConfigurationException
 
@@ -37,6 +39,7 @@ def parse_config(name, config, config_helper):
 class FrameworksManager(object):
     def __init__(self):
         self.api = CosmosAdapter()
+        self.marathon = MarathonAdapter()
 
     def deploy(self, config, dependencies_changed=False, silent=False):
         old_description = self.api.describe_service(config.service_name)
@@ -44,10 +47,11 @@ class FrameworksManager(object):
         if not old_description:
             print_if(not silent, "\tInstalling framework")
             self.api.install_package(config.service_name, config.package_name, config.package_version, config.options)
-            if config.package_name == "edgelb":
-                print_if(not silent, "\tPackage is Edge-LB. Waiting is disabled.")
-            else:
-                print_if(not silent, "\tWaiting for deployment to finish")
+            print_if(not silent, "\tWaiting for framework to start")
+            self.marathon.wait_for_deployment(config.service_name)
+            time.sleep(5)  # Wait a few seconds for admin-lb to catch up
+            if self.api.has_plans_api(config.service_name):
+                print_if(not silent, "\tWaiting for deployment plan to finish")
                 self.api.wait_for_plan_complete(config.service_name, "deploy")
         else:
             if old_description["package"]["version"] == config.package_version:

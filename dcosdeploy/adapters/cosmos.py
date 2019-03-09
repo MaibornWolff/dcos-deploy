@@ -99,6 +99,15 @@ class CosmosAdapter(object):
                 wait_time += 20
         return status
 
+    def has_plans_api(self, service_name):
+        if service_name[0] == "/":
+            service_name = service_name[1:]
+        response = requests.get(get_base_url()+"/service/" + service_name + "/v1/plans/", auth=get_auth(), verify=False)
+        if response.ok:
+            return True
+        else:
+            return False
+
     def _get_plan_status(self, service_name, plan):
         if service_name[0] == "/":
             service_name = service_name[1:]
