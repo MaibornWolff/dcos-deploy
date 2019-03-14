@@ -13,6 +13,7 @@ class MarathonApp(object):
 
 def preprocess_config(base_name, base_config, config_helper):
     if "_template" in base_config and "_vars" in base_config:
+        separator = base_config.get("_separator", "-")
         marathon_filename = base_config["_template"]
         config = config_helper.read_yaml(base_config["_vars"])
         defaults = config.get("defaults", dict())
@@ -26,15 +27,16 @@ def preprocess_config(base_name, base_config, config_helper):
             if "except" in config:
                 except_restriction = config["except"]
                 del config["except"]
-            extra_vars = config
+            extra_vars = config_helper.prepare_extra_vars(config)
             for key, value in defaults.items():
                 if key not in extra_vars:
                     extra_vars[key] = value
             extra_vars["name"] = name
-            instance_config = dict(marathon=marathon_filename, extra_vars=extra_vars, only=only_restriction)
+            instance_config = dict(marathon=marathon_filename, extra_vars=extra_vars, only=only_restriction, type=__config_name__)
             instance_config["except"] = except_restriction  # except not allowed as kwarg for dict()
-            yield base_name+"-"+name, instance_config
-    yield base_name, base_config
+            yield "%s%s%s" % (base_name, separator, name), instance_config
+    else:
+        yield base_name, base_config
 
 
 def parse_config(name, config, config_helper):
@@ -43,6 +45,8 @@ def parse_config(name, config, config_helper):
     if not app_definition_path:
         raise ConfigurationException("Service %s has no marathon app definition" % name)
     extra_vars = config.get("extra_vars", dict())
+    if extra_vars:
+        extra_vars = config_helper.prepare_extra_vars(extra_vars)
     app_definition_path = config_helper.render(app_definition_path)
     app_definition = config_helper.read_file(app_definition_path)
     app_definition = config_helper.render(app_definition, extra_vars)

@@ -190,6 +190,11 @@ class ConfigTest(unittest.TestCase):
         config, _ = read_config_mocked_open(dict(), PREPROCESS)
         self.assertTrue("test1" in config)
         self.assertTrue(config["test1"].entity.preprocess, False)
+      
+    def test_confighelper_prepare_extra_vars(self):
+        helper = config.ConfigHelper(dict(foo="bar"), dict())
+        vars = helper.prepare_extra_vars({"a": "b", "foo:bar": {"abc": "xyz"}, "foo:baz": {"abc": "abc"}})
+        self.assertEqual(vars, dict(abc="xyz", a="b"))
 
 
 def read_config_mocked_open(provided_variables, *input_texts):

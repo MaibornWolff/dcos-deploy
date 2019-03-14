@@ -223,6 +223,23 @@ instances:
 ```
 For each key under `instances` dcos-deploy will create a marathon app from the template file specialized with the variables provided.
 
+In both the `extra_vars` and the variables in the `instances` you can define dependent variables. The variable name must be in the form `<existing variable name>:<value to compare>`, and the value must be key-value pairs of variables. If `<existing variable name>` has value `<value to compare>` the variables defined under that key will be added to the variables for that entity, otherwise they will be discarded. A simple example:
+```
+variables:
+  env:
+    required: True
+  foo: something
+myapp:
+  type: app
+  marathon: myapp.json
+  extra_vars:
+    env:test:
+      foo: bar
+    env:int:
+      foo: baz
+```
+If `env` has value `test`, the variable `foo` will have value `bar`, if `env` has value `int`, the variable `foo` will have value `baz`, in neither of these cases `foo` will have value `something`.
+
 If not defined marathon will add a number of default fields to an app definition. dcos-deploy tries to detect these defaults and exclude them when checking for changes between the local definition and the one known to marathon. This is rather complex as these default values partly depend on several modes (network, container type, etc.). If you find a case where dcos-deploy falesly reports a change please open an issue at the github project and attach your app definition and the definition reported by marathon (via `dcos marathon app show <app-id>`).
 
 ### Framework

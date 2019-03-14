@@ -69,6 +69,22 @@ class ConfigHelper(object):
     def render(self, text, extra_vars=dict()):
         return self.variables_container.render(text, extra_vars)
 
+    def prepare_extra_vars(self, extra_vars):
+        return dict(self._prepare_extra_vars_inner(extra_vars))
+
+    def _prepare_extra_vars_inner(self, extra_vars):
+        for key, value in extra_vars.items():
+            if ":" in key:
+                var, var_equal_value = key.split(":", 1)
+                var_value = self.variables_container.get(var)
+                if not var_value:
+                    raise ConfigurationException("Variable %s is not defined. Can not be used in extra_vars" % var)
+                if var_value == var_equal_value:
+                    for sub_key, sub_value in self._prepare_extra_vars_inner(value):
+                        yield sub_key, sub_value
+            else:
+                yield (key, value)
+
 
 class EntityContainer(object):
     def __init__(self, entity, entity_type, dependencies, when_condition):

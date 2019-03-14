@@ -78,11 +78,12 @@ class VariableContainerBuilder:
                 if config.get("required", False):
                     raise ConfigurationException("Missing required variable %s" % name)
                 continue
-            if "values" in config and value not in config["values"]:
-                raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
+            if isinstance(config, dict):
+                if "values" in config and value not in config["values"]:
+                    raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
                                             % (value, name, ','.join(config["values"])))
-            if "encode" in config:
-                value = self._encode_value(value, config["encode"])
+                if "encode" in config:
+                    value = self._encode_value(value, config["encode"])
             self.variables[name] = value
         return self
 
