@@ -3,6 +3,16 @@ import setuptools
 with open("README.md", "r") as f:
     long_description = f.read()
 
+
+def read_requirements():
+    with open("requirements.txt") as req_file:
+        lines = req_file.read().split("\n")
+    for line in lines:
+        if line.startswith("#"):
+            continue
+        yield line.strip()
+
+
 setuptools.setup(
     name="dcos-deploy",
     version="0.1.0",
@@ -13,16 +23,9 @@ setuptools.setup(
     keywords="dcos marathon mesos",
     license='Apache 2.0',
     url="https://github.com/MaibornWolff/dcos-deploy/",
-    packages=["dcosdeploy", "dcosdeploy.commands", "dcosdeploy.adapters", "dcosdeploy.modules"],
+    packages=["dcosdeploy", "dcosdeploy.commands", "dcosdeploy.adapters", "dcosdeploy.modules", "dcosdeploy.config"],
     python_requires=">=3.5",
-    install_requires=[
-        "PyYaml>=3.13",
-        "pystache>=0.5.4",
-        "click>=6.7",
-        "requests>=2.20.1",
-        "minio>=4.0.6",
-        "cryptography>=2.4.2",
-    ],
+    install_requires=list(read_requirements()),
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Environment :: Console',
