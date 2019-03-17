@@ -90,6 +90,14 @@ _pool_defaults = dict(
     haproxy=dict(stats=dict(bindAddress="0.0.0.0"))
 )
 
+# New parameters introduced in version 1.2.3
+_pool_defaults_123 = dict(
+    poolHealthcheckGracePeriod=180,
+    poolHealthcheckInterval=12,
+    poolHealthcheckMaxFail=5,
+    poolHealthcheckTimeout=60
+)
+
 _backend_defaults= dict(
     balance="roundrobin",
     miscStrs=[],
@@ -136,6 +144,10 @@ def _normalize_pool_definition(local_pool_config, remote_pool_config):
             del remote_pool_config[key]
     # Apply default values on top level
     update_dict_with_defaults(local_pool_config, _pool_defaults)
+    # Detect if new parameters introduced in v1.2.3 are present in remote config and add their defaults to the local config to avoid false positives
+    if "poolHealthcheckGracePeriod" in remote_pool_config:
+        update_dict_with_defaults(local_pool_config, _pool_defaults_123)
+
 
     local_haproxy = local_pool_config["haproxy"]
     # Normalize backends
