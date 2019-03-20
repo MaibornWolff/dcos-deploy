@@ -82,6 +82,9 @@ def _read_config_from_env():
 def _read_config_from_service_account():
     global _base_url, _auth
     credentials = os.environ.get(ENV_DCOS_SERVICE_ACCOUNT_CREDENTIAL)
+    if not credentials:
+        return False
+    credentials = json.loads(credentials)
     _base_url = os.environ.get(ENV_BASE_URL)
     if not credentials or not _base_url:
         return False
