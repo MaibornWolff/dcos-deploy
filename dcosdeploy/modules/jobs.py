@@ -45,7 +45,7 @@ class JobsManager(object):
             print("Would create job %s" % config.job_id)
             return True
         existing_job_definition = self.api.get_job(config.job_id)
-        diff = self.compare_job_definitions(config.job_definition, existing_job_definition)
+        diff = self._compare_job_definitions(config.job_definition, existing_job_definition)
         if diff:
             if debug:
                 print("Would update job %s:" % config.job_id)
@@ -54,7 +54,7 @@ class JobsManager(object):
                 print("Would update job %s" % config.job_id)
         return diff is not None
 
-    def compare_job_definitions(self, local_definition, remote_definition):
+    def _compare_job_definitions(self, local_definition, remote_definition):
         local_definition, remote_definition = _normalize_definitions(local_definition, remote_definition)
         if "schedules" in remote_definition:
             for schedule in remote_definition["schedules"]:
@@ -63,10 +63,17 @@ class JobsManager(object):
         return compare_dicts(remote_definition, local_definition)
 
 
+_job_defaults = dict(
+    labels=dict(),
+    schedules=list(),
+)
+
 _run_defaults = dict(
     artifacts=[],
     cmd="",
     disk=0,
+    placement=dict(constraints=[]),
+    volumes=list(),
 )
 
 _docker_defaults = dict(
@@ -75,12 +82,25 @@ _docker_defaults = dict(
     privileged=False
 )
 
+_ucr_defaults = dict(
+    privileged=False,
+    image=dict(forcePull=False, kind="docker")
+)
+
 
 def _normalize_definitions(local_definition, remote_definition):
+    update_dict_with_defaults(local_definition, _job_defaults)
     local_run = local_definition["run"]
     update_dict_with_defaults(local_run, _run_defaults)
     if "docker" in local_run:
         update_dict_with_defaults(local_run["docker"], _docker_defaults)
+    if "ucr" in local_run:
+        update_dict_with_defaults(local_run["ucr"], _ucr_defaults)
+    if "gpus" in remote_definition["run"] and "gpus" not in local_run:
+        local_run["gpus"] = 0
+    for schedule in local_definition.get("schedules", list()):
+        if "concurrencyPolicy" not in schedule:
+            schedule["concurrencyPolicy"] = "ALLOW"
     return local_definition, remote_definition
 
 
