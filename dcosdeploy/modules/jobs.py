@@ -54,6 +54,20 @@ class JobsManager(object):
                 print("Would update job %s" % config.job_id)
         return diff is not None
 
+    def delete(self, config, silent=False):
+        print("\tDeleting job")
+        deleted = self.api.delete_job(config.job_id)
+        print("\tDeleted job.")
+        return deleted
+
+    def dry_delete(self, config):
+        if self.api.does_job_exist(config.job_id):
+            print("Would delete job %s" % config.job_id)
+            return True
+        else:
+            return False
+
+
     def _compare_job_definitions(self, local_definition, remote_definition):
         local_definition, remote_definition = _normalize_definitions(local_definition, remote_definition)
         if "schedules" in remote_definition:

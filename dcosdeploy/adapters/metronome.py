@@ -57,3 +57,16 @@ class MetronomeAdapter(object):
 
     def does_job_exist(self, job_id):
         return job_id in list(self.get_jobs())
+
+    def delete_job(self, job_id):
+        if job_id[0] == "/":
+            job_id = job_id[1:]
+        job_id = job_id.replace("/", ".")
+        response = requests.delete(self.metronome_url+"v1/jobs/%s" % job_id, auth=get_auth(), verify=False)
+        if response.ok:
+            return True
+        elif response.status_code == 404:
+            return False
+        else:
+            print(response.text)
+            raise Exception("Unknown error occured")

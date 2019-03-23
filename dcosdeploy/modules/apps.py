@@ -78,7 +78,7 @@ class MarathonAppsManager(object):
         if not app_state:
             print("Would create marathon app %s" % config.app_id)
             return True
-        diff = self.compare_app_definitions(config.app_definition, app_state)
+        diff = self._compare_app_definitions(config.app_definition, app_state)
         if diff:
             if debug:
                 print("Would update marathon app %s:" % config.app_id)
@@ -89,7 +89,21 @@ class MarathonAppsManager(object):
             print("Would restart marathon app %s" % config.app_id)
         return diff or dependencies_changed
 
-    def compare_app_definitions(self, local_definition, remote_definition):
+    def delete(self, config, silent=False):
+        print("\tDeleting app")
+        deleted = self.api.delete_app(config.app_id, wait_for_deployment=True)
+        print("\tDeleted app.")
+        return deleted
+
+    def dry_delete(self, config):
+        if self.api.get_app_state(config.app_id):
+            print("Would delete app %s" % config.app_id)
+            return True
+        else:
+            return False
+
+
+    def _compare_app_definitions(self, local_definition, remote_definition):
         local_definition = deepcopy(local_definition)
         for key in ["version", "lastTaskFailure", "tasks", "tasksHealthy", "tasksUnhealthy", "versionInfo", "deployments", "tasksRunning", "tasksStaged"]:
             if key in remote_definition:

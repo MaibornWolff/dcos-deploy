@@ -91,6 +91,7 @@ class EntityContainer(object):
         self.entity = entity
         self.entity_type = entity_type
         self.dependencies = dependencies
+        self.reverse_dependencies = list()
         self.when_condition = when_condition
 
 
