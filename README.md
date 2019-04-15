@@ -1,4 +1,4 @@
-# dcos-deploy
+<p align="center"><img src="img/dcos-deploy-logo.png" alt="dcos-deploy" width="256"></p>
 
 dcos-deploy is a command line tool that helps you to deploy and manage groups of services and apps on [DC/OS](https://dcos.io). It acts as an orchestration engine on top of the existing DC/OS tools and APIs to install, configure and update frameworks, marathon apps and metronome jobs. It is based on a yaml-configuration file which describes the services that you want. It will read this file and execute any changes necessary so that your DC/OS cluster reflects your desired configuration.
 
