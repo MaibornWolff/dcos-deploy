@@ -1,10 +1,10 @@
 from .config import read_config
-from .adapters.base import verify_connectivity
+from .adapters.dcos import fail_on_missing_connectivity
 
 
 class DeploymentRunner(object):
     def __init__(self, config_filename, provided_variables, debug_mode):
-        verify_connectivity()
+        fail_on_missing_connectivity()
         self.already_deployed = dict()  # entitiy-name -> changed
         self.dry_deployed = dict()  # entity-name -> changed
         self.debug_mode = debug_mode

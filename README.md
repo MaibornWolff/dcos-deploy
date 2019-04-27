@@ -98,6 +98,15 @@ variables:
 
 Variables can be used via [Mustache](http://mustache.github.io/) templates in most options and in marathon app definitions and package options. See `examples/elastic` for usage examples. You can not use variables in entity names or outside option strings (ground rule: the yaml file must be syntactically correct without mustache template rendering).
 
+Some variables are automatically provided by `dcos-deploy` based on your cluster. These are:
+
+* `_cluster_version`: The DC/OS version of your cluster, for example `1.12.2`
+* `_cluster_variant`: The DC/OS variant of your cluster, for example `enterprise`
+* `_num_masters`: The number of masters in your cluster
+* `_num_private_agents`: The number of private agents in your cluster (useful if you want to tailor the size of an app or framework node to the cluster size)
+* `_num_public_agents`: The number of public agents in your cluster
+* `_num_all_agents`: The number of public and private agents in your cluster
+
 ### Global config
 To specifiy an attribute for all entities of a specific type you can define it in the global config. The config for a specific entity will be merged with the global config for the corresponding type.
 

@@ -87,6 +87,12 @@ class VariableContainerBuilder:
             self.variables[name] = value
         return self
 
+    def add_direct_variables(self, variables):
+        for name, value in variables.items():
+            if name in self.variables:
+                print("WARNING!: Variable %s with value '%s' will be overwritten by '%s'" % (name, self.variables[name], value))
+            self.variables[name] = value
+
     def render_value(self, value):
         return pystache.render(value, self.variables)
 

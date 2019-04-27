@@ -1,10 +1,10 @@
 from .config import read_config
-from .adapters.base import verify_connectivity
+from .adapters.dcos import fail_on_missing_connectivity
 
 
 class DeletionRunner:
     def __init__(self, config_filename, provided_variables):
-        verify_connectivity()
+        fail_on_missing_connectivity()
         self._already_deleted = dict()  # entitiy-name -> newly deleted
         self._dry_deleted = dict()  # entity-name -> newly deleted
         self._config, self._managers = read_config(config_filename, provided_variables)

@@ -7,6 +7,7 @@ import yaml
 from ..util import decrypt_data, update_dict_with_defaults
 from ..base import ConfigurationException
 from .variables import VariableContainerBuilder
+from .predefined import calculate_predefined_variables
 
 
 META_NAMES = ["variables", "modules", "includes", "global"]
@@ -150,6 +151,7 @@ def read_config(filename, provided_variables):
             entities[key]["_basepath"] = config_basepath
         idx += 1
 
+    variables.add_direct_variables(calculate_predefined_variables())
     variables = variables.build()
     config_helper = ConfigHelper(variables, global_config)
     # init managers
