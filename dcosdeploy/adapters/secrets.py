@@ -54,7 +54,9 @@ class SecretsAdapter(object):
 
     def delete_secret(self, name):
         response = requests.delete(self.base_url + "secret/default/%s" % name, auth=get_auth(), verify=False)
-        if response.status_code == 404:
-            return
-        if not response.ok:
+        if response.ok:
+            return True
+        elif response.status_code == 404:
+            return False
+        else:
             raise Exception("Could not delete secret %s: %s " % (name, response.text))

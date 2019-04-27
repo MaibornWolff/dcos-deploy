@@ -40,6 +40,12 @@ class TaskExecManager(object):
         print("Would run command '%s' in task '%s'" % (config.command, config.task))
         return True
 
+    def delete(self, config, silent=False):
+        return False
+
+    def dry_delete(self, config):
+        return False
+
 
 __config__ = TaskExec
 __manager__ = TaskExecManager

@@ -139,6 +139,21 @@ class AccountsManager(object):
                     changes = True
         return changes
 
+    def delete(self, config, silent=False):
+        print("\tDeleting serviceaccount secret")
+        self.secrets.delete_secret(config.secret)
+        print("\tDeleting account")
+        self.bouncer.delete_account(config.path)
+        print("\tDeletion complete.")
+        return True
+
+    def dry_delete(self, config):
+        if self._does_serviceaccount_exist(config.path):
+            print("Would delete serviceaccount %s" % config.path)
+            return True
+        else:
+            return False
+
 
 __config__ = ServiceAccount
 __manager__ = AccountsManager

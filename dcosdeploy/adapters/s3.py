@@ -25,7 +25,18 @@ class S3FileAdapter(object):
         if not response.readable():
             raise Exception("Could not download file from S3")
         return response.read()
+    
+    def remove_file(self, server, bucket, key):
+        client = self._init_client(server)
+        client.remove_object(bucket, key)
 
+    def does_file_exist(self, server, bucket, key):
+        client = self._init_client(server)
+        try:
+            client.stat_object(bucket, key)
+            return True
+        except NoSuchKey:
+            return False
 
     def _init_client(self, server):
         return Minio(server.endpoint, server.access_key, server.secret_key, secure=True)

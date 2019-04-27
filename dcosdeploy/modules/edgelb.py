@@ -76,6 +76,18 @@ class EdgeLbPoolsManager(object):
         else:
             return False
 
+    def delete(self, config, silent=False):
+        print("\tDeleting pool")
+        deleted = self.api.delete_pool(config.name)
+        print("\tDeleted pool.")
+        return deleted
+
+    def dry_delete(self, config):
+        if config.name in self.api.get_pools():
+            print("Would delete pool %s" % config.name)
+            return True
+        else:
+            return False
 
 _pool_defaults = dict(
     constraints="hostname:UNIQUE",

@@ -75,6 +75,31 @@ class CertsManager(object):
             print("Would create cert %s" % config.name)
             return True
 
+    def delete(self, config, silent=False):
+        print("\tDeleting secrets for cert %s" % config.name)
+        cert_secret = self.secrets.get_secret(config.cert_secret)
+        key_secret = self.secrets.get_secret(config.key_secret)
+        if not key_secret and not cert_secret:
+            print_if(not silent, "\tSecrets already deleted. Not doing anything.")
+            return False
+        if cert_secret:
+            print("\tDeleting existing secret %s" % config.cert_secret)
+            self.secrets.delete_secret(config.cert_secret)
+        if key_secret:
+            print("\tDeleting existing secret %s" % config.key_secret)
+            self.secrets.delete_secret(config.key_secret)
+        print("\tDeletion complete.")
+        return True
+
+    def dry_delete(self, config):
+        cert_secret = self.secrets.get_secret(config.cert_secret)
+        key_secret = self.secrets.get_secret(config.key_secret)
+        if key_secret or cert_secret:
+            print("Would delete secrets for cert %s" % config.name)
+            return True
+        else:
+            return False
+
 
 __config__ = Cert
 __manager__ = CertsManager

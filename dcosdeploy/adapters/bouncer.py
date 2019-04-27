@@ -19,6 +19,15 @@ class BouncerAdapter(object):
             print(response.text)
             raise Exception("Error occured when creating account")
 
+    def delete_account(self, name):
+        response = requests.delete(self.base_url+"/users/"+name, auth=get_auth(), verify=False)
+        if response.ok:
+            return True
+        elif response.status_code == 404:
+            return False
+        else:
+            raise Exception("Error occured when deleting account: %s" % response.text)
+
     def get_groups_for_user(self, name):
         response = requests.get(self.base_url+"/users/%s/groups" % name, auth=get_auth(), verify=False)
         if not response.ok:

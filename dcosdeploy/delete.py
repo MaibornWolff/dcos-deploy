@@ -63,6 +63,8 @@ class DeletionRunner:
             print("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
             return to_delete
         deleted = manager.dry_delete(config.entity)
+        if not deleted:
+            self._already_deleted[name] = False
         self._dry_deleted[name] = deleted
         return deleted or to_delete
 

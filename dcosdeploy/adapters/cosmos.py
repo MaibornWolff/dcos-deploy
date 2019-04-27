@@ -33,7 +33,7 @@ class CosmosAdapter(object):
         response = requests.post(self.package_url+"/repository/add", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
-            raise Exception("Failed to delete package repository %s" % name)
+            raise Exception("Failed to add package repository %s" % name)
         return True
 
     def delete_repository(self, name):
@@ -44,7 +44,7 @@ class CosmosAdapter(object):
         response = requests.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
-            raise Exception("Failed to add package repository %s" % name)
+            raise Exception("Failed to delete package repository %s" % name)
         return True
 
     def describe_service(self, service_name):
@@ -69,7 +69,7 @@ class CosmosAdapter(object):
         response = requests.post(self.package_url+"/install", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
-            raise Exception("Failed to update service %s" % service_name)
+            raise Exception("Failed to install service %s" % service_name)
 
     def update_service(self, service_name, version, options):
         headers = {
@@ -83,6 +83,17 @@ class CosmosAdapter(object):
         if not response.ok:
             print(response.text, flush=True)
             raise Exception("Failed to update service %s" % service_name)
+
+    def uninstall_package(self, service_name, package_name):
+        headers = {
+            "Accept": "application/vnd.dcos.package.uninstall-response+json;charset=utf-8;version=v2",
+            "Content-Type": "application/vnd.dcos.package.uninstall-request+json;charset=utf-8;version=v1",
+        }
+        data = dict(all=True, appId=service_name, packageName=package_name)
+        response = requests.post(self.package_url+"/uninstall", json=data, headers=headers, auth=get_auth(), verify=False)
+        if not response.ok:
+            print(response.text, flush=True)
+            raise Exception("Failed to uninstall service %s" % service_name)
 
     def wait_for_plan_complete(self, service_name, plan, timeout=10*60):
         wait_time = 0

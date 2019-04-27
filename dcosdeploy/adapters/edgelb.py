@@ -36,6 +36,15 @@ class EdgeLbAdapter(object):
         if not response.ok:
             raise Exception("Could not update pool %s: %s " % (config["name"], response.text))
 
+    def delete_pool(self, name):
+        response = requests.delete(self.base_url + "v2/pools/%s" % name, auth=get_auth(), verify=False)
+        if response.ok:
+            return True
+        elif response.status_code == 404:
+            return False
+        else:
+            raise Exception("Unknown error occured: %s" % response.text)
+
     def ping(self):
         response = requests.get(self.base_url + "ping", auth=get_auth(), verify=False)
         if not response.ok:

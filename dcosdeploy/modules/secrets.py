@@ -83,6 +83,19 @@ class SecretsManager(object):
                 print("Would update secret %s" % config.path)
         return changed
 
+    def delete(self, config, silent=False):
+        print("\tDeleting secret")
+        deleted = self.api.delete_secret(config.path)
+        print("\tDeleted secret.")
+        return deleted
+
+    def dry_delete(self, config):
+        if self.api.get_secret(config.path):
+            print("Would delete secret %s" % config.path)
+            return True
+        else:
+            return False
+
 
 __config__ = Secret
 __manager__ = SecretsManager

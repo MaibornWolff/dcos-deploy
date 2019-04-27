@@ -53,6 +53,19 @@ class PackageRepositoriesManager(object):
         else:
             return False
 
+    def delete(self, config, silent=False):
+        print("\tDeleting repository")
+        deleted = self.api.delete_repository(config.name)
+        print("\tDeleted repository.")
+        return deleted
+
+    def dry_delete(self, config):
+        if self._get_repo(config.name):
+            print("Would delete repository %s" % config.name)
+            return True
+        else:
+            return False
+
     def _get_repo(self, name):
         repo_list = self.api.list_repositories()
         for repo in repo_list:

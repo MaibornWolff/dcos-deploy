@@ -156,6 +156,34 @@ class S3FilesManager(object):
                     changed = True
             return changed
 
+    def delete(self, config, silent=False):
+        if config.compress:
+            print("\tRemoving file %s" % config.files[0])
+            self.api.remove_file(config.server, config.bucket, config.files[0])
+            print("\tRemoved file.")
+            return True
+        else:
+            for key, _ in config.files:
+                print("\tRemoving %s" % key)
+                self.api.remove_file(config.server, config.bucket, key)
+            print("\tRemoved all files.")
+            return True
+
+    def dry_delete(self, config):
+        if config.compress:
+            if self.api.does_file_exist(config.server, config.bucket, config.files[0]):
+                print("Would remove file %s" % config.files[0])
+                return True
+            else:
+                return False
+        else:
+            something_gets_removed = False
+            for key, _ in config.files:
+                if self.api.does_file_exist(config.server, config.bucket, key):
+                    print("Would remove file %s" % key)
+                    something_gets_removed = True
+            return something_gets_removed
+
     def _dry_run_single_file(self, server, bucket, key, filename, debug):
         hash = md5_hash(filename)
         files_equal = self.api.files_equal(server, bucket, key, hash)
