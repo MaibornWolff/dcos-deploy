@@ -50,6 +50,8 @@ class EdgeLbAdapter(object):
         if not response.ok:
             if response.status_code == 503:
                 return False
+            elif response.status_code == 404:
+                return False
             else:
                 raise Exception("Could not get ping from edgelb: %s" % response.text)
         return True

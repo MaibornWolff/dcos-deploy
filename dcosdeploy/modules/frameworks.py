@@ -48,7 +48,7 @@ class FrameworksManager(object):
             print_if(not silent, "\tInstalling framework")
             self.api.install_package(config.service_name, config.package_name, config.package_version, config.options)
             print_if(not silent, "\tWaiting for framework to start")
-            self.marathon.wait_for_specific_deployment(config.service_name)
+            self.marathon.wait_for_deployment(config.service_name)
             time.sleep(5)  # Wait a few seconds for admin-lb to catch up
             if self.api.has_plans_api(config.service_name):
                 print_if(not silent, "\tWaiting for deployment plan to finish")
