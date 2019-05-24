@@ -86,7 +86,7 @@ class CosmosAdapter(object):
 
     def uninstall_package(self, service_name, package_name):
         headers = {
-            "Accept": "application/vnd.dcos.package.uninstall-response+json;charset=utf-8;version=v2",
+            "Accept": "application/vnd.dcos.package.uninstall-response+json;charset=utf-8;version=v1",
             "Content-Type": "application/vnd.dcos.package.uninstall-request+json;charset=utf-8;version=v1",
         }
         data = dict(all=True, appId=service_name, packageName=package_name)
