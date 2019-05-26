@@ -384,10 +384,16 @@ The deployment process has some specific restrictions:
 * An already created `cert` entity will not be changed if the `dn` or `hostnames` fields change.
 * Dependencies must be explicitly defined in the `dcos.yml`. Implicit dependencies (like a secret referenced in a marathon app) that are not explicitly stated are not honored by dcos-deploy.
 
+### Deleting entities
+
+dcos-deploy has support for deleting entities. You can use it to delete one or all entities defined (for example to clean up after tests). Do so use the command `dcos-deploy delete`. It will delete all entities defined in your configuration, honoring the dependencies (e.g. deleting a service before deleting the secret associated with it). If you only want to delete a specific entity use `--only <entity-name>`. All entities that have this entity as a dependency will also be deleted (e.g. if you delete a secret a marathon app depending on it will also be deleted). Check the dry-run output to make sure you don't unintentionally delete the wrong entity. The command is idempotent, so deleting an already deleted entity has no effect.
+The delete command will not modify your configuration files. So to make sure that the deleted entity will not be recreated during the next `apply`-run, remove the entity definition from your yaml files.  
+
 
 ## Roadmap
+
+* Support for creating and configuring kubernetes clusters
 * Add as package to the Mesosphere universe for easy installation as a module for the dcos-cli
-* Support more DC/OS services like Edge-LB
 * Better and documented plugin support
 * Provide some sort of verification for configurations
 
