@@ -62,7 +62,7 @@ class ConfigHelper(object):
         return data
 
     def read_yaml(self, filename, render_variables=False):
-        return yaml.load(self.read_file(filename, render_variables))
+        return yaml.safe_load(self.read_file(filename, render_variables))
 
     def read_json(self, filename, render_variables=False):
         return json.loads(self.read_file(filename, render_variables))
@@ -117,7 +117,7 @@ def read_config(filename, provided_variables):
                 encryption_key = global_config["vault"]["key"]
             encryption_key = variables.render_value(encryption_key)
             config = decrypt_data(encryption_key, config)
-        config = yaml.load(config)
+        config = yaml.safe_load(config)
         # Read variables
         variables.add_variables(config_basepath, config.get("variables", dict()))
         # Read global config

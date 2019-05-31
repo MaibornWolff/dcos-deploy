@@ -126,6 +126,7 @@ test1:
 
 
 @mock.patch("dcosdeploy.auth.get_base_url", lambda: "/bla")
+@mock.patch("dcosdeploy.config.reader.calculate_predefined_variables", lambda: dict())
 class ConfigTest(unittest.TestCase):
     def test_marathon_simple(self):
         config, _ = read_config_mocked_open(dict(), MARATHON_SIMPLE, "{}")

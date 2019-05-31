@@ -1,7 +1,7 @@
 PyYaml==5.1
 pystache==0.5.4
 click==7.0
-requests==2.21.0
-minio==4.0.12
-cryptography==2.6.1
+requests==2.22.0
+minio==4.0.17
+cryptography==2.7
 PyJWT==1.7.1

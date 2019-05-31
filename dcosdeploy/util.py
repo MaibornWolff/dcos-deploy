@@ -9,7 +9,7 @@ from cryptography.fernet import Fernet
 def read_yaml(filename):
     with open(filename) as yaml_file:
         data = yaml_file.read()
-    return yaml.load(data)
+    return yaml.safe_load(data)
 
 
 def generate_key():

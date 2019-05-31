@@ -15,7 +15,7 @@ def read_requirements():
 
 setuptools.setup(
     name="dcos-deploy",
-    version="0.1.0",
+    version="0.2.0",
     author="MaibornWolff",
     description="Deploy and orchestrate DC/OS services and apps",
     long_description=long_description,
