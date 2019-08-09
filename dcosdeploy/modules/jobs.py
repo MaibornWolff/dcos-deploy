@@ -1,3 +1,4 @@
+import json
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.adapters.metronome import MetronomeAdapter
 from dcosdeploy.util import compare_dicts, print_if, update_dict_with_defaults
@@ -15,8 +16,14 @@ def parse_config(name, config, config_helper):
     job_definition_path = config.get("definition")
     if not job_definition_path:
         raise ConfigurationException("Job %s has no definition file" % name)
+    extra_vars = config.get("extra_vars", dict())
+    if extra_vars:
+        extra_vars = config_helper.prepare_extra_vars(extra_vars)
     job_definition_path = config_helper.render(job_definition_path)
-    job_definition = config_helper.read_json(job_definition_path, render_variables=True)
+
+    job_definition = config_helper.read_file(job_definition_path)
+    job_definition = config_helper.render(job_definition, extra_vars)
+    job_definition = json.loads(job_definition)
     if path:
         path = config_helper.render(path)
     else:
