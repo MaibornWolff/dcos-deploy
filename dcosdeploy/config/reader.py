@@ -24,6 +24,7 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.edgelb",
     "dcosdeploy.modules.s3",
     "dcosdeploy.modules.taskexec",
+    "dcosdeploy.modules.httpcall",
 ]
 
 

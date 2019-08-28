@@ -372,6 +372,20 @@ As dcos-deploy has no state it cannnot detect if this command has been run befor
 
 Example for this is: Uploading configuration files to S3 and triggering a redownload of the files into the service by a command. See [examples](examples/demo) for details.
 
+### HttpCall
+`type: httpcall` allows to make HTTP calls as part of deployments. This is similar to `taskexec` and can be used to upload configuration to services as part of deployments. It has the following specific options:
+
+* `url`: HTTP(s) URL to call. Required. Variables can be used.
+* `method`: HTTP method to use for the call, defaults to `GET`.
+* `ignore_errors`: If set to true a non-200 result status code of the call will not be treated as a failure. Defaults to false.
+* `body`: Allows to send a request body along. Optional. Has the following sub options:
+  * `content`: Specifies the content of the request body.
+  * `file`: Contents of this file will be used as request body. Is mutually exclusive with `content`. Variables can be used in the filename.
+  * `render`: If set to true the request body from `file` or `content` will be rendered using mustache.
+
+If the URL is neither a http nor a https url it wil be treated as a path behind the DC/OS adminrouter. When executing the call dcos-deploy will use its DC/OS credentials to authenticate against the adminrouter. So for example if a DC/OS cluster is reachable under `https://dcos.mycluster` and `url` is defined as `/service/myservice/reload` then dcos-deploy will call the URL `https://dcos.mycluster/service/myservice/reload`.
+
+The same restrictions from `taskexec` in regards to state apply. As such this entity will run every time `apply` is called unless `when` and dependencies are used (see description for `taskexec` above for details).
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.
