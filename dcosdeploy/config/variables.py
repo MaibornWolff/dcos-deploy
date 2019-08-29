@@ -8,12 +8,13 @@ from ..util import decrypt_data
 class VariableContainer:
     def __init__(self, variables):
         self.variables = variables
+        self.extra_vars = dict()
+    
+    def set_extra_vars(self, extra_vars):
+        self.extra_vars = extra_vars
 
-    def render(self, text, extra_vars=dict()):
-        if extra_vars:
-            variables = {**self.variables, **extra_vars}
-        else:
-            variables = self.variables
+    def render(self, text):
+        variables = {**self.variables, **self.extra_vars}
         result_text = pystache.render(text, variables)
         if result_text.count("{{"):
             raise ConfigurationException("Unresolved variable")
@@ -93,8 +94,12 @@ class VariableContainerBuilder:
                 print("WARNING!: Variable %s with value '%s' will be overwritten by '%s'" % (name, self.variables[name], value))
             self.variables[name] = value
 
-    def render_value(self, value):
-        return pystache.render(value, self.variables)
+    def render_value(self, value, extra_vars=dict()):
+        if extra_vars:
+            variables = {**self.variables, **extra_vars}
+        else:
+            variables = self.variables
+        return pystache.render(value, variables)
 
     def build(self):
         for name, value in self.provided_variables.items():

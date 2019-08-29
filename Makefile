@@ -21,7 +21,8 @@ binary:
 	--hidden-import dcosdeploy.modules.repositories \
 	--hidden-import dcosdeploy.modules.edgelb \
 	--hidden-import dcosdeploy.modules.s3 \
-	--hidden-import dcosdeploy.modules.taskexec
+	--hidden-import dcosdeploy.modules.taskexec \
+	--hidden-import dcosdeploy.modules.httpcall
 
 dist:
 	@python3 setup.py sdist

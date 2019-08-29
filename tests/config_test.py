@@ -124,6 +124,33 @@ test1:
   pre: bla
 """
 
+LOOP = """
+modules:
+    - "./:dummy_module"
+loop:
+  type: dummy
+  test: bla
+  loop:
+    foo:
+      - a
+      - b
+    bar:
+      - c
+      - d
+"""
+
+LOOP_TEMPLATE_NAME = """
+modules:
+    - "./:dummy_module"
+"{{foo}}-loop":
+  type: dummy
+  test: bla
+  loop:
+    foo:
+      - a
+      - b
+"""
+
 
 @mock.patch("dcosdeploy.auth.get_base_url", lambda: "/bla")
 @mock.patch("dcosdeploy.config.reader.calculate_predefined_variables", lambda: dict())
@@ -192,6 +219,20 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue("test1" in config)
         self.assertTrue(config["test1"].entity.preprocess, False)
       
+    def test_loop(self):
+        config, _ = read_config_mocked_open(dict(), LOOP)
+        self.assertEqual(len(config), 4)
+        self.assertTrue("loop-a-c" in config)
+        self.assertTrue("loop-a-d" in config)
+        self.assertTrue("loop-b-c" in config)
+        self.assertTrue("loop-b-d" in config)
+
+    def test_loop_template_name(self):
+        config, _ = read_config_mocked_open(dict(), LOOP_TEMPLATE_NAME)
+        self.assertEqual(len(config), 2)
+        self.assertTrue("a-loop" in config)
+        self.assertTrue("b-loop" in config)
+
     def test_confighelper_prepare_extra_vars(self):
         helper = config.ConfigHelper(dict(foo="bar"), dict())
         vars = helper.prepare_extra_vars({"a": "b", "foo:bar": {"abc": "xyz"}, "foo:baz": {"abc": "abc"}})

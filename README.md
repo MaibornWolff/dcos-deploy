@@ -190,6 +190,10 @@ entityname:
     var2: bar
   dependencies:
     - otherentity
+  loop:
+    var3:
+      - a
+      - b
 ```
 
 `type` defines what kind of entity this is. Currently implemented are
@@ -209,6 +213,8 @@ See their respective sections below for details.
 
 `dependencies` takes a list of entity names that this entity depends on. Optionally the dependency type can be provided. Currently supported are `create` (default) and `update`. They can be defined by adding a colon after the entity name and then the type (e.g. `otherentity:create`). A `create` dependency is only honored during creation time of an entity and means that the entity will only be created after all its dependencies have been successfully created (e.g. a service account for a framework). An update dependency extends the `create` dependency and is currently only honored by the `marathon` module. If during an apply-operation a dependency of a marathon app is changed (e.g. a secret) and the app has no changes it will be restarted.
 
+`loop` is very useful for describing multiple entities that are very similar. The values of the variables defined under `loop` will be extended into a cross product and for each combination an entity with these extra variables will be created. These extra variables can be used like normal variables to parametrize the entity. By default the entity name will be created by concatenating the given name with the values of all loop variables (in the example above these would be `entityname-a` and `entityname-b`). This can be overridden by using an entityname that has template parameters (for example `{{var3}}-myentity`).
+
 ### Marathon app
 `type: app` defines a marathon app. It has the following specific options:
 * `path`: id of the app. If not specified the `id` field of the marathon app definition is used. Variables can be used.
@@ -216,15 +222,19 @@ See their respective sections below for details.
 * `extra_vars`: key/value-pairs of of extra variables and values to be used when rendering the app definition file.
 
 If you want to start several apps from the same basic app definition, there is a meta option to allow this:
-```
+
+```yaml
 mymultiapp:
   type: app
   _template: marathon.json
   _vars: mymultiapp.yml
 ```
 
+This option and `loop` can not be used at the same time.
+
 The `marathon.json` file is your normal app definition json file, paramerised with mustache variables. The `mymultiapp.yml` file has the following structure:
-```
+
+```yaml
 defaults: # optional, key/value-pairs of variables, can get overwritten in the instances section
   var1: foo
   var2: bar
@@ -235,10 +245,12 @@ instances:
   instance2:
     var3: world
 ```
+
 For each key under `instances` dcos-deploy will create a marathon app from the template file specialized with the variables provided.
 
 In both the `extra_vars` and the variables in the `instances` you can define dependent variables. The variable name must be in the form `<existing variable name>:<value to compare>`, and the value must be key-value pairs of variables. If `<existing variable name>` has value `<value to compare>` the variables defined under that key will be added to the variables for that entity, otherwise they will be discarded. A simple example:
-```
+
+```yaml
 variables:
   env:
     required: True
@@ -252,6 +264,7 @@ myapp:
     env:int:
       foo: baz
 ```
+
 If `env` has value `test`, the variable `foo` will have value `bar`, if `env` has value `int`, the variable `foo` will have value `baz`, in neither of these cases `foo` will have value `something`.
 
 If not defined marathon will add a number of default fields to an app definition. dcos-deploy tries to detect these defaults and exclude them when checking for changes between the local definition and the one known to marathon. This is rather complex as these default values partly depend on several modes (network, container type, etc.). If you find a case where dcos-deploy falesly reports a change please open an issue at the github project and attach your app definition and the definition reported by marathon (via `dcos marathon app show <app-id>`).

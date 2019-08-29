@@ -2,7 +2,7 @@ import difflib
 import hashlib
 import json
 import os
-import yaml
+import oyaml as yaml
 from cryptography.fernet import Fernet
 
 

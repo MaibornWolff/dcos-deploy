@@ -23,6 +23,7 @@ class AppsTest(unittest.TestCase):
         with mock.patch('builtins.open', open_mock):
             config = list(preprocess_config("multi", dict(_vars="bla.yaml", _template="bla.json"), config_helper))
             self.assertEqual("multi-test1", config[0][0])
+            config_helper.set_extra_vars(config[0][1]["extra_vars"])
             service = parse_config(config[0][0], config[0][1], config_helper)
         self.assertIsNotNone(service)
         self.assertTrue(isinstance(service, MarathonApp))

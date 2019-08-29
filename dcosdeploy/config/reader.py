@@ -1,9 +1,11 @@
+import copy
 import importlib
+import itertools
 import sys
 import os
 import json
 import pystache
-import yaml
+import oyaml as yaml
 from ..util import decrypt_data, update_dict_with_defaults
 from ..base import ConfigurationException
 from .variables import VariableContainerBuilder
@@ -35,6 +37,9 @@ class ConfigHelper(object):
 
     def set_base_path(self, base_path):
         self.base_path = base_path
+    
+    def set_extra_vars(self, extra_vars):
+        self.variables_container.set_extra_vars(self.prepare_extra_vars(extra_vars))
 
     def abspath(self, path):
         return os.path.abspath(os.path.join(self.base_path, path))
@@ -68,8 +73,8 @@ class ConfigHelper(object):
     def read_json(self, filename, render_variables=False):
         return json.loads(self.read_file(filename, render_variables))
 
-    def render(self, text, extra_vars=dict()):
-        return self.variables_container.render(text, extra_vars)
+    def render(self, text):
+        return self.variables_container.render(text)
 
     def prepare_extra_vars(self, extra_vars):
         return dict(self._prepare_extra_vars_inner(extra_vars))
@@ -148,8 +153,15 @@ def read_config(filename, provided_variables):
                 continue
             if key in entities:
                 raise ConfigurationException("%s found in several files" % key)
-            entities[key] = values
-            entities[key]["_basepath"] = config_basepath
+            if "loop" in values:
+                for name, value in _expand_loop(key, values):
+                    if name in entities:
+                        raise ConfigurationException("%s found in several files" % name)
+                    entities[name] = value
+                    entities[name]["_basepath"] = config_basepath
+            else:
+                entities[key] = values
+                entities[key]["_basepath"] = config_basepath
         idx += 1
 
     variables.add_direct_variables(calculate_predefined_variables())
@@ -171,6 +183,7 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
         parse_config_func = module["parser"]
         preprocess_config_func = module["preprocesser"]
         config_helper.set_base_path(entity_config["_basepath"])
+        config_helper.set_extra_vars(entity_config.get("extra_vars", dict()))
         entities = [(name, entity_config)]
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
@@ -244,3 +257,21 @@ def _entity_should_be_excluded(variables, restriction_only, restriction_except):
                 elif variables.get(var) == value:
                     return True
     return False
+
+
+def _expand_loop(key, values):
+    # TODO: make loop keys ordered
+    loop = values["loop"]
+    del values["loop"]
+    extra_vars = values.get("extra_vars", dict())
+    loop_vars = loop.keys()
+    if "{{" in key:
+        name_template = key
+    else:
+        name_template = "%s-%s" % (key, '-'.join(["{{%s}}" % var for var in loop_vars]))
+    for combination in itertools.product(*[loop[var] for var in loop_vars]):
+        variables = {**extra_vars, **dict([(var, combination[idx]) for idx, var in enumerate(loop_vars)])}
+        name = pystache.render(name_template, variables)
+        entity_config = copy.deepcopy(values)
+        entity_config["extra_vars"] = variables
+        yield name, entity_config
