@@ -260,7 +260,6 @@ def _entity_should_be_excluded(variables, restriction_only, restriction_except):
 
 
 def _expand_loop(key, values):
-    # TODO: make loop keys ordered
     loop = values["loop"]
     del values["loop"]
     extra_vars = values.get("extra_vars", dict())

@@ -71,8 +71,7 @@ class FrameworksManager(object):
         options_diff = compare_dicts(old_options, config.options)
         version_equal = description["package"]["version"] == config.package_version
         if not version_equal:
-            if debug:
-                print("Would update %s from %s to %s" % (config.service_name, description["package"]["version"], config.package_version))
+            print("Would update %s from %s to %s" % (config.service_name, description["package"]["version"], config.package_version))
         if options_diff:
             if debug:
                 print("Would change config of %s:" % config.service_name)
