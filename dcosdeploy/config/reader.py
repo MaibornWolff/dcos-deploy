@@ -183,11 +183,11 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
         parse_config_func = module["parser"]
         preprocess_config_func = module["preprocesser"]
         config_helper.set_base_path(entity_config["_basepath"])
-        config_helper.set_extra_vars(entity_config.get("extra_vars", dict()))
         entities = [(name, entity_config)]
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
         for name, entity_config in entities:
+            config_helper.set_extra_vars(entity_config.get("extra_vars", dict()))
             if entity_type in global_config:
                 update_dict_with_defaults(entity_config, global_config[entity_type])
             only_restriction = entity_config.get("only", dict())
