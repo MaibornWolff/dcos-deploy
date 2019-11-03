@@ -6,14 +6,14 @@ class CAAdapter(object):
     def __init__(self):
         self.base_url = get_base_url() + "/ca/api/v2/"
 
-    def generate_key(self, dn, hosts=list(), size=2048):
+    def generate_key(self, dn, hosts=list(), algorithm="rsa", size=2048):
         data = {
           "names": [
             dn
           ],
           "hosts": hosts,
           "key": {
-            "algo": "rsa",
+            "algo": algorithm,
             "size": size
           }
         }

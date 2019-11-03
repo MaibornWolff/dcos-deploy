@@ -1,3 +1,5 @@
+from cryptography.hazmat import backends
+from cryptography.hazmat.primitives import serialization
 from dcosdeploy.base import ConfigurationException
 from dcosdeploy.util import print_if
 from dcosdeploy.adapters.ca import CAAdapter
@@ -5,12 +7,16 @@ from dcosdeploy.adapters.secrets import SecretsAdapter
 
 
 class Cert(object):
-    def __init__(self, name, cert_secret, key_secret, dn, hostnames):
+    def __init__(self, name, cert_secret, key_secret, dn, hostnames, encoding, format, algorithm, key_size):
         self.name = name
         self.cert_secret = cert_secret
         self.key_secret = key_secret
         self.dn = dn
         self.hostnames = hostnames
+        self.encoding = encoding
+        self.format = format
+        self.algorithm = algorithm
+        self.key_size = key_size
 
 
 def parse_config(name, config, config_helper):
@@ -18,18 +24,42 @@ def parse_config(name, config, config_helper):
     key_secret = config.get("key_secret")
     dn = config.get("dn")
     hostnames = config.get("hostnames", list())
+    encoding = config.get("encoding")
+    format = config.get("format")
+    algorithm = config.get("algorithm", "rsa").lower()
+    key_size = config.get("key_size")
     if not cert_secret:
         raise ConfigurationException("Cert %s has no cert_secret" % name)
     if not key_secret:
         raise ConfigurationException("Cert %s has no key_secret" % name)
     if not dn:
         raise ConfigurationException("Cert %s has no dn" % name)
+    if encoding and not encoding.lower() in ("pem", "der"):
+        raise ConfigurationException("Cert %s encoding must be one of pem, der" % name)
+    if format and not format.lower() in ("pkcs1", "pkcs8"):
+        raise ConfigurationException("Cert %s format must be one of pkcs1, pkcs8" % name)
+    if not algorithm in ("rsa", "ecdsa"):
+        raise ConfigurationException("Cert %s algorithm must be one of rsa, ecdsa" % name)
+    if algorithm == "rsa":
+        if key_size:
+            key_size = int(key_size)
+            if not key_size in (2048, 4096, 8192):
+                raise ConfigurationException("Cert %s key_size must be one of 2048, 4096, 8192" % name)
+        else:
+            key_size = 2048
+    elif algorithm == "ecdsa":
+        if key_size:
+            key_size = int(key_size)
+            if not key_size in (256, 384, 512):
+                raise ConfigurationException("Cert %s key_size must be one of 256, 384, 512" % name)
+        else:
+            key_size = 256
     cert_secret = config_helper.render(cert_secret)
     key_secret = config_helper.render(key_secret)
     for k, v in dn.items():
         dn[k] = config_helper.render(v)
     hostnames = [config_helper.render(hn) for hn in hostnames]
-    return Cert(name, cert_secret, key_secret, dn, hostnames)
+    return Cert(name, cert_secret, key_secret, dn, hostnames, encoding, format, algorithm, key_size)
 
 
 class CertsManager(object):
@@ -51,7 +81,8 @@ class CertsManager(object):
             self.secrets.delete_secret(config.key_secret)
 
         print_if(not silent, "\tGenerating private key")
-        csr, private_key = self.ca.generate_key(config.dn, config.hostnames)
+        csr, private_key = self.ca.generate_key(config.dn, config.hostnames, config.algorithm, config.key_size)
+        private_key = _convert_key(config.encoding, config.format, private_key)
         print_if(not silent, "\tSigning csr")
         cert = self.ca.sign_csr(csr, config.hostnames)
         print_if(not silent, "\tCreating secrets")
@@ -99,6 +130,28 @@ class CertsManager(object):
             return True
         else:
             return False
+
+
+def _convert_key(encoding_name, format_name, private_key):
+    if not encoding_name and not format_name:
+        return private_key
+    backend = backends.default_backend()
+    key_obj = serialization.load_pem_private_key(private_key.encode("utf-8"), None, backend)
+    if encoding_name.lower() == "pem":
+        encoding = serialization.Encoding.PEM
+    elif encoding_name.lower() == "der":
+        encoding = serialization.Encoding.DER
+    else:
+        raise Exception("Unknown key encoding: %s" % encoding_name)
+    if format_name.lower() == "pkcs1":
+        format = serialization.PrivateFormat.TraditionalOpenSSL
+    elif format_name.lower() == "pkcs8":
+        format = serialization.PrivateFormat.PKCS8
+    else:
+        raise Exception("Unknown key format: %s" % format_name)
+
+    target_key = key_obj.private_bytes(encoding=encoding, format=format, encryption_algorithm=serialization.NoEncryption())
+    return target_key.decode("utf-8")
 
 
 __config__ = Cert

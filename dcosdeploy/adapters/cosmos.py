@@ -28,7 +28,7 @@ class CosmosAdapter(object):
             "Content-Type": "application/vnd.dcos.package.repository.add-request+json;charset=utf-8;version=v1",
         }
         data = dict(name=name, uri=uri)
-        if index:
+        if index is not None:
             data["index"] = index
         response = requests.post(self.package_url+"/repository/add", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:

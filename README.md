@@ -318,13 +318,19 @@ permissions:
 ```
 
 ### X.509 certificate
+
 `type: cert` is a special type that uses the [DC/OS CA API](https://docs.mesosphere.com/1.11/security/ent/tls-ssl/ca-api/) to create a public-private keypair, sign it with the internal DC/OS CA and provide the key and certificate as secrets. This can only be used on EE clusters. It has the following specific options:
+
 * `cert_secret`: secret path to store the certificate. Required. Variables can be used.
 * `key_secret`: secret path to store the key. Required. Variables can be used.
 * `dn`: distinguished name to be used for the certificate. Requied. Variables can be used.
-* `hostnames`:  List of hostnames to put in the certificate. Optional.
+* `hostnames`: List of hostnames to put in the certificate. Optional.
+* `encoding`: Encoding to use for the private key (PEM, DER), default is PEM. Optional.
+* `format`: Format to use for the private key (PKCS1, PKCS8), default is PKCS1. Optional.
+* `algorithm`: Algorithm to use for the private key (RSA, ECDSA), default is RSA. Optional.
+* `key_size`: Key size in bits to use for the private key. Default is 2048 for RSA and 256 for ECDSA. Optional.
 
-One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `secret` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.mesosphere.com/1.11/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
+One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `cert` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.mesosphere.com/1.11/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
 
 ### Package repository
 `type: repository` defines a package repository. It has the following specific options:

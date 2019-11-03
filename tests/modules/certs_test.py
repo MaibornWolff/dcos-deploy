@@ -17,7 +17,7 @@ class CertsTest(unittest.TestCase):
 
     def test_existing_cert(self):
         from dcosdeploy.modules.certs import Cert, CertsManager
-        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list())
+        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list(), None, None, "rsa", 2048)
         from dcosdeploy.adapters.secrets import SecretsAdapter
         m = mock.Mock()
         m.side_effect = [True, True]
@@ -29,12 +29,12 @@ class CertsTest(unittest.TestCase):
     @mock.patch("dcosdeploy.modules.certs.SecretsAdapter")
     def test_half_existing_cert(self, mock_secretsadapter, mock_caadapter):
         # given
-        mock_caadapter.return_value.generate_key.side_effect = lambda x, y: ("csr", "key")
+        mock_caadapter.return_value.generate_key.side_effect = lambda a, b, x, y: ("csr", "key")
         mock_caadapter.return_value.sign_csr.return_value = "cert"
         mock_secretsadapter.return_value.get_secret.side_effect = lambda name: True if name == "cert_bla" else False
         # when
         from dcosdeploy.modules.certs import Cert, CertsManager
-        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list())
+        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list(), None, None, "rsa", 2048)
         certs = CertsManager()
         result = certs.deploy(cert, silent=True)
         # then
@@ -47,12 +47,12 @@ class CertsTest(unittest.TestCase):
     @mock.patch("dcosdeploy.modules.certs.SecretsAdapter")
     def test_deploy(self, mock_secretsadapter, mock_caadapter):
         # given
-        mock_caadapter.return_value.generate_key.side_effect = lambda x, y: ("csr", "key")
+        mock_caadapter.return_value.generate_key.side_effect = lambda a, b, x, y: ("csr", "key")
         mock_caadapter.return_value.sign_csr.return_value = "cert"
         mock_secretsadapter.return_value.get_secret.side_effect = lambda x: False
         # when
         from dcosdeploy.modules.certs import Cert, CertsManager
-        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list())
+        cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list(), None, None, "rsa", 2048)
         certs = CertsManager()
         result = certs.deploy(cert, silent=True)
         # then
