@@ -1,5 +1,6 @@
+from urllib3 import PoolManager
 from minio import Minio
-from minio.error import NoSuchKey
+from minio.error import NoSuchKey, NoSuchBucket
 
 
 class S3FileAdapter(object):
@@ -11,8 +12,10 @@ class S3FileAdapter(object):
         client = self._init_client(server)
         try:
             stat = client.stat_object(bucket, key)
-            return hash == stat.metadata.get("x-amz-meta-hash", "")
+            return hash == stat.metadata.get(self._hash_key(server), "")
         except NoSuchKey:
+            return None
+        except NoSuchBucket:
             return None
 
     def upload_file(self, server, bucket, key, file_obj, file_size, hash):
@@ -37,6 +40,31 @@ class S3FileAdapter(object):
             return True
         except NoSuchKey:
             return False
+        except NoSuchBucket:
+            return False
+
+    def does_bucket_exist(self, server, bucket):
+        client = self._init_client(server)
+        return client.bucket_exists(bucket)
+
+    def create_bucket(self, server, bucket):
+        client = self._init_client(server)
+        client.make_bucket(bucket)
+
+    def set_bucket_policy(self, server, bucket, policy):
+        client = self._init_client(server)
+        client.set_bucket_policy(bucket, policy)
+
+    def _hash_key(self, server):
+        """Try to detect if endpoint is AWS S3 and use lower case key, minio uses upper case"""
+        if "amazonaws" in server.endpoint:
+            return "x-amz-meta-hash"
+        else:
+            return "X-Amz-Meta-Hash"
 
     def _init_client(self, server):
-        return Minio(server.endpoint, server.access_key, server.secret_key, secure=True)
+        if not server.ssl_verify:
+            pool = PoolManager(cert_reqs='CERT_NONE')
+        else:
+            pool = None
+        return Minio(server.endpoint, server.access_key, server.secret_key, secure=True, http_client=pool)

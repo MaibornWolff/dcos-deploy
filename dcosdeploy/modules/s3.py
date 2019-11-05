@@ -6,18 +6,21 @@ from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_re
 
 
 class S3Server(object):
-    def __init__(self, endpoint, access_key, secret_key):
+    def __init__(self, endpoint, access_key, secret_key, ssl_verify):
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
+        self.ssl_verify = ssl_verify
 
 
 class S3File(object):
-    def __init__(self, server, bucket, files, compress):
+    def __init__(self, server, bucket, files, compress, create_bucket, bucket_policy):
         self.server = server
         self.bucket = bucket
         self.files = files  # list of (s3_key, local_filename) or (key, list of (filename, path in zip))
         self.compress = compress
+        self.create_bucket = create_bucket
+        self.bucket_policy = bucket_policy
 
 
 def parse_config(name, config, config_helper):
@@ -39,6 +42,10 @@ def parse_config(name, config, config_helper):
     if not key:
         raise ConfigurationException("Field 'destination.key' is required for s3file '%s'" % name)
     key = config_helper.render(key)
+    create_bucket = destination.get("create_bucket", False)
+    bucket_policy = destination.get("bucket_policy")
+    if bucket_policy:
+        bucket_policy = config_helper.render(bucket_policy)
 
     compress = config.get("compress")
     if compress:
@@ -48,7 +55,7 @@ def parse_config(name, config, config_helper):
 
     files = _collect_files(name, source, key, compress, config_helper)
     server = _parse_server_config(name, server, config_helper)
-    return S3File(server, bucket, files, compress)
+    return S3File(server, bucket, files, compress, create_bucket, bucket_policy)
 
 
 def _parse_server_config(name, server, config_helper):
@@ -64,7 +71,8 @@ def _parse_server_config(name, server, config_helper):
     if not secret_key:
         raise ConfigurationException("Field 'server.secret_key' is required for s3file '%s'" % name)
     secret_key = config_helper.render(secret_key)
-    return S3Server(endpoint, access_key, secret_key)
+    ssl_verify = server.get("ssl_verify", True)
+    return S3Server(endpoint, access_key, secret_key, ssl_verify)
 
 
 def _collect_files(name, source, key, compress, config_helper):
@@ -108,6 +116,13 @@ class S3FilesManager(object):
         self.api = S3FileAdapter()
 
     def deploy(self, config, dependencies_changed=False, silent=False):
+        if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
+            print_if(not silent, "\tCreating bucket %s" % config.bucket)
+            self.api.create_bucket(config.server, config.bucket)
+            print_if(not silent, "\tCreated bucket %s" % config.bucket)
+            if config.bucket_policy:
+                self.api.set_bucket_policy(config.server, config.bucket, config.bucket_policy)
+                print_if(not silent, "\tSet policy for bucket %s" % config.bucket)
         if config.compress:
             zip_obj = self._compress_zip(config.files[1])
             size = zip_obj.tell()
@@ -134,6 +149,8 @@ class S3FilesManager(object):
             return changed
 
     def dry_run(self, config, dependencies_changed=False, debug=False):
+        if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
+            print("Would create bucket %s" % config.bucket)
         if config.compress:
             hash = self._hash_for_file_list(config.files[1])
             files_equal = self.api.files_equal(config.server, config.bucket, config.files[0], hash)

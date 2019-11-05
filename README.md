@@ -356,10 +356,13 @@ At the moment dcos-deploy can not safely detect if the pool config was changed s
   * `endpoint`: endpoint of your s3-compatible storage. If you use AWS S3 set this to your region endpoint (e.g. `s3.eu-central-1.amazonaws.com`). Required. Variables can be used.
   * `access_key`: your access key. Required. Variables can be used. For security reasons you should provide the value via environment variable. Make sure the iam user associated with these credentials has all rights for retrieving and uploading objects (`s3:Get*` and `s3:Put*`).
   * `secret_key`: your secret access key. Required. Variables can be used. For security reasons you should provide the value via environment variable.
+  * `ssl_verify`: Set to false to disable ssl verifcation for s3 connection. Defaults to true. Optional.
 * `source`: path to your file or folder to be uploaded to s3. Should be relative to the `dcos.yml` file. Required. Variables can be used.
 * `destination`:
   * `bucket`: name of the bucket to use. Required. Variables can be used.
   * `key`: key to store the file(s) under. Required. Variables can be used.
+  * `create_bucket`: Set to true to create bucket if it does not exist. Defaults to false. Optional.
+  * `bucket_policy`: S3 bucket policy content. When bucket will be created because of `create_bucket: true` the policy will be applied. Optional.
 * `compress`: type of compressed archive to combine the files in. Currently only supported is `zip`. Optional. Variables can be used.
 
 This entity has several modes of operation:
