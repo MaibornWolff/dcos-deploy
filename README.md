@@ -283,9 +283,13 @@ During installation of a package dcos-deploy will wait until the framework is in
 Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`). dcos-deploy will not wait for the completion of the update as it assumes that any updates are done in a rolling-restart fashion.
 
 ### Metronome job
+
 `type: job` defines a metronome job. It has the following specific options:
+
 * `path`: id of the job. If not specified the `id` field of the job definition is used. Variables can be used.
 * `definition`: path to the metronome job definition json file. Required. Variables can be used in the path and in the json file itsself.
+
+The job definition is expected to be in the format used starting with DC/S 1.13. It is described in the [DC/OS 1.13 release notes](https://docs.d2iq.com/mesosphere/dcos/1.13/release-notes/1.13.0/#using-separate-json-files-for-job-scheduling).
 
 ### Secret
 `type: secret` defines a secret. This can only be used on EE clusters. It has the following specific options:
