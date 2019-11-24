@@ -188,6 +188,7 @@ entityname:
     var1: foo
   except:
     var2: bar
+  state: removed
   dependencies:
     - otherentity
   loop:
@@ -210,6 +211,8 @@ entityname:
 See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
+
+`state` can be used to define a specific state for an entity. Currently only none (default, option is ignored) and `removed` are supported. By specifying `state: removed` the entity will be deleted if it exists. This can be useful in several ways. For example in air-gapped clusters the normally configured universe repository is not reachable and must be removed before other frameworks can be installed from local universes / package registries. This can be accomplished by defining the universe repo as an entity with `state: removed`.
 
 `dependencies` takes a list of entity names that this entity depends on. Optionally the dependency type can be provided. Currently supported are `create` (default) and `update`. They can be defined by adding a colon after the entity name and then the type (e.g. `otherentity:create`). A `create` dependency is only honored during creation time of an entity and means that the entity will only be created after all its dependencies have been successfully created (e.g. a service account for a framework). An update dependency extends the `create` dependency and is currently only honored by the `marathon` module. If during an apply-operation a dependency of a marathon app is changed (e.g. a secret) and the app has no changes it will be restarted.
 

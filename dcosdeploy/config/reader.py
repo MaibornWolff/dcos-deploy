@@ -1,4 +1,5 @@
 import copy
+import enum
 import importlib
 import itertools
 import sys
@@ -93,13 +94,28 @@ class ConfigHelper(object):
                 yield (key, value)
 
 
+class StateEnum(enum.Enum):
+    NONE = 0
+    REMOVED = 1
+
+    @staticmethod
+    def convert(name):
+        if not name:
+            return StateEnum.NONE
+        elif name.lower() == "removed":
+            return StateEnum.REMOVED
+        else:
+            raise ConfigurationException("Unknown state value '%s'" % name)
+
+
 class EntityContainer(object):
-    def __init__(self, entity, entity_type, dependencies, when_condition):
+    def __init__(self, entity, entity_type, dependencies, when_condition, state):
         self.entity = entity
         self.entity_type = entity_type
         self.dependencies = dependencies
         self.reverse_dependencies = list()
         self.when_condition = when_condition
+        self.state = state
 
 
 def read_config(filename, provided_variables):
@@ -193,11 +209,15 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
             when_condition = entity_config.get("when")
+            state = entity_config.get("state")
             if when_condition and when_condition not in ["dependencies-changed"]:
                 raise ConfigurationException("Unknown when '%s' for '%s'" % (when_condition, name))
             if _entity_should_be_excluded(variables, only_restriction, except_restriction):
                 excluded_entities.append(name)
                 continue
+            if state and state not in ["removed"]:
+                raise ConfigurationException("Unknown state '%s for '%s" % (state, name))
+            state = StateEnum.convert(state)
             dependencies_config = entity_config.get("dependencies", list())
             entity_object = parse_config_func(name, entity_config, config_helper)
             dependencies = list()
@@ -207,7 +227,7 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
                 else:
                     dep_type = "create"
                 dependencies.append((dependency, dep_type))
-            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition)
+            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition, state)
             deployment_objects[name] = container
     _validate_dependencies(deployment_objects, excluded_entities)
     return deployment_objects

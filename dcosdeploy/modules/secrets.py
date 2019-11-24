@@ -20,6 +20,8 @@ def parse_config(name, config, config_helper):
     file_path = config.get("file")
     render = config.get("render", False)
     path = config_helper.render(path)
+    if path[0] == '/':
+        path = path[1:]
     if value:
         value = config_helper.render(value)
         file_content = None
