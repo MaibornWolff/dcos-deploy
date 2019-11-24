@@ -67,4 +67,4 @@ class S3FileAdapter(object):
             pool = PoolManager(cert_reqs='CERT_NONE')
         else:
             pool = None
-        return Minio(server.endpoint, server.access_key, server.secret_key, secure=True, http_client=pool)
+        return Minio(server.endpoint, server.access_key, server.secret_key, secure=server.secure, http_client=pool)

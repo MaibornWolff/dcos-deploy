@@ -361,6 +361,7 @@ At the moment dcos-deploy can not safely detect if the pool config was changed s
   * `access_key`: your access key. Required. Variables can be used. For security reasons you should provide the value via environment variable. Make sure the iam user associated with these credentials has all rights for retrieving and uploading objects (`s3:Get*` and `s3:Put*`).
   * `secret_key`: your secret access key. Required. Variables can be used. For security reasons you should provide the value via environment variable.
   * `ssl_verify`: Set to false to disable ssl verifcation for s3 connection. Defaults to true. Optional.
+  * `secure`: Set to false to use insecure http connections for s3 connection. Defaults to true. Optional.
 * `source`: path to your file or folder to be uploaded to s3. Should be relative to the `dcos.yml` file. Required. Variables can be used.
 * `destination`:
   * `bucket`: name of the bucket to use. Required. Variables can be used.

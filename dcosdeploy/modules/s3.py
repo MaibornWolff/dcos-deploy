@@ -6,11 +6,12 @@ from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_re
 
 
 class S3Server(object):
-    def __init__(self, endpoint, access_key, secret_key, ssl_verify):
+    def __init__(self, endpoint, access_key, secret_key, ssl_verify, secure):
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
         self.ssl_verify = ssl_verify
+        self.secure = secure
 
 
 class S3File(object):
@@ -72,7 +73,8 @@ def _parse_server_config(name, server, config_helper):
         raise ConfigurationException("Field 'server.secret_key' is required for s3file '%s'" % name)
     secret_key = config_helper.render(secret_key)
     ssl_verify = server.get("ssl_verify", True)
-    return S3Server(endpoint, access_key, secret_key, ssl_verify)
+    secure = server.get("secure", True)
+    return S3Server(endpoint, access_key, secret_key, ssl_verify, secure)
 
 
 def _collect_files(name, source, key, compress, config_helper):
