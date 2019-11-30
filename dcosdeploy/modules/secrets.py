@@ -37,7 +37,7 @@ class SecretsManager(object):
     def __init__(self):
         self.api = SecretsAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         exists = config.path in self.api.list_secrets()
         if exists:
             content = self.api.get_secret(config.path)
@@ -49,7 +49,7 @@ class SecretsManager(object):
                 changed = content != config.file_content
             else:
                 raise Exception("Specified neither value nor file_content for secret")
-            if not changed:
+            if not changed and not force:
                 print_if(not silent, "\tSecret already exists. No update needed.")
                 return False
             print_if(not silent, "\tUpdating secret")
@@ -85,7 +85,7 @@ class SecretsManager(object):
                 print("Would update secret %s" % config.path)
         return changed
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting secret")
         deleted = self.api.delete_secret(config.path)
         print("\tDeleted secret.")

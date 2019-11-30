@@ -61,12 +61,12 @@ class MarathonAppsManager(object):
     def __init__(self):
         self.api = MarathonAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         print_if(not silent, "\tStarting deployment...")
-        changed = self.api.deploy_app(config.app_definition, True)
+        changed = self.api.deploy_app(config.app_definition, True, force=force)
         if not changed and dependencies_changed:
             print_if(not silent, "\tNo change in app config. Restarting app...")
-            self.api.restart_app(config.app_id, True)
+            self.api.restart_app(config.app_id, True, force=force)
             print_if(not silent, "\tRestart finished")
         else:
             print_if(not silent, "\tFinished")
@@ -88,9 +88,9 @@ class MarathonAppsManager(object):
             print("Would restart marathon app %s" % config.app_id)
         return diff or dependencies_changed
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting app")
-        deleted = self.api.delete_app(config.app_id, wait_for_deployment=True)
+        deleted = self.api.delete_app(config.app_id, wait_for_deployment=True, force=force)
         print("\tDeleted app.")
         return deleted
 

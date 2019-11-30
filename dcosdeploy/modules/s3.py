@@ -117,7 +117,7 @@ class S3FilesManager(object):
     def __init__(self):
         self.api = S3FileAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
             print_if(not silent, "\tCreating bucket %s" % config.bucket)
             self.api.create_bucket(config.server, config.bucket)
@@ -140,7 +140,7 @@ class S3FilesManager(object):
                 with open(filename, "rb") as source_file:
                     hash = md5_hash_bytes(source_file)
                     source_file.seek(0)
-                    if not self.api.files_equal(config.server, config.bucket, key, hash):
+                    if force or not self.api.files_equal(config.server, config.bucket, key, hash):
                         changed = True
                         print_if(not silent, "\tUploading file to %s" % key)
                         file_stat = os.stat(filename)
@@ -175,7 +175,7 @@ class S3FilesManager(object):
                     changed = True
             return changed
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         if config.compress:
             print("\tRemoving file %s" % config.files[0])
             self.api.remove_file(config.server, config.bucket, config.files[0])

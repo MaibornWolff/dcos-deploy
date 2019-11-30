@@ -26,7 +26,7 @@ def apply(config_file, var, only, dry_run, yes, debug, force):
     else:
         if runner.dry_run() and not dry_run:
             if yes or click.confirm("Do you want to apply these changes?", default=False):
-                runner.run_deployment()
+                runner.run_deployment(force=force)
             else:
                 print("Not doing anything")
 

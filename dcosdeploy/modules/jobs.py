@@ -38,7 +38,7 @@ class JobsManager(object):
     def __init__(self):
         self.api = MetronomeAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         if self.api.does_job_exist(config.job_id):
             print_if(not silent, "\tUpdating existing job")
             self.api.update_job(config.job_id, config.job_definition)
@@ -74,7 +74,7 @@ class JobsManager(object):
                 print("Would update schedule for job %s" % config.job_id)
         return job_diff is not None or schedule_diff is not None
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting job")
         deleted = self.api.delete_job(config.job_id)
         print("\tDeleted job.")

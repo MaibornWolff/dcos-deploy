@@ -41,7 +41,7 @@ class FrameworksManager(object):
         self.api = CosmosAdapter()
         self.marathon = MarathonAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         old_description = self.api.describe_service(config.service_name)
         package_version = config.package_version
         if not old_description:
@@ -80,7 +80,7 @@ class FrameworksManager(object):
                 print("Would change config of %s" % config.service_name)
         return options_diff or not version_equal
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting framework")
         self.api.uninstall_package(config.service_name, config.package_name)
         print("\tDeleted framework. Waiting for uninstall to complete")

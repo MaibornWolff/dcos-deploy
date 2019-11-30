@@ -10,9 +10,9 @@ class DeploymentRunner(object):
         self.debug_mode = debug_mode
         self.config, self.managers = read_config(config_filename, provided_variables)
 
-    def run_deployment(self):
+    def run_deployment(self, force=False):
         for name, deployment_object in self.config.items():
-            self.deploy(name, deployment_object)
+            self.deploy(name, deployment_object, force=force)
 
     def run_partial_deployment(self, only, force=False):
         deployment_object = self.config.get(only)
@@ -28,19 +28,17 @@ class DeploymentRunner(object):
             dependency = self.config[dependency_name]
             if self.deploy(dependency_name, dependency) and dependency_type == "update":
                 dependency_changed = True
-        if force:
-            dependency_changed = True
         manager = self.managers[config.entity_type]
         if not manager:
             raise Exception("Could not find manager for '%s'" % config.entity_type)
-        if config.when_condition == "dependencies-changed" and not dependency_changed:
+        if config.when_condition == "dependencies-changed" and not dependency_changed and not force:
             changed = False
         else:
             print("Deploying %s:" % name)
             if config.state == StateEnum.REMOVED:
-                changed = manager.delete(config.entity)
+                changed = manager.delete(config.entity, force=force)
             else:
-                changed = manager.deploy(config.entity, dependencies_changed=dependency_changed)
+                changed = manager.deploy(config.entity, dependencies_changed=dependency_changed, force=force)
         self.already_deployed[name] = changed
         return changed
 
@@ -80,4 +78,6 @@ class DeploymentRunner(object):
         if not changed and not force:
             self.already_deployed[name] = False
         self.dry_deployed[name] = changed
+        if force:
+            changed = True
         return changed

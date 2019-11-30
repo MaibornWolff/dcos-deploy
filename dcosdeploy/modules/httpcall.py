@@ -44,7 +44,7 @@ class HttpCallManager(object):
     def __init__(self):
         pass
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         print_if(not silent, "\tDoing HTTP call")
         auth = get_auth() if config.use_adminrouter else None
         response = requests.request(config.method, config.url, auth=auth, data=config.content, verify=False)
@@ -57,7 +57,7 @@ class HttpCallManager(object):
         print("Would do HTTP %s call to '%s'" % (config.method, config.url))
         return True
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         return False
 
     def dry_delete(self, config):

@@ -58,7 +58,7 @@ class AccountsManager(object):
                                                     serialization.PublicFormat.SubjectPublicKeyInfo)
         return private_key_string.decode("utf-8"), public_key_string.decode("utf-8")
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         changed = False
         if not self._does_serviceaccount_exist(config.path):
             print_if(not silent, "\tCreating serviceaccount")
@@ -139,7 +139,7 @@ class AccountsManager(object):
                     changes = True
         return changes
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting serviceaccount secret")
         self.secrets.delete_secret(config.secret)
         print("\tDeleting account")

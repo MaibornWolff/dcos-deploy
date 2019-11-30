@@ -65,8 +65,8 @@ class MarathonAdapter(object):
             wait_time += 10
             state = self.get_app_state(app_id)
 
-    def deploy_app(self, app_definition, wait_for_deployment=False):
-        response = requests.put(self.marathon_url + "/apps", json=[app_definition], auth=get_auth(), verify=False)
+    def deploy_app(self, app_definition, wait_for_deployment=False, force=False):
+        response = requests.put(self.marathon_url + "/apps?force=%s" % force, json=[app_definition], auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
             raise Exception("Failed to deploy app %s" % app_definition["id"])
@@ -78,8 +78,8 @@ class MarathonAdapter(object):
             self.wait_for_specific_deployment(deployment_id)
         return True
 
-    def restart_app(self, app_id, wait_for_deployment=False):
-        response = requests.post(self.marathon_url + "/apps/%s/restart" % app_id, auth=get_auth(), verify=False)
+    def restart_app(self, app_id, wait_for_deployment=False, force=False):
+        response = requests.post(self.marathon_url + "/apps/%s/restart?force=%s" % (app_id, force), auth=get_auth(), verify=False)
         if not response.ok:
             print(response.text, flush=True)
             raise Exception("Failed to restart app %s" % app_id)
@@ -87,8 +87,8 @@ class MarathonAdapter(object):
         if wait_for_deployment:
             self.wait_for_specific_deployment(deployment_id)
 
-    def delete_app(self, app_id, wait_for_deployment=False):
-        response = requests.delete(self.marathon_url + "/apps/%s" % app_id, auth=get_auth(), verify=False)
+    def delete_app(self, app_id, wait_for_deployment=False, force=False):
+        response = requests.delete(self.marathon_url + "/apps/%s?force=%s" % (app_id, force), auth=get_auth(), verify=False)
         if not response.ok:
             if response.status_code == 404:
                 return False

@@ -25,7 +25,7 @@ class PackageRepositoriesManager(object):
     def __init__(self):
         self.api = CosmosAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         repo = self._get_repo(config.name)
         if repo:
             if repo["uri"] != config.uri:
@@ -53,7 +53,7 @@ class PackageRepositoriesManager(object):
         else:
             return False
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting repository")
         deleted = self.api.delete_repository(config.name)
         print("\tDeleted repository.")

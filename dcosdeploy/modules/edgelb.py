@@ -33,7 +33,7 @@ class EdgeLbPoolsManager(object):
     def __init__(self):
         self.api = EdgeLbAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         if not self.api.ping():
             print_if(not silent, "\tEdgeLB api not yet available. Waiting ...")
             waiting = 0
@@ -76,7 +76,7 @@ class EdgeLbPoolsManager(object):
         else:
             return False
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting pool")
         deleted = self.api.delete_pool(config.name)
         print("\tDeleted pool.")

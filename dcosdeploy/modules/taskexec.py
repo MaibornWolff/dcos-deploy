@@ -27,7 +27,7 @@ class TaskExecManager(object):
     def __init__(self):
         self.api = MesosAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         print_if(not silent, "\tRunning command")
         parent_container_id, slave_id = self.api.get_container_id_and_slave_id_for_task(config.task)
         result = self.api.launch_nested_container(slave_id, parent_container_id, config.command.split(" "))
@@ -40,7 +40,7 @@ class TaskExecManager(object):
         print("Would run command '%s' in task '%s'" % (config.command, config.task))
         return True
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         return False
 
     def dry_delete(self, config):

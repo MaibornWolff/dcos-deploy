@@ -67,7 +67,7 @@ class CertsManager(object):
         self.ca = CAAdapter()
         self.secrets = SecretsAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False):
+    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:
@@ -106,7 +106,7 @@ class CertsManager(object):
             print("Would create cert %s" % config.name)
             return True
 
-    def delete(self, config, silent=False):
+    def delete(self, config, silent=False, force=False):
         print("\tDeleting secrets for cert %s" % config.name)
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
