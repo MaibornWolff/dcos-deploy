@@ -1,6 +1,7 @@
 import click
 from . import maingroup
-from dcosdeploy.delete import DeletionRunner
+from ..delete import DeletionRunner
+from ..util import detect_yml_file
 
 
 @maingroup.command()
@@ -12,7 +13,7 @@ from dcosdeploy.delete import DeletionRunner
 def delete(config_file, var, only, dry_run, yes):
     provided_variables = get_variables(var)
     if not config_file:
-        config_file = "dcos.yml"
+        config_file = detect_yml_file("dcos")
     runner = DeletionRunner(config_file, provided_variables)
     if only:
         if runner.partial_dry_run(only) and not dry_run:

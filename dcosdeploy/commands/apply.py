@@ -1,6 +1,7 @@
 import click
 from . import maingroup
-from dcosdeploy.deploy import DeploymentRunner
+from ..deploy import DeploymentRunner
+from ..util import detect_yml_file
 
 
 @maingroup.command()
@@ -14,7 +15,7 @@ from dcosdeploy.deploy import DeploymentRunner
 def apply(config_file, var, only, dry_run, yes, debug, force):
     provided_variables = get_variables(var)
     if not config_file:
-        config_file = "dcos.yml"
+        config_file = detect_yml_file("dcos")
     runner = DeploymentRunner(config_file, provided_variables, debug)
     if only:
         if runner.partial_dry_run(only, force=force) and not dry_run:

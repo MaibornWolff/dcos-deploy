@@ -2,7 +2,7 @@ import os
 import sys
 import click
 from . import maingroup
-from dcosdeploy import util
+from .. import util
 
 
 @maingroup.group()

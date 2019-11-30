@@ -4,6 +4,14 @@ import json
 import os
 import oyaml as yaml
 from cryptography.fernet import Fernet
+from .base import ConfigurationException
+
+
+def detect_yml_file(base):
+    for choice in [".yml", ".yaml"]:
+        if os.path.exists(base+choice):
+            return base+choice
+    raise ConfigurationException("Could not find yaml file %s.yml" % base)
 
 
 def read_yaml(filename):
