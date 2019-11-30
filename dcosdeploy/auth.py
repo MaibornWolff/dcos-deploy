@@ -10,7 +10,10 @@ from requests.auth import AuthBase
 
 ENV_BASE_URL = "DCOS_BASE_URL"
 ENV_AUTH_TOKEN = "DCOS_AUTH_TOKEN"
+ENV_USERNAME = "DCOS_USERNAME"
+ENV_PASSWORD = "DCOS_PASSWORD"
 ENV_DCOS_SERVICE_ACCOUNT_CREDENTIAL = "DCOS_SERVICE_ACCOUNT_CREDENTIAL"
+LOGIN_ENDPOINT = "/acs/api/v1/auth/login"
 
 
 _base_url = None
@@ -75,6 +78,21 @@ def _read_config_from_env():
         _base_url = os.environ.get(ENV_BASE_URL)
         _auth = StaticTokenAuth(os.environ.get(ENV_AUTH_TOKEN))
         return True
+    elif ENV_BASE_URL in os.environ and ENV_USERNAME in os.environ and ENV_PASSWORD in os.environ:
+        _base_url = os.environ.get(ENV_BASE_URL)
+        username = os.environ.get(ENV_USERNAME)
+        password = os.environ.get(ENV_PASSWORD)
+        login_endpoint = _base_url + LOGIN_ENDPOINT
+        now = int(time.time())
+        data = {
+            'uid': username,
+            'password': password,
+            'exp': now + 30*60, # expiry time for the token
+        }
+        r = requests.post(login_endpoint, json=data, timeout=(3.05, 46), verify=False)
+        r.raise_for_status()
+        _auth = StaticTokenAuth(r.cookies['dcos-acs-auth-cookie'])
+        return True
     else:
         return False
 
@@ -103,10 +121,7 @@ def _read_config_from_service_account():
         'token': token.decode('ascii'),
         'exp': now + 30*60, # expiry time for the token
     }
-    r = requests.post(login_endpoint,
-                        json=data,
-                        timeout=(3.05, 46),
-                        verify=False)
+    r = requests.post(login_endpoint, json=data, timeout=(3.05, 46), verify=False)
     r.raise_for_status()
     _auth = StaticTokenAuth(r.cookies['dcos-acs-auth-cookie'])
     return True
