@@ -54,11 +54,18 @@ class FrameworksManager(object):
                 print_if(not silent, "\tWaiting for deployment plan to finish")
                 self.api.wait_for_plan_complete(config.service_name, "deploy")
         else:
-            if old_description["package"]["version"] == config.package_version:
-                package_version = None
-            print_if(not silent, "\tUpdating framework")
-            self.api.update_service(config.service_name, package_version, config.options)
-            # Do not wait for completion after update, assume update is done in rolling fashion
+            old_options = old_description["userProvidedOptions"]
+            options_diff = compare_dicts(old_options, config.options)
+            version_equal = old_description["package"]["version"] == config.package_version
+            if version_equal and not options_diff and dependencies_changed:
+                print_if(not silent, "\tNo change in config. Restarting framework")
+                self.marathon.restart_app(config.service_name)
+            else:
+                if version_equal:
+                    package_version = None
+                print_if(not silent, "\tUpdating framework")
+                self.api.update_service(config.service_name, package_version, config.options)
+                # Do not wait for completion after update, assume update is done in rolling fashion
         print_if(not silent, "\tFinished")
         return True
 
@@ -78,6 +85,9 @@ class FrameworksManager(object):
                 print(options_diff)
             else:
                 print("Would change config of %s" % config.service_name)
+        if dependencies_changed and version_equal and not options_diff and not self.api.has_plans_api(config.service_name):
+            print("Would restart framework %s" % config.service_name)
+            return True
         return options_diff or not version_equal
 
     def delete(self, config, silent=False, force=False):

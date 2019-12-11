@@ -11,14 +11,18 @@ class DeploymentRunner(object):
         self.config, self.managers = read_config(config_filename, provided_variables)
 
     def run_deployment(self, force=False):
+        changed = False
         for name, deployment_object in self.config.items():
-            self.deploy(name, deployment_object, force=force)
+            entitiy_changed = self.deploy(name, deployment_object, force=force)
+            if entitiy_changed:
+                changed = True
+        return changed
 
     def run_partial_deployment(self, only, force=False):
         deployment_object = self.config.get(only)
         if not deployment_object:
             raise Exception("Could not find %s" % only)
-        self.deploy(only, deployment_object, force=force)
+        return self.deploy(only, deployment_object, force=force)
 
     def deploy(self, name, config, force=False):
         if name in self.already_deployed:
