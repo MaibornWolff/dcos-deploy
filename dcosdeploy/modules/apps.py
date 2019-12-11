@@ -161,6 +161,7 @@ _health_check_defaults = dict(
 
 
 def _normalize_app_definition(local_definition, remote_definition):
+    local_definition, remote_definition = _align_app_definitions(local_definition, remote_definition)
     update_dict_with_defaults(local_definition, _app_defaults)
     update_dict_with_defaults(remote_definition, _app_defaults)
     if local_definition["id"][0] != "/":
@@ -217,6 +218,13 @@ def _normalize_app_definition(local_definition, remote_definition):
         residency.setdefault("relaunchEscalationTimeoutSeconds", 3600)
         residency.setdefault("taskLostBehavior", "WAIT_FOREVER")
 
+    return local_definition, remote_definition
+
+
+def _align_app_definitions(local_definition, remote_definition):
+    for key in _app_defaults.keys():
+        if key in remote_definition and not key in local_definition:
+            local_definition[key] = remote_definition[key]
     return local_definition, remote_definition
 
 
