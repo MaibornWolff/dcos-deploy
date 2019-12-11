@@ -1,6 +1,10 @@
 import unittest
 from unittest import mock
 from dcosdeploy.config import VariableContainer
+from dcosdeploy.util import global_config
+
+
+global_config.silent = True
 
 
 REPOSITORY_CONFIG = dict(type="repository", name="foo", uri="http://bar")
@@ -27,7 +31,7 @@ class RepositoriesTest(unittest.TestCase):
         from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
         repo = PackageRepository(name="foo", uri="bar", index=None)
         manager = PackageRepositoriesManager()
-        result = manager.deploy(repo, silent=True)
+        result = manager.deploy(repo)
         # then
         self.assertTrue(result)
         mock_cosmosadapter.return_value.add_repository.assert_called_with("foo", "bar", None)
@@ -41,7 +45,7 @@ class RepositoriesTest(unittest.TestCase):
         from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
         repo = PackageRepository(name="foo", uri="baz", index=None)
         manager = PackageRepositoriesManager()
-        result = manager.deploy(repo, silent=True)
+        result = manager.deploy(repo)
         # then
         self.assertTrue(result)
         mock_cosmosadapter.return_value.delete_repository.assert_called_with("foo")

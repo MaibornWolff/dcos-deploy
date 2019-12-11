@@ -1,5 +1,6 @@
 from .config import read_config
 from .adapters.dcos import fail_on_missing_connectivity
+from .util.output import echo
 
 
 class DeletionRunner:
@@ -43,9 +44,9 @@ class DeletionRunner:
         if not manager:
             raise Exception("Could not find manager for '%s'" % config.entity_type)
         if not hasattr(manager, "delete"):
-            print("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
+            echo("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
             return False
-        print("Deleting %s:" % name)
+        echo("Deleting %s:" % name)
         deleted = manager.delete(config.entity)
         self._already_deleted[name] = deleted
         return deleted
@@ -62,7 +63,7 @@ class DeletionRunner:
         if not manager:
             raise Exception("Could not find manager for '%s'" % config.entity_type)
         if not hasattr(manager, "dry_delete"):
-            print("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
+            echo("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
             return to_delete
         deleted = manager.dry_delete(config.entity)
         if not deleted:

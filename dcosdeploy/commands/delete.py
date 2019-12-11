@@ -2,6 +2,7 @@ import click
 from . import maingroup
 from ..delete import DeletionRunner
 from ..util import detect_yml_file
+from ..util.output import echo
 
 
 @maingroup.command()
@@ -20,13 +21,13 @@ def delete(config_file, var, only, dry_run, yes):
             if yes or click.confirm("Do you want to apply these changes?", default=False):
                 runner.run_partial_deletion(only)
             else:
-                print("Not doing anything")
+                echo("Not doing anything")
     else:
         if runner.dry_run() and not dry_run:
             if yes or click.confirm("Do you want to apply these changes?", default=False):
                 runner.run_deletion()
             else:
-                print("Not doing anything")
+                echo("Not doing anything")
 
 
 def get_variables(vars):

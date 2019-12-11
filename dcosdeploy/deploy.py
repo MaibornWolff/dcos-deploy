@@ -1,13 +1,13 @@
 from .config import read_config, StateEnum
 from .adapters.dcos import fail_on_missing_connectivity
+from .util.output import echo
 
 
 class DeploymentRunner(object):
-    def __init__(self, config_filename, provided_variables, debug_mode):
+    def __init__(self, config_filename, provided_variables):
         fail_on_missing_connectivity()
         self.already_deployed = dict()  # entitiy-name -> changed
         self.dry_deployed = dict()  # entity-name -> changed
-        self.debug_mode = debug_mode
         self.config, self.managers = read_config(config_filename, provided_variables)
 
     def run_deployment(self, force=False):
@@ -38,7 +38,7 @@ class DeploymentRunner(object):
         if config.when_condition == "dependencies-changed" and not dependency_changed and not force:
             changed = False
         else:
-            print("Deploying %s:" % name)
+            echo("Deploying %s:" % name)
             if config.state == StateEnum.REMOVED:
                 changed = manager.delete(config.entity, force=force)
             else:
@@ -78,7 +78,7 @@ class DeploymentRunner(object):
             if config.state == StateEnum.REMOVED:
                 changed = manager.dry_delete(config.entity)
             else:
-                changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed, debug=self.debug_mode)
+                changed = manager.dry_run(config.entity, dependencies_changed=dependency_changed)
         if not changed and not force:
             self.already_deployed[name] = False
         self.dry_deployed[name] = changed

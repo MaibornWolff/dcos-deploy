@@ -1,5 +1,6 @@
 import requests
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
+from ..util.output import echo_error
 
 
 class EdgeLbAdapter(object):
@@ -10,7 +11,7 @@ class EdgeLbAdapter(object):
         """Retrive a list of pool names"""
         response = requests.get(self.base_url + "v2/pools", auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Failed to list pools")
         data = response.json()
         for pool in data:
@@ -20,7 +21,7 @@ class EdgeLbAdapter(object):
         """Get config for a specific pool"""
         response = requests.get(self.base_url + "v2/pools/%s" % name, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Failed to get pool")
         return response.json()
 

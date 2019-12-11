@@ -1,5 +1,6 @@
 import requests
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
+from ..util.output import echo_error
 
 
 class SecretsAdapter(object):
@@ -12,7 +13,7 @@ class SecretsAdapter(object):
         if not self._cache_secrets_list:
             response = requests.get(self.base_url + "secret/default/?list=true", auth=get_auth(), verify=False)
             if not response.ok:
-                print(response.text)
+                echo_error(response.text)
                 raise Exception("Failed to list secrets")
             self._cache_secrets_list = response.json()["array"]
         return self._cache_secrets_list
@@ -25,7 +26,7 @@ class SecretsAdapter(object):
         if response.status_code == 404:
             return None
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Failed to get secret")
         if response.headers.get("Content-Type") == "application/json":
             return response.json()["value"]
@@ -49,7 +50,7 @@ class SecretsAdapter(object):
         else:
             raise Exception("You must either specify value or file_content")
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Failed to create secret")
 
     def delete_secret(self, name):

@@ -1,6 +1,7 @@
-from dcosdeploy.adapters.secrets import SecretsAdapter
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if, compare_text
+from ..adapters.secrets import SecretsAdapter
+from ..base import ConfigurationException
+from ..util import compare_text
+from ..util.output import echo, echo_diff
 
 
 class Secret(object):
@@ -37,7 +38,7 @@ class SecretsManager(object):
     def __init__(self):
         self.api = SecretsAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         exists = config.path in self.api.list_secrets()
         if exists:
             content = self.api.get_secret(config.path)
@@ -50,22 +51,22 @@ class SecretsManager(object):
             else:
                 raise Exception("Specified neither value nor file_content for secret")
             if not changed and not force:
-                print_if(not silent, "\tSecret already exists. No update needed.")
+                echo("\tSecret already exists. No update needed.")
                 return False
-            print_if(not silent, "\tUpdating secret")
+            echo("\tUpdating secret")
             self.api.write_secret(config.path, config.value, config.file_content, update=exists)
-            print_if(not silent, "\tSecret updated.")
+            echo("\tSecret updated.")
             return True
         else:
-            print_if(not silent, "\tCreating secret")
+            echo("\tCreating secret")
             self.api.write_secret(config.path, config.value, config.file_content, update=exists)
-            print_if(not silent, "\tSecret created.")
+            echo("\tSecret created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         exists = config.path in self.api.list_secrets()
         if not exists:
-            print("Would create secret %s" % config.path)
+            echo("Would create secret %s" % config.path)
             return True
         content = self.api.get_secret(config.path)
         if config.value:
@@ -77,23 +78,19 @@ class SecretsManager(object):
         else:
             raise Exception("Specified neither value nor file_content for secret")
         if changed:
-            if debug:
-                new_content = config.file_content if config.file_content else config.value
-                print("Would update secret %s:" % config.path)
-                print(compare_text(content, new_content))
-            else:
-                print("Would update secret %s" % config.path)
+            new_content = config.file_content if config.file_content else config.value
+            echo_diff("Would update secret %s" % config.path, compare_text(content, new_content))
         return changed
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting secret")
+    def delete(self, config, force=False):
+        echo("\tDeleting secret")
         deleted = self.api.delete_secret(config.path)
-        print("\tDeleted secret.")
+        echo("\tDeleted secret.")
         return deleted
 
     def dry_delete(self, config):
         if self.api.get_secret(config.path):
-            print("Would delete secret %s" % config.path)
+            echo("Would delete secret %s" % config.path)
             return True
         else:
             return False

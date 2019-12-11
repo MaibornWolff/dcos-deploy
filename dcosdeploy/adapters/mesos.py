@@ -3,7 +3,7 @@ import base64
 import json
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 

@@ -1,8 +1,10 @@
 import os
 from io import BytesIO
-from dcosdeploy.adapters.s3 import S3FileAdapter
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, print_if, compare_text
+from ..adapters.s3 import S3FileAdapter
+from ..base import ConfigurationException
+from ..util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, compare_text
+from ..util.output import echo, echo_diff
+from ..util import global_config
 
 
 class S3Server(object):
@@ -117,22 +119,22 @@ class S3FilesManager(object):
     def __init__(self):
         self.api = S3FileAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
-            print_if(not silent, "\tCreating bucket %s" % config.bucket)
+            echo("\tCreating bucket %s" % config.bucket)
             self.api.create_bucket(config.server, config.bucket)
-            print_if(not silent, "\tCreated bucket %s" % config.bucket)
+            echo("\tCreated bucket %s" % config.bucket)
             if config.bucket_policy:
                 self.api.set_bucket_policy(config.server, config.bucket, config.bucket_policy)
-                print_if(not silent, "\tSet policy for bucket %s" % config.bucket)
+                echo("\tSet policy for bucket %s" % config.bucket)
         if config.compress:
             zip_obj = self._compress_zip(config.files[1])
             size = zip_obj.tell()
             zip_obj.seek(0)
             hash = self._hash_for_file_list(config.files[1])
-            print_if(not silent, "\tUploading file to %s" % config.files[0])
+            echo("\tUploading file to %s" % config.files[0])
             self.api.upload_file(config.server, config.bucket, config.files[0], zip_obj, size, hash)
-            print_if(not silent, "\tUploaded file to %s" % config.files[0])
+            echo("\tUploaded file to %s" % config.files[0])
             return True
         else:
             changed = False
@@ -142,56 +144,56 @@ class S3FilesManager(object):
                     source_file.seek(0)
                     if force or not self.api.files_equal(config.server, config.bucket, key, hash):
                         changed = True
-                        print_if(not silent, "\tUploading file to %s" % key)
+                        echo("\tUploading file to %s" % key)
                         file_stat = os.stat(filename)
                         self.api.upload_file(config.server, config.bucket, key, source_file, file_stat.st_size, hash)
-                        print_if(not silent, "\tUploaded file to %s" % key)
+                        echo("\tUploaded file to %s" % key)
             if not changed:
-                print_if(not silent, "\tNothing changed")
+                echo("\tNothing changed")
             return changed
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
-            print("Would create bucket %s" % config.bucket)
+            echo("Would create bucket %s" % config.bucket)
         if config.compress:
             hash = self._hash_for_file_list(config.files[1])
             files_equal = self.api.files_equal(config.server, config.bucket, config.files[0], hash)
             if files_equal is None:
-                print("Would upload file to %s" % config.files[0])
+                echo("Would upload file to %s" % config.files[0])
                 return True
             elif not files_equal:
-                if debug:
-                    print("Would upload file to %s. Changes:" % config.files[0])
+                if global_config.debug:
+                    echo("Would upload file to %s. Changes:" % config.files[0])
                     self._print_diffs_for_zip(self.api.get_file(config.server, config.bucket, config.files[0]), config.files[1])
                 else:
-                    print("Would upload file to %s due to changes" % config.files[0])
+                    echo("Would upload file to %s due to changes" % config.files[0])
                 return True
             else:
                 return False
         else:
             changed = False
             for key, filename in config.files:
-                if self._dry_run_single_file(config.server, config.bucket, key, filename, debug):
+                if self._dry_run_single_file(config.server, config.bucket, key, filename, global_config.debug):
                     changed = True
             return changed
 
-    def delete(self, config, silent=False, force=False):
+    def delete(self, config, force=False):
         if config.compress:
-            print("\tRemoving file %s" % config.files[0])
+            echo("\tRemoving file %s" % config.files[0])
             self.api.remove_file(config.server, config.bucket, config.files[0])
-            print("\tRemoved file.")
+            echo("\tRemoved file.")
             return True
         else:
             for key, _ in config.files:
-                print("\tRemoving %s" % key)
+                echo("\tRemoving %s" % key)
                 self.api.remove_file(config.server, config.bucket, key)
-            print("\tRemoved all files.")
+            echo("\tRemoved all files.")
             return True
 
     def dry_delete(self, config):
         if config.compress:
             if self.api.does_file_exist(config.server, config.bucket, config.files[0]):
-                print("Would remove file %s" % config.files[0])
+                echo("Would remove file %s" % config.files[0])
                 return True
             else:
                 return False
@@ -199,7 +201,7 @@ class S3FilesManager(object):
             something_gets_removed = False
             for key, _ in config.files:
                 if self.api.does_file_exist(config.server, config.bucket, key):
-                    print("Would remove file %s" % key)
+                    echo("Would remove file %s" % key)
                     something_gets_removed = True
             return something_gets_removed
 
@@ -207,17 +209,17 @@ class S3FilesManager(object):
         hash = md5_hash(filename)
         files_equal = self.api.files_equal(server, bucket, key, hash)
         if files_equal is None:
-            print("Would upload file to %s" % key)
+            echo("Would upload file to %s" % key)
             return True
         elif not files_equal:
-            if debug:
-                print("Would upload file to %s. Changes:" % key)
+            if global_config.debug:
+                echo("Would upload file to %s. Changes:" % key)
                 server_file_content = self.api.get_file(server, bucket, key)
                 with open(filename, "r") as local_file:
                     local_file_content = local_file.read()
-                print(compare_text(server_file_content, local_file_content))
+                echo(compare_text(server_file_content, local_file_content))
             else:
-                print("Would upload file to %s due to changes" % key)
+                echo("Would upload file to %s due to changes" % key)
             return True
         return False
 
@@ -227,7 +229,7 @@ class S3FilesManager(object):
             local_files = dict(map(lambda tup: (tup[1], tup[0]), files))
             for name in zip_file.namelist():
                 if name not in local_files:
-                    print("  %s will be deleted" % name)
+                    echo("  %s will be deleted" % name)
                 else:
                     with zip_file.open(name, "r") as remote_file:
                         remote_file_content = remote_file.read()
@@ -235,11 +237,11 @@ class S3FilesManager(object):
                         local_file_content = local_file.read()
                     diff = compare_text(remote_file_content, local_file_content)
                     if diff:
-                        print("  %s changed:" % name)
-                        print(diff)
+                        echo("  %s changed:" % name)
+                        echo(diff)
             for name in local_files.keys():
                 if name not in zip_file.namelist():
-                    print("  %s will be added" % name)
+                    echo("  %s will be added" % name)
 
     def _hash_for_file_list(self, files):
         hash_list = list()

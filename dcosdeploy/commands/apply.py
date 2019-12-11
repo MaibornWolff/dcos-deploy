@@ -1,7 +1,8 @@
 import click
 from . import maingroup
 from ..deploy import DeploymentRunner
-from ..util import detect_yml_file
+from ..util import detect_yml_file, global_config
+from ..util.output import echo
 
 
 @maingroup.command()
@@ -13,22 +14,23 @@ from ..util import detect_yml_file
 @click.option("--debug", help="Enable debug logging", is_flag=True)
 @click.option("--force", help="Forces deployment of entity provided with --only", is_flag=True)
 def apply(config_file, var, only, dry_run, yes, debug, force):
+    global_config.debug = True
     provided_variables = get_variables(var)
     if not config_file:
         config_file = detect_yml_file("dcos")
-    runner = DeploymentRunner(config_file, provided_variables, debug)
+    runner = DeploymentRunner(config_file, provided_variables)
     if only:
         if runner.partial_dry_run(only, force=force) and not dry_run:
             if yes or click.confirm("Do you want to apply these changes?", default=False):
                 runner.run_partial_deployment(only, force=force)
             else:
-                print("Not doing anything")
+                echo("Not doing anything")
     else:
         if runner.dry_run() and not dry_run:
             if yes or click.confirm("Do you want to apply these changes?", default=False):
                 runner.run_deployment(force=force)
             else:
-                print("Not doing anything")
+                echo("Not doing anything")
 
 
 def get_variables(vars):

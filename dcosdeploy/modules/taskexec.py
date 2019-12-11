@@ -1,6 +1,6 @@
-from dcosdeploy.adapters.mesos import MesosAdapter
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if
+from ..adapters.mesos import MesosAdapter
+from ..base import ConfigurationException
+from ..util.output import echo
 
 
 class TaskExec(object):
@@ -27,20 +27,20 @@ class TaskExecManager(object):
     def __init__(self):
         self.api = MesosAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
-        print_if(not silent, "\tRunning command")
+    def deploy(self, config, dependencies_changed=False, force=False):
+        echo("\tRunning command")
         parent_container_id, slave_id = self.api.get_container_id_and_slave_id_for_task(config.task)
         result = self.api.launch_nested_container(slave_id, parent_container_id, config.command.split(" "))
-        if config.print_output and not silent:
-            print(result)
-        print_if(not silent, "\tFinished.")
+        if config.print_output:
+            echo(result)
+        echo("\tFinished.")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
-        print("Would run command '%s' in task '%s'" % (config.command, config.task))
+    def dry_run(self, config, dependencies_changed=False):
+        echo("Would run command '%s' in task '%s'" % (config.command, config.task))
         return True
 
-    def delete(self, config, silent=False, force=False):
+    def delete(self, config, force=False):
         return False
 
     def dry_delete(self, config):

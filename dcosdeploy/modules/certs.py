@@ -1,9 +1,9 @@
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives import serialization
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if
-from dcosdeploy.adapters.ca import CAAdapter
-from dcosdeploy.adapters.secrets import SecretsAdapter
+from ..base import ConfigurationException
+from ..util.output import echo
+from ..adapters.ca import CAAdapter
+from ..adapters.secrets import SecretsAdapter
 
 
 class Cert(object):
@@ -67,66 +67,66 @@ class CertsManager(object):
         self.ca = CAAdapter()
         self.secrets = SecretsAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:
-            print_if(not silent, "\tSecrets already exist. Not doing anything.")
+            echo("\tSecrets already exist. Not doing anything.")
             return False
         if cert_secret and not key_secret:
-            print_if(not silent, "\tDeleting existing secret %s" % config.cert_secret)
+            echo("\tDeleting existing secret %s" % config.cert_secret)
             self.secrets.delete_secret(config.cert_secret)
         if not cert_secret and key_secret:
-            print_if(not silent, "\tDeleting existing secret %s" % config.key_secret)
+            echo("\tDeleting existing secret %s" % config.key_secret)
             self.secrets.delete_secret(config.key_secret)
 
-        print_if(not silent, "\tGenerating private key")
+        echo("\tGenerating private key")
         csr, private_key = self.ca.generate_key(config.dn, config.hostnames, config.algorithm, config.key_size)
         private_key = _convert_key(config.encoding, config.format, private_key)
-        print_if(not silent, "\tSigning csr")
+        echo("\tSigning csr")
         cert = self.ca.sign_csr(csr, config.hostnames)
-        print_if(not silent, "\tCreating secrets")
+        echo("\tCreating secrets")
         self.secrets.write_secret(config.key_secret, file_content=private_key, update=False)
         self.secrets.write_secret(config.cert_secret, file_content=cert, update=False)
-        print_if(not silent, "\tFinished")
+        echo("\tFinished")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret and cert_secret:
             return False
         elif cert_secret and not key_secret:
-            print("Would delete existing secret %s for cert %s and recreate" % (config.cert_secret, config.name))
+            echo("Would delete existing secret %s for cert %s and recreate" % (config.cert_secret, config.name))
             return True
         elif not cert_secret and key_secret:
-            print("Would delete existing secret %s for cert %s and recreate" % (config.key_secret, config.name))
+            echo("Would delete existing secret %s for cert %s and recreate" % (config.key_secret, config.name))
             return True
         else:
-            print("Would create cert %s" % config.name)
+            echo("Would create cert %s" % config.name)
             return True
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting secrets for cert %s" % config.name)
+    def delete(self, config, force=False):
+        echo("\tDeleting secrets for cert %s" % config.name)
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if not key_secret and not cert_secret:
-            print_if(not silent, "\tSecrets already deleted. Not doing anything.")
+            echo("\tSecrets already deleted. Not doing anything.")
             return False
         if cert_secret:
-            print("\tDeleting existing secret %s" % config.cert_secret)
+            echo("\tDeleting existing secret %s" % config.cert_secret)
             self.secrets.delete_secret(config.cert_secret)
         if key_secret:
-            print("\tDeleting existing secret %s" % config.key_secret)
+            echo("\tDeleting existing secret %s" % config.key_secret)
             self.secrets.delete_secret(config.key_secret)
-        print("\tDeletion complete.")
+        echo("\tDeletion complete.")
         return True
 
     def dry_delete(self, config):
         cert_secret = self.secrets.get_secret(config.cert_secret)
         key_secret = self.secrets.get_secret(config.key_secret)
         if key_secret or cert_secret:
-            print("Would delete secrets for cert %s" % config.name)
+            echo("Would delete secrets for cert %s" % config.name)
             return True
         else:
             return False

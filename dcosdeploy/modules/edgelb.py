@@ -1,7 +1,8 @@
 import time
-from dcosdeploy.adapters.edgelb import EdgeLbAdapter
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if, compare_dicts, update_dict_with_defaults
+from ..adapters.edgelb import EdgeLbAdapter
+from ..base import ConfigurationException
+from ..util import compare_dicts, update_dict_with_defaults
+from ..util.output import echo, echo_diff
 
 
 class EdgeLbPool(object):
@@ -33,58 +34,54 @@ class EdgeLbPoolsManager(object):
     def __init__(self):
         self.api = EdgeLbAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         if not self.api.ping():
-            print_if(not silent, "\tEdgeLB api not yet available. Waiting ...")
+            echo("\tEdgeLB api not yet available. Waiting ...")
             waiting = 0
             while not self.api.ping():
                 time.sleep(10)
                 waiting += 1
                 if waiting > 12:
-                    print_if(not silent, "\tCould not reach edgelb api. Giving up")
+                    echo("\tCould not reach edgelb api. Giving up")
                     raise Exception("EdgeLB api not available.")
         exists = config.name in self.api.get_pools()
         if exists:
-            print_if(not silent, "\tUpdating pool")
+            echo("\tUpdating pool")
             self.api.update_pool(config.pool_config)
-            print_if(not silent, "\tPool updated.")
+            echo("\tPool updated.")
             return True
         else:
-            print_if(not silent, "\tCreating pool")
+            echo("\tCreating pool")
             self.api.create_pool(config.pool_config)
-            print_if(not silent, "\tPool created.")
+            echo("\tPool created.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         if not self.api.ping():
-            print("Could not reach api-server. Would probably create pool %s" % config.name)
+            echo("Could not reach api-server. Would probably create pool %s" % config.name)
             return True
         exists = config.name in self.api.get_pools()
         if not exists:
-            print("Would create pool %s" % config.name)
+            echo("Would create pool %s" % config.name)
             return True
         existing_pool_config = self.api.get_pool(config.name)
         local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)
         diff = compare_dicts(existing_pool_config, local_pool_config)
         if diff:
-            if debug:
-                print("Would update pool %s:" % config.name)
-                print(diff)
-            else:
-                print("Would update pool %s" % config.name)
+            echo_diff("Would update pool %s" % config.name, diff)
             return True
         else:
             return False
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting pool")
+    def delete(self, config, force=False):
+        echo("\tDeleting pool")
         deleted = self.api.delete_pool(config.name)
-        print("\tDeleted pool.")
+        echo("\tDeleted pool.")
         return deleted
 
     def dry_delete(self, config):
         if config.name in self.api.get_pools():
-            print("Would delete pool %s" % config.name)
+            echo("Would delete pool %s" % config.name)
             return True
         else:
             return False

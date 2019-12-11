@@ -1,6 +1,10 @@
 import unittest
 from unittest import mock
 from dcosdeploy.config import ConfigHelper, VariableContainer
+from dcosdeploy.util import global_config
+
+
+global_config.silent = True
 
 
 @mock.patch("dcosdeploy.auth.get_base_url", lambda: "/bla")
@@ -23,7 +27,7 @@ class CertsTest(unittest.TestCase):
         m.side_effect = [True, True]
         with mock.patch.object(SecretsAdapter, 'get_secret', m):
             certs = CertsManager()
-            self.assertFalse(certs.deploy(cert, silent=True))
+            self.assertFalse(certs.deploy(cert))
 
     @mock.patch("dcosdeploy.modules.certs.CAAdapter")
     @mock.patch("dcosdeploy.modules.certs.SecretsAdapter")
@@ -36,7 +40,7 @@ class CertsTest(unittest.TestCase):
         from dcosdeploy.modules.certs import Cert, CertsManager
         cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list(), None, None, "rsa", 2048)
         certs = CertsManager()
-        result = certs.deploy(cert, silent=True)
+        result = certs.deploy(cert)
         # then
         self.assertTrue(result)
         mock_secretsadapter.return_value.delete_secret.assert_called_with("cert_bla")
@@ -54,7 +58,7 @@ class CertsTest(unittest.TestCase):
         from dcosdeploy.modules.certs import Cert, CertsManager
         cert = Cert("mycert", "cert_bla", "key_bla", {"CN": "foo"}, list(), None, None, "rsa", 2048)
         certs = CertsManager()
-        result = certs.deploy(cert, silent=True)
+        result = certs.deploy(cert)
         # then
         self.assertTrue(result)
         mock_secretsadapter.return_value.delete_secret.assert_not_called()

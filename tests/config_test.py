@@ -1,7 +1,11 @@
 import unittest
 from unittest import mock
 from dcosdeploy import config
+from dcosdeploy.util import global_config
 import dummy_module
+
+
+global_config.silent = True
 
 
 MARATHON_SIMPLE = """

@@ -3,6 +3,7 @@ import base64
 import pystache
 from ..base import ConfigurationException
 from ..util import decrypt_data
+from ..util.output import echo
 
 
 class VariableContainer:
@@ -91,7 +92,7 @@ class VariableContainerBuilder:
     def add_direct_variables(self, variables):
         for name, value in variables.items():
             if name in self.variables:
-                print("WARNING!: Variable %s with value '%s' will be overwritten by '%s'" % (name, self.variables[name], value))
+                echo("WARNING!: Variable %s with value '%s' will be overwritten by '%s'" % (name, self.variables[name], value))
             self.variables[name] = value
 
     def render_value(self, value, extra_vars=dict()):

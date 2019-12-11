@@ -1,5 +1,5 @@
 import requests
-from dcosdeploy.auth import get_auth, get_base_url
+from ..auth import get_auth, get_base_url
 
 
 class CAAdapter(object):

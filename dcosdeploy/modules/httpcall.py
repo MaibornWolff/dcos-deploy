@@ -1,7 +1,7 @@
 import requests
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if
-from dcosdeploy.auth import get_base_url, get_auth
+from ..base import ConfigurationException
+from ..util.output import echo 
+from ..auth import get_base_url, get_auth
 
 
 class HttpCall(object):
@@ -44,20 +44,20 @@ class HttpCallManager(object):
     def __init__(self):
         pass
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
-        print_if(not silent, "\tDoing HTTP call")
+    def deploy(self, config, dependencies_changed=False, force=False):
+        echo("\tDoing HTTP call")
         auth = get_auth() if config.use_adminrouter else None
         response = requests.request(config.method, config.url, auth=auth, data=config.content, verify=False)
         if not response.ok and not config.ignore_errors:
             raise Exception("Got response {}: {}".format(response.status_code, response.text))
-        print_if(not silent, "\tGot response {}.".format(response.status_code))
+        echo("\tGot response {}.".format(response.status_code))
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
-        print("Would do HTTP %s call to '%s'" % (config.method, config.url))
+    def dry_run(self, config, dependencies_changed=False):
+        echo("Would do HTTP %s call to '%s'" % (config.method, config.url))
         return True
 
-    def delete(self, config, silent=False, force=False):
+    def delete(self, config, force=False):
         return False
 
     def dry_delete(self, config):

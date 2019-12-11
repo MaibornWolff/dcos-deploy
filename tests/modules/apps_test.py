@@ -1,6 +1,11 @@
 import unittest
 from unittest import mock
 from dcosdeploy.config import VariableContainer, ConfigHelper
+from dcosdeploy.util import global_config
+
+
+global_config.silent = True
+
 
 VARS_YAML = """
 defaults:

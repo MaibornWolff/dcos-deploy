@@ -1,6 +1,7 @@
 import time
 import requests
-from dcosdeploy.auth import get_auth, get_base_url
+from ..auth import get_auth, get_base_url
+from ..util.output import echo_error
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -17,14 +18,14 @@ class MarathonAdapter(object):
         if not response.ok:
             if response.status_code == 404:
                 return None
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to get state for %s" % app_id)
         return response.json()["app"]
 
     def get_deployments(self):
         response = requests.get(self.marathon_url+"/deployments", auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to get deployments")
         return response.json()
 
@@ -68,7 +69,7 @@ class MarathonAdapter(object):
     def deploy_app(self, app_definition, wait_for_deployment=False, force=False):
         response = requests.put(self.marathon_url + "/apps?force=%s" % force, json=[app_definition], auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to deploy app %s" % app_definition["id"])
         deployment_id = response.json()["deploymentId"]
         deployment = self.get_deployment(deployment_id)
@@ -81,7 +82,7 @@ class MarathonAdapter(object):
     def restart_app(self, app_id, wait_for_deployment=False, force=False):
         response = requests.post(self.marathon_url + "/apps/%s/restart?force=%s" % (app_id, force), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to restart app %s" % app_id)
         deployment_id = response.json()["deploymentId"]
         if wait_for_deployment:
@@ -92,7 +93,7 @@ class MarathonAdapter(object):
         if not response.ok:
             if response.status_code == 404:
                 return False
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to delete app %s" % app_id)
         deployment_id = response.json()["deploymentId"]
         if wait_for_deployment:

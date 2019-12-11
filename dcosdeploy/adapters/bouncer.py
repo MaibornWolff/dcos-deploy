@@ -1,5 +1,6 @@
 import requests
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
+from ..util.output import echo_error
 
 
 class BouncerAdapter(object):
@@ -16,7 +17,7 @@ class BouncerAdapter(object):
         data = dict(description=description, public_key=public_key)
         response = requests.put(self.base_url+"/users/"+name, json=data, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when creating account")
 
     def delete_account(self, name):
@@ -31,14 +32,14 @@ class BouncerAdapter(object):
     def get_groups_for_user(self, name):
         response = requests.get(self.base_url+"/users/%s/groups" % name, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when querying groups for user")
         return [g["group"]["gid"] for g in response.json()["array"]]
 
     def get_permissions_for_user(self, name):
         response = requests.get(self.base_url+"/users/%s/permissions" % name, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when querying permissions for user")
         permissions = dict()
         for permission in response.json()["direct"]:
@@ -48,40 +49,40 @@ class BouncerAdapter(object):
     def add_user_to_group(self, user_name, group):
         response = requests.put(self.base_url+"/groups/%s/users/%s" % (group, user_name), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when adding user to group")
 
     def remove_user_from_group(self, user_name, group):
         response = requests.delete(self.base_url+"/groups/%s/users/%s" % (group, user_name), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when adding user to group")
 
     def add_permission_to_user(self, user_name, rid, action):
         rid = self._encode_rid(rid)
         response = requests.put(self.base_url+r"/acls/%s/users/%s/%s" % (rid, user_name, action), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when adding permission to user")
 
     def remove_permission_from_user(self, user_name, rid, action):
         rid = self._encode_rid(rid)
         response = requests.delete(self.base_url+"/acls/%s/users/%s/%s" % (rid, user_name, action), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when removing permission from user")
 
     def create_permission(self, rid):
         rid = self._encode_rid(rid)
         response = requests.put(self.base_url+"/acls/%s" % rid, json=dict(description="created by dcos-deploy"), auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when creating permission")
 
     def get_rids(self):
         response = requests.get(self.base_url+"/acls", auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Error occured when listing permission")
         return [acl["rid"] for acl in response.json()["array"]]
 

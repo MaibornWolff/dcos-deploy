@@ -1,6 +1,7 @@
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
+from ..util.output import echo_error
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -14,10 +15,10 @@ class MetronomeAdapter(object):
         if response.ok:
             return
         if response.status_code == 422:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Invalid job definition")
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def update_job(self, job_id, definition):
@@ -25,18 +26,18 @@ class MetronomeAdapter(object):
         if response.ok:
             return
         if response.status_code == 422:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Invalid job definition")
         elif response.status_code == 404:
             raise Exception("Job does not exist")
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def get_jobs(self):
         response = requests.get(self.metronome_url+"v1/jobs", auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
         data = response.json()
         for job in data:
@@ -51,7 +52,7 @@ class MetronomeAdapter(object):
         elif response.status_code == 404:
             return None
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def get_schedules(self, job_id):
@@ -63,7 +64,7 @@ class MetronomeAdapter(object):
         elif response.status_code == 404:
             return None
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def does_job_exist(self, job_id):
@@ -78,7 +79,7 @@ class MetronomeAdapter(object):
         elif response.status_code == 404:
             return False
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def create_schedule(self, job_id, definition):
@@ -86,10 +87,10 @@ class MetronomeAdapter(object):
         if response.ok:
             return
         if response.status_code == 422:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Invalid job definition")
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def update_schedule(self, job_id, definition):
@@ -97,10 +98,10 @@ class MetronomeAdapter(object):
         if response.ok:
             return
         if response.status_code == 422:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Invalid job definition")
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")
 
     def delete_schedule(self, job_id, schedule_id):
@@ -110,5 +111,5 @@ class MetronomeAdapter(object):
         elif response.status_code == 404:
             return False
         else:
-            print(response.text)
+            echo_error(response.text)
             raise Exception("Unknown error occured")

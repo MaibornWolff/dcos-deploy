@@ -4,7 +4,8 @@ import json
 import sys
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from dcosdeploy.auth import get_base_url, get_auth
+from ..auth import get_base_url, get_auth
+from ..util.output import echo_error
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
@@ -45,9 +46,8 @@ class DcosAdapter(object):
         return dict(master=master_count, agent=agent_count, public_agent=public_agent_count)
 
 
-
 def fail_on_missing_connectivity():
     connected = DcosAdapter().verify_connectivity()
     if not connected:
-        print("Authentication failed. Please run `dcos auth login`.")
+        echo_error("Authentication failed. Please run `dcos auth login`.")
         sys.exit(1)

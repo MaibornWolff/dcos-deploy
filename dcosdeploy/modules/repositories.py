@@ -1,6 +1,7 @@
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.util import print_if
-from dcosdeploy.adapters.cosmos import CosmosAdapter
+from ..base import ConfigurationException
+from ..util.output import echo
+from ..util import global_config
+from ..adapters.cosmos import CosmosAdapter
 
 
 class PackageRepository(object):
@@ -25,43 +26,43 @@ class PackageRepositoriesManager(object):
     def __init__(self):
         self.api = CosmosAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         repo = self._get_repo(config.name)
         if repo:
             if repo["uri"] != config.uri:
-                print_if(not silent, "\tURIs do not match. Deleting old repository")
+                echo("\tURIs do not match. Deleting old repository")
                 self.api.delete_repository(config.name)
             else:
-                print_if(not silent, "\tNothing changed.")
+                echo("\tNothing changed.")
                 return False
-        print_if(not silent, "\tAdding repository")
+        echo("\tAdding repository")
         self.api.add_repository(config.name, config.uri, config.index)
-        print_if(not silent, "\tFinished")
+        echo("\tFinished")
         return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         repo = self._get_repo(config.name)
         if not repo:
-            print("Would add repository %s" % config.name)
+            echo("Would add repository %s" % config.name)
             return True
         elif repo["uri"] != config.uri:
-            if debug:
-                print("Would change URI of repository %s from %s to %s" % (config.name, repo["uri"], config.uri))
+            if global_config.debug:
+                echo("Would change URI of repository %s from %s to %s" % (config.name, repo["uri"], config.uri))
             else:
-                print("Would change URI of repository %s" % config.name)
+                echo("Would change URI of repository %s" % config.name)
             return True
         else:
             return False
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting repository")
+    def delete(self, config, force=False):
+        echo("\tDeleting repository")
         deleted = self.api.delete_repository(config.name)
-        print("\tDeleted repository.")
+        echo("\tDeleted repository.")
         return deleted
 
     def dry_delete(self, config):
         if self._get_repo(config.name):
-            print("Would delete repository %s" % config.name)
+            echo("Would delete repository %s" % config.name)
             return True
         else:
             return False

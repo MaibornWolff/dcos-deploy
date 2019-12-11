@@ -1,6 +1,7 @@
 import time
 import requests
-from dcosdeploy.auth import get_auth, get_base_url
+from ..auth import get_auth, get_base_url
+from ..util.output import echo_error
 
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -18,7 +19,7 @@ class CosmosAdapter(object):
         }
         response = requests.post(self.package_url+"/repository/list", json={}, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to get list of package repositories")
         return response.json()["repositories"]
 
@@ -32,7 +33,7 @@ class CosmosAdapter(object):
             data["index"] = index
         response = requests.post(self.package_url+"/repository/add", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to add package repository %s" % name)
         return True
 
@@ -43,7 +44,7 @@ class CosmosAdapter(object):
         }
         response = requests.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to delete package repository %s" % name)
         return True
 
@@ -56,7 +57,7 @@ class CosmosAdapter(object):
         if not response.ok:
             if response.json()["type"] == "MarathonAppNotFound":
                 return None
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to get describe for %s" % service_name)
         return response.json()
 
@@ -68,7 +69,7 @@ class CosmosAdapter(object):
         data = dict(appId=service_name, options=options, packageName=package_name, packageVersion=version, replace=True)
         response = requests.post(self.package_url+"/install", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to install service %s" % service_name)
 
     def update_service(self, service_name, version, options):
@@ -81,7 +82,7 @@ class CosmosAdapter(object):
             data["packageVersion"] = version
         response = requests.post(self.service_url+"/update", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to update service %s" % service_name)
 
     def uninstall_package(self, service_name, package_name):
@@ -92,7 +93,7 @@ class CosmosAdapter(object):
         data = dict(all=True, appId=service_name, packageName=package_name)
         response = requests.post(self.package_url+"/uninstall", json=data, headers=headers, auth=get_auth(), verify=False)
         if not response.ok:
-            print(response.text, flush=True)
+            echo_error(response.text)
             raise Exception("Failed to uninstall service %s" % service_name)
 
     def wait_for_plan_complete(self, service_name, plan, timeout=10*60):

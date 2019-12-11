@@ -1,8 +1,9 @@
 import json
 from copy import deepcopy
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.adapters.marathon import MarathonAdapter
-from dcosdeploy.util import compare_dicts, print_if, update_dict_with_defaults
+from ..base import ConfigurationException
+from ..adapters.marathon import MarathonAdapter
+from ..util import compare_dicts, update_dict_with_defaults
+from ..util.output import echo, echo_diff
 
 
 class MarathonApp(object):
@@ -61,42 +62,38 @@ class MarathonAppsManager(object):
     def __init__(self):
         self.api = MarathonAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
-        print_if(not silent, "\tStarting deployment...")
+    def deploy(self, config, dependencies_changed=False, force=False):
+        echo("\tStarting deployment...")
         changed = self.api.deploy_app(config.app_definition, True, force=force)
         if not changed and dependencies_changed:
-            print_if(not silent, "\tNo change in app config. Restarting app...")
+            echo("\tNo change in app config. Restarting app...")
             self.api.restart_app(config.app_id, True, force=force)
-            print_if(not silent, "\tRestart finished")
+            echo("\tRestart finished")
         else:
-            print_if(not silent, "\tFinished")
+            echo("\tFinished")
         return changed
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         app_state = self.api.get_app_state(config.app_id)
         if not app_state:
-            print("Would create marathon app %s" % config.app_id)
+            echo("Would create marathon app %s" % config.app_id)
             return True
         diff = self._compare_app_definitions(config.app_definition, app_state)
         if diff:
-            if debug:
-                print("Would update marathon app %s:" % config.app_id)
-                print(diff)
-            else:
-                print("Would update marathon app %s" % config.app_id)
+            echo_diff("Would update marathon app %s" % config.app_id, diff)
         elif dependencies_changed:
-            print("Would restart marathon app %s" % config.app_id)
+            echo("Would restart marathon app %s" % config.app_id)
         return diff or dependencies_changed
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting app")
+    def delete(self, config, force=False):
+        echo("\tDeleting app")
         deleted = self.api.delete_app(config.app_id, wait_for_deployment=True, force=force)
-        print("\tDeleted app.")
+        echo("\tDeleted app.")
         return deleted
 
     def dry_delete(self, config):
         if self.api.get_app_state(config.app_id):
-            print("Would delete app %s" % config.app_id)
+            echo("Would delete app %s" % config.app_id)
             return True
         else:
             return False

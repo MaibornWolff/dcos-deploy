@@ -1,7 +1,8 @@
 import json
-from dcosdeploy.base import ConfigurationException
-from dcosdeploy.adapters.metronome import MetronomeAdapter
-from dcosdeploy.util import compare_dicts, print_if, update_dict_with_defaults
+from ..base import ConfigurationException
+from ..adapters.metronome import MetronomeAdapter
+from ..util import compare_dicts, update_dict_with_defaults
+from ..util.output import echo, echo_diff
 
 
 class MetronomeJob(object):
@@ -38,51 +39,43 @@ class JobsManager(object):
     def __init__(self):
         self.api = MetronomeAdapter()
 
-    def deploy(self, config, dependencies_changed=False, silent=False, force=False):
+    def deploy(self, config, dependencies_changed=False, force=False):
         if self.api.does_job_exist(config.job_id):
-            print_if(not silent, "\tUpdating existing job")
+            echo("\tUpdating existing job")
             self.api.update_job(config.job_id, config.job_definition)
             self.api.update_schedule(config.job_id, config.schedule_definition)
-            print_if(not silent, "\tUpdated job.")
+            echo("\tUpdated job.")
             return True
         else:
-            print_if(not silent, "\tCreating job")
+            echo("\tCreating job")
             self.api.create_job(config.job_definition)
             self.api.create_schedule(config.job_id, config.schedule_definition)
-            print_if(not silent, "\tCreated job.")
+            echo("\tCreated job.")
             return True
 
-    def dry_run(self, config, dependencies_changed=False, debug=False):
+    def dry_run(self, config, dependencies_changed=False):
         if not self.api.does_job_exist(config.job_id):
-            print("Would create job %s" % config.job_id)
+            echo("Would create job %s" % config.job_id)
             return True
         existing_job_definition = self.api.get_job(config.job_id)
         existing_schedule_definition = self.api.get_schedules(config.job_id)
         job_diff = self._compare_job_definitions(config.job_definition, existing_job_definition)
         if job_diff:
-            if debug:
-                print("Would update job %s:" % config.job_id)
-                print(job_diff)
-            else:
-                print("Would update job %s" % config.job_id)
+            echo_diff("Would update job %s" % config.job_id, job_diff)
         schedule_diff = self._compare_schedule_definitions(config.schedule_definition, existing_schedule_definition)
         if schedule_diff:
-            if debug:
-                print("Would update schedule for job %s:" % config.job_id)
-                print(schedule_diff)
-            else:
-                print("Would update schedule for job %s" % config.job_id)
+            echo_diff("Would update schedule for job %s" % config.job_id, schedule_diff)
         return job_diff is not None or schedule_diff is not None
 
-    def delete(self, config, silent=False, force=False):
-        print("\tDeleting job")
+    def delete(self, config, force=False):
+        echo("\tDeleting job")
         deleted = self.api.delete_job(config.job_id)
-        print("\tDeleted job.")
+        echo("\tDeleted job.")
         return deleted
 
     def dry_delete(self, config):
         if self.api.does_job_exist(config.job_id):
-            print("Would delete job %s" % config.job_id)
+            echo("Would delete job %s" % config.job_id)
             return True
         else:
             return False
