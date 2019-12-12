@@ -1,10 +1,7 @@
 import time
-import requests
-from ..auth import get_auth, get_base_url
+from ..auth import get_base_url
+from ..util import http
 from ..util.output import echo_error
-
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class CosmosAdapter(object):
@@ -17,7 +14,7 @@ class CosmosAdapter(object):
             "Accept": "application/vnd.dcos.package.repository.list-response+json;charset=utf-8;version=v1",
             "Content-Type": "application/vnd.dcos.package.repository.list-request+json;charset=utf-8;version=v1",
         }
-        response = requests.post(self.package_url+"/repository/list", json={}, headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.package_url+"/repository/list", json={}, headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to get list of package repositories")
@@ -31,7 +28,7 @@ class CosmosAdapter(object):
         data = dict(name=name, uri=uri)
         if index is not None:
             data["index"] = index
-        response = requests.post(self.package_url+"/repository/add", json=data, headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.package_url+"/repository/add", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to add package repository %s" % name)
@@ -42,7 +39,7 @@ class CosmosAdapter(object):
             "Accept": "application/vnd.dcos.package.repository.delete-response+json;charset=utf-8;version=v1",
             "Content-Type": "application/vnd.dcos.package.repository.delete-request+json;charset=utf-8;version=v1",
         }
-        response = requests.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to delete package repository %s" % name)
@@ -53,7 +50,7 @@ class CosmosAdapter(object):
             "Accept": "application/vnd.dcos.service.describe-response+json;charset=utf-8;version=v1",
             "Content-Type": "application/vnd.dcos.service.describe-request+json;charset=utf-8;version=v1",
         }
-        response = requests.post(self.service_url+"/describe", json=dict(appId=service_name), headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.service_url+"/describe", json=dict(appId=service_name), headers=headers)
         if not response.ok:
             if response.json()["type"] == "MarathonAppNotFound":
                 return None
@@ -67,7 +64,7 @@ class CosmosAdapter(object):
             "Content-Type": "application/vnd.dcos.package.install-request+json;charset=utf-8;version=v1",
         }
         data = dict(appId=service_name, options=options, packageName=package_name, packageVersion=version, replace=True)
-        response = requests.post(self.package_url+"/install", json=data, headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.package_url+"/install", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to install service %s" % service_name)
@@ -80,7 +77,7 @@ class CosmosAdapter(object):
         data = dict(appId=service_name, options=options, replace=True)
         if version:
             data["packageVersion"] = version
-        response = requests.post(self.service_url+"/update", json=data, headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.service_url+"/update", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to update service %s" % service_name)
@@ -91,7 +88,7 @@ class CosmosAdapter(object):
             "Content-Type": "application/vnd.dcos.package.uninstall-request+json;charset=utf-8;version=v1",
         }
         data = dict(all=True, appId=service_name, packageName=package_name)
-        response = requests.post(self.package_url+"/uninstall", json=data, headers=headers, auth=get_auth(), verify=False)
+        response = http.post(self.package_url+"/uninstall", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to uninstall service %s" % service_name)
@@ -114,7 +111,7 @@ class CosmosAdapter(object):
     def has_plans_api(self, service_name):
         if service_name[0] == "/":
             service_name = service_name[1:]
-        response = requests.get(get_base_url()+"/service/" + service_name + "/v1/plans/", auth=get_auth(), verify=False)
+        response = http.get(get_base_url()+"/service/" + service_name + "/v1/plans/")
         if response.ok:
             return True
         else:
@@ -123,7 +120,7 @@ class CosmosAdapter(object):
     def _get_plan_status(self, service_name, plan):
         if service_name[0] == "/":
             service_name = service_name[1:]
-        response = requests.get(get_base_url()+"/service/" + service_name + "/v1/plans/%s" % plan, auth=get_auth(), verify=False)
+        response = http.get(get_base_url()+"/service/" + service_name + "/v1/plans/%s" % plan)
         if response.ok:
             return response.json()["status"]
         else:

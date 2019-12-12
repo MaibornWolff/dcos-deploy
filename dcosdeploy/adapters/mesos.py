@@ -1,11 +1,8 @@
 import uuid
 import base64
 import json
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from ..auth import get_base_url, get_auth
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+from ..util import http
+from ..auth import get_base_url
 
 
 class MesosAdapter(object):
@@ -30,7 +27,7 @@ class MesosAdapter(object):
             }
           }
         }
-        response = requests.post(url, json=action, auth=get_auth(), verify=False)
+        response = http.post(url, json=action)
         if response.ok:
             lines = response.text.split("\n")
             idx = 1
@@ -55,7 +52,7 @@ class MesosAdapter(object):
         return parent_container_id, slave_id
 
     def _get_master_state(self):
-        response = requests.get(self.mesos_url+"master/state", auth=get_auth(), verify=False)
+        response = http.get(self.mesos_url+"master/state")
         if response.ok:
             return response.json()
         else:

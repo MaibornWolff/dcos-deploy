@@ -2,12 +2,9 @@ import uuid
 import base64
 import json
 import sys
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-from ..auth import get_base_url, get_auth
+from ..auth import get_base_url
+from ..util import http
 from ..util.output import echo_error
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class DcosAdapter(object):
@@ -16,18 +13,18 @@ class DcosAdapter(object):
 
     def verify_connectivity(self):
         # Dummy call to verify if connection and authentication token work
-        response = requests.get(self.base_url+"/mesos_dns/v1/hosts/master.mesos", auth=get_auth(), verify=False)
+        response = http.get(self.base_url+"/mesos_dns/v1/hosts/master.mesos")
         return response.ok
 
     def get_cluster_info(self):
-        response = requests.get(self.base_url+"/dcos-metadata/dcos-version.json", auth=get_auth(), verify=False)
+        response = http.get(self.base_url+"/dcos-metadata/dcos-version.json")
         if not response.ok:
             raise Exception("Unknown error occured: %s" % response.text)
         info = response.json()
         return dict(version=info["version"], variant=info["dcos-variant"])
     
     def get_nodes(self):
-        response = requests.get(self.base_url+"/system/health/v1/nodes", auth=get_auth(), verify=False)
+        response = http.get(self.base_url+"/system/health/v1/nodes")
         if not response.ok:
             raise Exception("Unknown error occured: %s" % response.text)
         return response.json()["nodes"]

@@ -1,10 +1,7 @@
 import time
-import requests
-from ..auth import get_auth, get_base_url
+from ..auth import get_base_url
+from ..util import http
 from ..util.output import echo_error
-
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MarathonAdapter(object):
@@ -14,7 +11,7 @@ class MarathonAdapter(object):
     def get_app_state(self, app_id):
         if not app_id[0] == "/":
             app_id = "/" + app_id
-        response = requests.get(self.marathon_url+"/apps%s/?embed=app.counts" % app_id, auth=get_auth(), verify=False)
+        response = http.get(self.marathon_url+"/apps%s/?embed=app.counts" % app_id)
         if not response.ok:
             if response.status_code == 404:
                 return None
@@ -23,7 +20,7 @@ class MarathonAdapter(object):
         return response.json()["app"]
 
     def get_deployments(self):
-        response = requests.get(self.marathon_url+"/deployments", auth=get_auth(), verify=False)
+        response = http.get(self.marathon_url+"/deployments")
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to get deployments")
@@ -67,7 +64,7 @@ class MarathonAdapter(object):
             state = self.get_app_state(app_id)
 
     def deploy_app(self, app_definition, wait_for_deployment=False, force=False):
-        response = requests.put(self.marathon_url + "/apps?force=%s" % force, json=[app_definition], auth=get_auth(), verify=False)
+        response = http.put(self.marathon_url + "/apps?force=%s" % force, json=[app_definition])
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to deploy app %s" % app_definition["id"])
@@ -80,7 +77,7 @@ class MarathonAdapter(object):
         return True
 
     def restart_app(self, app_id, wait_for_deployment=False, force=False):
-        response = requests.post(self.marathon_url + "/apps/%s/restart?force=%s" % (app_id, force), auth=get_auth(), verify=False)
+        response = http.post(self.marathon_url + "/apps/%s/restart?force=%s" % (app_id, force))
         if not response.ok:
             echo_error(response.text)
             raise Exception("Failed to restart app %s" % app_id)
@@ -89,7 +86,7 @@ class MarathonAdapter(object):
             self.wait_for_specific_deployment(deployment_id)
 
     def delete_app(self, app_id, wait_for_deployment=False, force=False):
-        response = requests.delete(self.marathon_url + "/apps/%s?force=%s" % (app_id, force), auth=get_auth(), verify=False)
+        response = http.delete(self.marathon_url + "/apps/%s?force=%s" % (app_id, force))
         if not response.ok:
             if response.status_code == 404:
                 return False

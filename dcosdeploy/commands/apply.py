@@ -14,7 +14,7 @@ from ..util.output import echo
 @click.option("--debug", help="Enable debug logging", is_flag=True)
 @click.option("--force", help="Forces deployment of entity provided with --only", is_flag=True)
 def apply(config_file, var, only, dry_run, yes, debug, force):
-    global_config.debug = True
+    global_config.debug = debug
     provided_variables = get_variables(var)
     if not config_file:
         config_file = detect_yml_file("dcos")

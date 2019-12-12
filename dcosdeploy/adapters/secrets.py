@@ -1,5 +1,5 @@
-import requests
-from ..auth import get_base_url, get_auth
+from ..auth import get_base_url
+from ..util import http
 from ..util.output import echo_error
 
 
@@ -11,7 +11,7 @@ class SecretsAdapter(object):
     def list_secrets(self):
         """Retrive a list of secrets names"""
         if not self._cache_secrets_list:
-            response = requests.get(self.base_url + "secret/default/?list=true", auth=get_auth(), verify=False)
+            response = http.get(self.base_url + "secret/default/?list=true")
             if not response.ok:
                 echo_error(response.text)
                 raise Exception("Failed to list secrets")
@@ -22,7 +22,7 @@ class SecretsAdapter(object):
         """Get value of a specific secret"""
         if name[0] == "/":
             name = name[1:]
-        response = requests.get(self.base_url + "secret/default/%s" % name, auth=get_auth(), verify=False)
+        response = http.get(self.base_url + "secret/default/%s" % name)
         if response.status_code == 404:
             return None
         if not response.ok:
@@ -36,17 +36,17 @@ class SecretsAdapter(object):
     def write_secret(self, name, value=None, file_content=None, update=True):
         """Write a secret, set either value or file_content but not both."""
         if update:
-            func = requests.patch
+            func = http.patch
         else:
-            func = requests.put
+            func = http.put
         if name[0] == "/":
             name = name[1:]
         path = self.base_url + "secret/default/%s" % name
         if value:
             data = {"value": value}
-            response = func(path, json=data, auth=get_auth(), verify=False)
+            response = func(path, json=data)
         elif file_content:
-            response = func(path, data=file_content, headers={'Content-Type': 'application/octet-stream'}, auth=get_auth(), verify=False)
+            response = func(path, data=file_content, headers={'Content-Type': 'application/octet-stream'})
         else:
             raise Exception("You must either specify value or file_content")
         if not response.ok:
@@ -54,7 +54,7 @@ class SecretsAdapter(object):
             raise Exception("Failed to create secret")
 
     def delete_secret(self, name):
-        response = requests.delete(self.base_url + "secret/default/%s" % name, auth=get_auth(), verify=False)
+        response = http.delete(self.base_url + "secret/default/%s" % name)
         if response.ok:
             return True
         elif response.status_code == 404:

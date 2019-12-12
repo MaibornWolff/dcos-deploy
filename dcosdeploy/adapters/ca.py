@@ -1,5 +1,5 @@
-import requests
-from ..auth import get_auth, get_base_url
+from ..auth import get_base_url
+from ..util import http
 
 
 class CAAdapter(object):
@@ -17,7 +17,7 @@ class CAAdapter(object):
             "size": size
           }
         }
-        response = requests.post(self.base_url+"newkey", json=data, auth=get_auth(), verify=False)
+        response = http.post(self.base_url+"newkey", json=data)
         if not response.ok:
             raise Exception("Failed to generate key: %s" % response.text)
         return response.json()["result"]["certificate_request"], response.json()["result"]["private_key"]
@@ -27,7 +27,7 @@ class CAAdapter(object):
           "certificate_request": csr,
           "hosts": hosts
         }
-        response = requests.post(self.base_url+"sign", json=data, auth=get_auth(), verify=False)
+        response = http.post(self.base_url+"sign", json=data)
         if not response.ok:
             raise Exception("Failed to sign cert: %s" % response.text)
         return response.json()["result"]["certificate"]

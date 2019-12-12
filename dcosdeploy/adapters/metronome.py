@@ -1,9 +1,6 @@
-import requests
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from ..auth import get_base_url, get_auth
+from ..util import http
 from ..util.output import echo_error
-
-requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 
 class MetronomeAdapter(object):
@@ -11,7 +8,7 @@ class MetronomeAdapter(object):
         self.metronome_url = get_base_url() + "/service/metronome/"
 
     def create_job(self, definition):
-        response = requests.post(self.metronome_url+"v1/jobs", json=definition, auth=get_auth(), verify=False)
+        response = http.post(self.metronome_url+"v1/jobs", json=definition)
         if response.ok:
             return
         if response.status_code == 422:
@@ -22,7 +19,7 @@ class MetronomeAdapter(object):
             raise Exception("Unknown error occured")
 
     def update_job(self, job_id, definition):
-        response = requests.put(self.metronome_url+"v1/jobs/%s" % job_id, json=definition, auth=get_auth(), verify=False)
+        response = http.put(self.metronome_url+"v1/jobs/%s" % job_id, json=definition)
         if response.ok:
             return
         if response.status_code == 422:
@@ -35,7 +32,7 @@ class MetronomeAdapter(object):
             raise Exception("Unknown error occured")
 
     def get_jobs(self):
-        response = requests.get(self.metronome_url+"v1/jobs", auth=get_auth(), verify=False)
+        response = http.get(self.metronome_url+"v1/jobs")
         if not response.ok:
             echo_error(response.text)
             raise Exception("Unknown error occured")
@@ -46,7 +43,7 @@ class MetronomeAdapter(object):
     def get_job(self, job_id):
         if job_id[0] == "/":
             job_id = job_id[1:]
-        response = requests.get(self.metronome_url+"v1/jobs/%s" % job_id, auth=get_auth(), verify=False)
+        response = http.get(self.metronome_url+"v1/jobs/%s" % job_id)
         if response.ok:
             return response.json()
         elif response.status_code == 404:
@@ -58,7 +55,7 @@ class MetronomeAdapter(object):
     def get_schedules(self, job_id):
         if job_id[0] == "/":
             job_id = job_id[1:]
-        response = requests.get(self.metronome_url+"v1/jobs/%s/schedules" % job_id, auth=get_auth(), verify=False)
+        response = http.get(self.metronome_url+"v1/jobs/%s/schedules" % job_id)
         if response.ok:
             return response.json()
         elif response.status_code == 404:
@@ -73,7 +70,7 @@ class MetronomeAdapter(object):
     def delete_job(self, job_id):
         if job_id[0] == "/":
             job_id = job_id[1:]
-        response = requests.delete(self.metronome_url+"v1/jobs/%s" % job_id, auth=get_auth(), verify=False)
+        response = http.delete(self.metronome_url+"v1/jobs/%s" % job_id)
         if response.ok:
             return True
         elif response.status_code == 404:
@@ -83,7 +80,7 @@ class MetronomeAdapter(object):
             raise Exception("Unknown error occured")
 
     def create_schedule(self, job_id, definition):
-        response = requests.post(self.metronome_url+"v1/jobs/%s/schedules" % job_id, json=definition, auth=get_auth(), verify=False)
+        response = http.post(self.metronome_url+"v1/jobs/%s/schedules" % job_id, json=definition)
         if response.ok:
             return
         if response.status_code == 422:
@@ -94,7 +91,7 @@ class MetronomeAdapter(object):
             raise Exception("Unknown error occured")
 
     def update_schedule(self, job_id, definition):
-        response = requests.put(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, definition["id"]), json=definition, auth=get_auth(), verify=False)
+        response = http.put(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, definition["id"]), json=definition)
         if response.ok:
             return
         if response.status_code == 422:
@@ -105,7 +102,7 @@ class MetronomeAdapter(object):
             raise Exception("Unknown error occured")
 
     def delete_schedule(self, job_id, schedule_id):
-        response = requests.delete(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, schedule_id), auth=get_auth(), verify=False)
+        response = http.delete(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, schedule_id))
         if response.ok:
             return True
         elif response.status_code == 404:
