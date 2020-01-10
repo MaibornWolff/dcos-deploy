@@ -63,7 +63,7 @@ class CosmosAdapter(object):
             "Accept": "application/vnd.dcos.package.install-response+json;charset=utf-8;version=v2",
             "Content-Type": "application/vnd.dcos.package.install-request+json;charset=utf-8;version=v1",
         }
-        data = dict(appId=service_name, options=options, packageName=package_name, packageVersion=version, replace=True)
+        data = dict(options=options, packageName=package_name, packageVersion=version, replace=True)
         response = http.post(self.package_url+"/install", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)

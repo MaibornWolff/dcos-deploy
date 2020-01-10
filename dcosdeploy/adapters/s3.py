@@ -12,7 +12,7 @@ class S3FileAdapter(object):
         client = self._init_client(server)
         try:
             stat = client.stat_object(bucket, key)
-            return hash == stat.metadata.get(self._hash_key(server), "")
+            return hash == self._hash_from_metadata(stat.metadata)
         except NoSuchKey:
             return None
         except NoSuchBucket:
@@ -55,12 +55,11 @@ class S3FileAdapter(object):
         client = self._init_client(server)
         client.set_bucket_policy(bucket, policy)
 
-    def _hash_key(self, server):
-        """Try to detect if endpoint is AWS S3 and use lower case key, minio uses upper case"""
-        if "amazonaws" in server.endpoint:
-            return "x-amz-meta-hash"
-        else:
-            return "X-Amz-Meta-Hash"
+    def _hash_from_metadata(self, metadata):
+        for key in metadata.keys():
+            if key.lower() == "x-amz-meta-hash":
+                return metadata[key]
+        return ""
 
     def _init_client(self, server):
         if not server.ssl_verify:

@@ -349,7 +349,10 @@ One example usecase for this is a service secured with TLS client certificate au
 With this type you can add additional package repositories to DC/OS. You can for example use it to add the Edge-LB repositories to your EE cluster. Set the repository as a dependency for any frameworks/packages installed from it.
 
 ### Edge-LB pool
+
 `type: edgelb` defines an edgelb pool. This can only be used on EE clusters. It has the following specific options:
+
+* `api_server`: path to the edgelb-api server if not installed at default location. Variables can be used. Optional. E.g. if you installed Edge-LB at `infra/edgelb` then use this for `api_server`.
 * `name`: name of the pool. Taken from pool config if not present. Variables can be used.
 * `pool`: filename to the yaml file for configuring the pool. Required. The filename itsself and the yaml file can contain variables.
 
