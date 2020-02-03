@@ -15,7 +15,7 @@ def read_requirements():
 
 setuptools.setup(
     name="dcos-deploy",
-    version="0.2.0",
+    version="0.3.0",
     author="MaibornWolff",
     description="Deploy and orchestrate DC/OS services and apps",
     long_description=long_description,
@@ -23,7 +23,7 @@ setuptools.setup(
     keywords="dcos marathon mesos",
     license='Apache 2.0',
     url="https://github.com/MaibornWolff/dcos-deploy/",
-    packages=["dcosdeploy", "dcosdeploy.commands", "dcosdeploy.adapters", "dcosdeploy.modules", "dcosdeploy.config"],
+    packages=["dcosdeploy", "dcosdeploy.commands", "dcosdeploy.adapters", "dcosdeploy.modules", "dcosdeploy.config", "dcosdeploy.util"],
     python_requires=">=3.5",
     install_requires=list(read_requirements()),
     classifiers=[

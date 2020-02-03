@@ -138,6 +138,8 @@ _app_defaults = dict(
         "type": "MESOS",
         "volumes": []
     },
+    secrets={},
+    deployments=[]
 )
 
 _docker_defaults = dict(
