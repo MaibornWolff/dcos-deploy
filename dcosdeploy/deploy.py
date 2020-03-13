@@ -4,11 +4,11 @@ from .util.output import echo
 
 
 class DeploymentRunner(object):
-    def __init__(self, config_filename, provided_variables):
+    def __init__(self, config_filenames, provided_variables):
         fail_on_missing_connectivity()
         self.already_deployed = dict()  # entitiy-name -> changed
         self.dry_deployed = dict()  # entity-name -> changed
-        self.config, self.managers = read_config(config_filename, provided_variables)
+        self.config, self.managers = read_config(config_filenames, provided_variables)
 
     def run_deployment(self, force=False):
         changed = False

@@ -118,9 +118,8 @@ class EntityContainer(object):
         self.state = state
 
 
-def read_config(filename, provided_variables):
-    abspath = os.path.abspath(filename)
-    config_files = [(abspath, None)]
+def read_config(filenames, provided_variables):
+    config_files = [(os.path.abspath(filename), None) for filename in filenames]
     idx = 0
     entities = dict()
     global_config = dict()

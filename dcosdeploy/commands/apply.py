@@ -6,7 +6,7 @@ from ..util.output import echo
 
 
 @maingroup.command()
-@click.option("--config-file", "-f", help="Path to alternate config file, default is dcos.yml", required=False)
+@click.option("--config-file", "-f", help="Path to alternate config file, default is dcos.yml. Can be provided multiple times", required=False, multiple=True)
 @click.option("--var", "-e", help="Variable", multiple=True)
 @click.option("--only", help="Deploy only specified object")
 @click.option("--dry-run", "-d", help="Only check what would be done", is_flag=True)

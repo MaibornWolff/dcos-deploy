@@ -4,11 +4,11 @@ from .util.output import echo
 
 
 class DeletionRunner:
-    def __init__(self, config_filename, provided_variables):
+    def __init__(self, config_filenames, provided_variables):
         fail_on_missing_connectivity()
         self._already_deleted = dict()  # entitiy-name -> newly deleted
         self._dry_deleted = dict()  # entity-name -> newly deleted
-        self._config, self._managers = read_config(config_filename, provided_variables)
+        self._config, self._managers = read_config(config_filenames, provided_variables)
         self._calculate_reserve_dependencies()
 
     def run_deletion(self):

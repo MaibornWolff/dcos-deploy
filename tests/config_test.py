@@ -247,4 +247,4 @@ def read_config_mocked_open(provided_variables, *input_texts):
     open_mock = mock.mock_open(read_data=input_texts[0])
     open_mock.side_effect = [mock.mock_open(read_data=text).return_value for text in input_texts]
     with mock.patch('builtins.open', open_mock):
-        return config.read_config("dcos-test.yaml", provided_variables)
+        return config.read_config(["dcos-test.yaml"], provided_variables)
