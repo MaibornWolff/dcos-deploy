@@ -180,10 +180,11 @@ supersecret
 
 To use encrypted files with includes make sure that the variable for the encryption key is either defined in the file itsself or in an included file that is read before the encrypted one.
 
-
 ### Entity
+
 Each entity has the same structure and some common options:
-```
+
+```yaml
 entityname:
   type: foo
   only:
@@ -200,6 +201,7 @@ entityname:
 ```
 
 `type` defines what kind of entity this is. Currently implemented are
+
 * `app`
 * `framework`
 * `job`
@@ -210,6 +212,9 @@ entityname:
 * `edgelb`
 * `s3file`
 * `taskexec`
+* `iam_group`
+* `iam_user`
+
 See their respective sections below for details.
 
 `only` and `except` take key/value-pairs of variable names and values. These are evaluated when reading the config file based on all provided and default variables. The entity is excluded if one of the variables in the `only` section does not have the value specified or if one of the variables in the `except` section has the specified value. In the example above the entity is only included if `var1 == foo` and `var2 != bar`. If a variable in the `only` section is not defined (no default value) the condition is treated as false and the entity is ignored.
@@ -305,16 +310,18 @@ The job definition is expected to be in the format used starting with DC/S 1.13.
 
 ### Serviceaccount
 `type: serviceaccount` defines a serviceaccount. This can only be used on EE clusters. It has the following specific options:
+
 * `name`: Name of the serviceaccount. Required. Variables can be used.
 * `secret`: Path to use for the secret that contains the private key associated with the account. Required. Variables can be used.
 * `groups`: List of groups the account should be added to. Optional. Variables can be used.
-* `permissions`: Permissions to give to the account. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables are not supported.
+* `permissions`: Permissions to give to the account. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables can be used.
 
 This entity equates to the steps required to create a serviceaccount for a framework as described in the [DC/OS documentation](https://docs.mesosphere.com/1.12/security/ent/service-auth/custom-service-auth/).
 Any groups or permissions not specified in the config are removed from the account during the update process.
 
 Example:
-```
+
+```yaml
 type: serviceaccount
 name: hdfs-service-account
 secret: hdfs/serviceaccount-secret
@@ -408,6 +415,7 @@ As dcos-deploy has no state it cannnot detect if this command has been run befor
 Example for this is: Uploading configuration files to S3 and triggering a redownload of the files into the service by a command. See [examples](examples/demo) for details.
 
 ### HttpCall
+
 `type: httpcall` allows to make HTTP calls as part of deployments. This is similar to `taskexec` and can be used to upload configuration to services as part of deployments. It has the following specific options:
 
 * `url`: HTTP(s) URL to call. Required. Variables can be used.
@@ -421,6 +429,25 @@ Example for this is: Uploading configuration files to S3 and triggering a redown
 If the URL is neither a http nor a https url it wil be treated as a path behind the DC/OS adminrouter. When executing the call dcos-deploy will use its DC/OS credentials to authenticate against the adminrouter. So for example if a DC/OS cluster is reachable under `https://dcos.mycluster` and `url` is defined as `/service/myservice/reload` then dcos-deploy will call the URL `https://dcos.mycluster/service/myservice/reload`.
 
 The same restrictions from `taskexec` in regards to state apply. As such this entity will run every time `apply` is called unless `when` and dependencies are used (see description for `taskexec` above for details).
+
+### IAM Group
+
+`type: iam_group` defines a group in the DC/OS IAM system. It has the following options:
+
+* `name`: Name of the group. Required. Variables can be used.
+* `description`: Description of the group. Required. Variables can be used.
+* `permissions`: Permissions to give to the group. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables can be used. See [Serviceaccount](#Serviceaccount) for an example.
+
+### IAM User
+
+`type: iam_user` defines a user in the DC/OS IAM system. It is similar to the `serviceaccount` but represents a normal user with username and password. It has the following options:
+
+* `name`: Name of the user. Required. Variables can be used.
+* `description`: Description of the user. Is represented as `Full name` in the DC/OS Admin UI. Required. Variables can be used.
+* `update_password`: Cleartext password to set for the user. Required. Variables can be used.
+* `update_password`: If set to true will always overwrite the current user password with the one specified here. Defaults to true.
+* `groups`: List of groups the user should be added to. Optional. Variables can be used.
+* `permissions`: Permissions to give to the user. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables can be used. See [Serviceaccount](#Serviceaccount) for an example.
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.

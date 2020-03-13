@@ -28,6 +28,8 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.s3",
     "dcosdeploy.modules.taskexec",
     "dcosdeploy.modules.httpcall",
+    "dcosdeploy.modules.iam_groups",
+    "dcosdeploy.modules.iam_users",
 ]
 
 
@@ -75,6 +77,8 @@ class ConfigHelper(object):
         return json.loads(self.read_file(filename, render_variables))
 
     def render(self, text):
+        if text is None:
+            return None
         return self.variables_container.render(text)
 
     def prepare_extra_vars(self, extra_vars):

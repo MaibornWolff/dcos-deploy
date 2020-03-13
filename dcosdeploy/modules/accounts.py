@@ -6,46 +6,45 @@ from ..base import ConfigurationException
 from ..util.output import echo
 from ..adapters.bouncer import BouncerAdapter
 from ..adapters.secrets import SecretsAdapter
+from .iam_users import IamUserBaseManager, render_permissions
 
 
 LOGIN_ENDPOINT = "https://leader.mesos/acs/api/v1/auth/login"
 
 
 class ServiceAccount(object):
-    def __init__(self, name, path, secret, groups, permissions):
+    def __init__(self, name, secret, groups, permissions):
         self.name = name
-        self.path = path
         self.secret = secret
         self.groups = groups
         self.permissions = permissions
-        self.dependencies = list()
 
 
 def parse_config(name, config, config_helper):
-    path = config.get("name")
-    if not path:
+    name = config.get("name")
+    if not name:
         raise ConfigurationException("name is required for serviceaccounts")
     secret_path = config.get("secret")
-    path = config_helper.render(path)
+    name = config_helper.render(name)
     secret_path = config_helper.render(secret_path)
     groups = config.get("groups", list())
-    permissions = config.get("permissions", dict())
+    permissions = render_permissions(config_helper, config.get("permissions", dict()))
     groups = [config_helper.render(g) for g in groups]
-    return ServiceAccount(name, path, secret_path, groups, permissions)
+    return ServiceAccount(name, secret_path, groups, permissions)
 
 
-class AccountsManager(object):
+class AccountsManager(IamUserBaseManager):
     def __init__(self):
-        self.bouncer = BouncerAdapter()
+        super().__init__()
         self.secrets = SecretsAdapter()
 
-    def _does_serviceaccount_exist(self, path):
-        return self.bouncer.get_account(path) is not None
+    def _does_serviceaccount_exist(self, name):
+        return self.bouncer.get_account(name) is not None
 
-    def _create_serviceaccount(self, path, secret):
+    def _create_serviceaccount(self, name, secret):
         private_key, public_key = self._generate_keypair()
-        self.bouncer.create_account(path, "", public_key)
-        cert_secret = json.dumps(dict(login_endpoint=LOGIN_ENDPOINT, private_key=private_key, scheme="RS256", uid=path))
+        self.bouncer.create_service_account(name, "", public_key)
+        cert_secret = json.dumps(dict(login_endpoint=LOGIN_ENDPOINT, private_key=private_key, scheme="RS256", uid=name))
         self.secrets.write_secret(secret, cert_secret, update=False)
 
     def _generate_keypair(self, size=2048):
@@ -60,96 +59,35 @@ class AccountsManager(object):
 
     def deploy(self, config, dependencies_changed=False, force=False):
         changed = False
-        if not self._does_serviceaccount_exist(config.path):
+        if not self._does_serviceaccount_exist(config.name):
             echo("\tCreating serviceaccount")
-            self._create_serviceaccount(config.path, config.secret)
+            self._create_serviceaccount(config.name, config.secret)
             changed = True
         else:
             echo("\tServiceaccount already exists. Not creating it.")
-        existing_groups = self.bouncer.get_groups_for_user(config.path)
-        existing_permissions = self.bouncer.get_permissions_for_user(config.path)
-        existing_rids = self.bouncer.get_rids()
 
-        echo("\tUpdating groups")
-        # Update groups
-        for group in existing_groups:
-            if group not in config.groups:
-                self.bouncer.remove_user_from_group(config.path, group)
-                changed = True
-        for group in config.groups:
-            if group not in existing_groups:
-                self.bouncer.add_user_to_group(config.path, group)
-                changed = True
+        if self._update_groups_permissions(config.name, config.groups, config.permissions):
+            changed = True
 
-        # Update permissions
-        echo("\tUpdating permissions")
-        for rid, actions in existing_permissions.items():
-            target_actions = config.permissions.get(rid, list())
-            for action in actions:
-                if action not in target_actions:
-                    self.bouncer.remove_permission_from_user(config.path, rid, action)
-                    changed = True
-        for rid, actions in config.permissions.items():
-            if rid not in existing_rids:
-                self.bouncer.create_permission(rid)
-            for action in actions:
-                if action not in existing_permissions.get(rid, list()):
-                    self.bouncer.add_permission_to_user(config.path, rid, action)
-                    changed = True
         return changed
 
     def dry_run(self, config, dependencies_changed=False):
-        existing_rids = self.bouncer.get_rids()
-
-        if not self._does_serviceaccount_exist(config.path):
-            echo("Would create serviceaccount %s" % config.path)
-            for rid, actions in config.permissions.items():
-                if rid not in existing_rids:
-                    echo("Would create permission %s" % rid)
+        if not self._does_serviceaccount_exist(config.name):
+            echo("Would create serviceaccount %s" % config.name)
             return True
-        existing_groups = self.bouncer.get_groups_for_user(config.path)
-        existing_permissions = self.bouncer.get_permissions_for_user(config.path)
-
-        changes = False
-        # Check groups
-        for group in existing_groups:
-            if group not in config.groups:
-                echo("Would remove user %s from group %s" % (config.path, group))
-                changes = True
-        for group in config.groups:
-            if group not in existing_groups:
-                echo("Would add user %s to group %s" % (config.path, group))
-                changes = True
-        # Check permissions
-        for rid, actions in existing_permissions.items():
-            if rid not in config.permissions:
-                echo("Would remove permission %s completely from user %s" % (rid, config.path))
-                changes = True
-            else:
-                for action in actions:
-                    if action not in config.permissions[rid]:
-                        echo("Would remove permission %s %s from user %s" % (rid, action, config.path))
-                        changes = True
-        for rid, actions in config.permissions.items():
-            if rid not in existing_rids:
-                echo("Would create permission %s" % rid)
-            for action in actions:
-                if action not in existing_permissions.get(rid, list()):
-                    echo("Would add permission %s %s to user %s" % (rid, action, config.path))
-                    changes = True
-        return changes
+        return self._check_groups_permissions(config.name, config.groups, config.permissions)
 
     def delete(self, config, force=False):
         echo("\tDeleting serviceaccount secret")
         self.secrets.delete_secret(config.secret)
         echo("\tDeleting account")
-        self.bouncer.delete_account(config.path)
+        self.bouncer.delete_account(config.name)
         echo("\tDeletion complete.")
         return True
 
     def dry_delete(self, config):
-        if self._does_serviceaccount_exist(config.path):
-            echo("Would delete serviceaccount %s" % config.path)
+        if self._does_serviceaccount_exist(config.name):
+            echo("Would delete serviceaccount %s" % config.name)
             return True
         else:
             return False

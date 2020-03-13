@@ -13,12 +13,34 @@ class BouncerAdapter(object):
             return None
         return response.json()
 
-    def create_account(self, name, description, public_key):
+    def create_service_account(self, name, description, public_key):
         data = dict(description=description, public_key=public_key)
         response = http.put(self.base_url+"/users/"+name, json=data)
         if not response.ok:
             echo_error(response.text)
             raise Exception("Error occured when creating account")
+
+    def create_user(self, name, password, full_name, provider_type=None, provider_id=None):
+        data = dict(description=full_name, password=password)
+        if provider_type:
+            data["provider_type"] = provider_type
+        if provider_id:
+            data["provider_id"] = provider_id
+        response = http.put(self.base_url+"/users/"+name, json=data)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when creating user")
+
+    def update_user(self, name, password=None, full_name=None):
+        data = dict()
+        if password:
+            data["password"] = password
+        if full_name:
+            data["description"] = full_name
+        response = http.patch(self.base_url+"/users/"+name, json=data)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when updating user")
 
     def delete_account(self, name):
         response = http.delete(self.base_url+"/users/"+name)
@@ -85,6 +107,62 @@ class BouncerAdapter(object):
             echo_error(response.text)
             raise Exception("Error occured when listing permission")
         return [acl["rid"] for acl in response.json()["array"]]
+
+    def create_group(self, name, description, provider_type):
+        data = dict(description=description)
+        if provider_type:
+            data["provider_type"] = provider_type
+        response = http.put(self.base_url+"/groups/"+name, json=data)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when creating group")
+
+    def update_group(self, name, description):
+        data = dict(description=description)
+        response = http.patch(self.base_url+"/groups/"+name, json=data)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when updating group")
+
+    def delete_group(self, name):
+        response = http.delete(self.base_url+"/groups/"+name)
+        if response.ok:
+            return True
+        elif response.status_code == 404:
+            return False
+        else:
+            echo_error(response.text)
+            raise Exception("Error occured when deleting group")
+
+    def get_group(self, name):
+        response = http.get(self.base_url+"/groups/"+name)
+        if response.status_code != 200:
+            return None
+        return response.json()
+
+    def get_permissions_for_group(self, name):
+        response = http.get(self.base_url+"/groups/%s/permissions" % name)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when querying permissions for group")
+        permissions = dict()
+        for permission in response.json()["array"]:
+            permissions[permission["rid"]] = [a["name"] for a in permission["actions"]]
+        return permissions
+
+    def add_permission_to_group(self, group_name, rid, action):
+        rid = self._encode_rid(rid)
+        response = http.put(self.base_url+r"/acls/%s/groups/%s/%s" % (rid, group_name, action))
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when adding permission to group")
+
+    def remove_permission_from_group(self, group_name, rid, action):
+        rid = self._encode_rid(rid)
+        response = http.delete(self.base_url+"/acls/%s/groups/%s/%s" % (rid, group_name, action))
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Error occured when removing permission from group")
 
     def _encode_rid(self, rid):
         return rid.replace("/", r"%252F")
