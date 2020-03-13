@@ -103,6 +103,7 @@ Some variables are automatically provided by `dcos-deploy` based on your cluster
 
 * `_cluster_version`: The DC/OS version of your cluster, for example `1.12.2`
 * `_cluster_variant`: The DC/OS variant of your cluster, for example `enterprise`
+* `_cluster_name`: The name of your cluster
 * `_num_masters`: The number of masters in your cluster
 * `_num_private_agents`: The number of private agents in your cluster (useful if you want to tailor the size of an app or framework node to the cluster size)
 * `_num_public_agents`: The number of public agents in your cluster

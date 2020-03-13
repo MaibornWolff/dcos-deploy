@@ -22,6 +22,13 @@ class DcosAdapter(object):
             raise Exception("Unknown error occured: %s" % response.text)
         info = response.json()
         return dict(version=info["version"], variant=info["dcos-variant"])
+
+    def get_cluster_state(self):
+        response = http.get(self.base_url+"/mesos/master/state-summary")
+        if not response.ok:
+            raise Exception("Unknown error occured: %s" % response.text)
+        info = response.json()
+        return dict(cluster=info["cluster"])
     
     def get_nodes(self):
         response = http.get(self.base_url+"/system/health/v1/nodes")
