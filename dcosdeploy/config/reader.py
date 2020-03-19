@@ -30,6 +30,7 @@ STANDARD_MODULES = [
     "dcosdeploy.modules.httpcall",
     "dcosdeploy.modules.iam_groups",
     "dcosdeploy.modules.iam_users",
+    "dcosdeploy.modules.marathon_groups"
 ]
 
 

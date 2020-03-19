@@ -96,3 +96,30 @@ class MarathonAdapter(object):
         if wait_for_deployment:
             self.wait_for_specific_deployment(deployment_id)
         return True
+
+    def get_group(self, name):
+        response = http.get(self.marathon_url+"/groups/%s" % name)
+        if not response.ok:
+            if response.status_code == 404:
+                return None
+            echo_error(response.text)
+            raise Exception("Failed to get marathon group %s" % name)
+        return response.json()
+
+    def update_group(self, name, enforce_role):
+        response = http.put(self.marathon_url+"/groups/%s" % name, json={'enforceRole': enforce_role})
+        if not response.ok:
+            raise Exception("Error while updating marathon group: %s" % response.text)
+        return response.json()
+
+    def add_group(self, name, enforce_role=False):
+        response = http.post(self.marathon_url+"/groups/", json={'id': name, 'enforceRole': enforce_role})
+        if not response.ok:
+            raise Exception("Error while creating marathon group: %s" % response.text)
+        return response.json()
+
+    def delete_group(self, name):
+        response = http.delete(self.marathon_url+"/groups/%s" % name)
+        if not response.ok:
+            raise Exception("Error while removing marathon group: %s" % response.text)
+        return response.json()

@@ -214,6 +214,7 @@ entityname:
 * `taskexec`
 * `iam_group`
 * `iam_user`
+* `marathon_group`
 
 See their respective sections below for details.
 
@@ -448,6 +449,23 @@ The same restrictions from `taskexec` in regards to state apply. As such this en
 * `update_password`: If set to true will always overwrite the current user password with the one specified here. Defaults to true.
 * `groups`: List of groups the user should be added to. Optional. Variables can be used.
 * `permissions`: Permissions to give to the user. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables can be used. See [Serviceaccount](#Serviceaccount) for an example.
+
+### Marathon Group
+
+`type: marathon_group` allows to manage groups in marathon. For top-level groups in DC/OS `>=2.0` it can also manage group quotas.
+
+* `name`: Name of the group. Required. Variables can be sued.
+* `enforce_role`: Whether to enforce the group quota. Takes effect only for top-level groups. Defaults to False. In the DC/OS Admin UI values are seen as `Use Group Role` (True) and `Use Legacy Role` (False). Optional.
+* `quota`: Optional
+  * `cpus`: Maximum number of CPUs the role can use. Optional. Defaults to 0.
+  * `mem`: Maximum memory the role can use. In MB. Optional. Defaults to 0.
+  * `disk`: Maximum disk the role can use. In MB. Optional. Defaults to 0.
+  * `gpus`: Maximum number of GPUs the role can use. Optional. Defaults to 0.
+
+Restrictions:
+
+* Removing quotas is currently not supported.
+* Quotas are only supported for DC/OS `>=2.0`.
 
 ## Deployment process
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.

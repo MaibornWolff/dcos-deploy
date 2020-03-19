@@ -58,6 +58,43 @@ class MesosAdapter(object):
         else:
             raise Exception("Failed to get mesos master state: %s" % response.text)
 
+    def update_quota(self, name, quota, force=True):
+        request_body = {
+            "type": "UPDATE_QUOTA",
+            "update_quota": {
+                "force": force,
+                "quota_configs": [{
+                    "role": name,
+                    "limits": {
+                        "cpus": {
+                            "value": quota.cpus
+                        },
+                        "mem": {
+                            "value": quota.mem
+                        },
+                        "disk": {
+                            "value": quota.disk
+                        },
+                        "gpus": {
+                            "value": quota.gpus
+                        }
+                    }
+                }
+                ]
+            }
+        }
+        response = http.post(self.mesos_url+"/api/v1", json=request_body)
+        if not response.ok:
+            raise Exception("Error while updating quota: %s" % response.text)
+        return response.status_code
+
+    def get_quota(self, name):
+        roles = http.get(self.mesos_url+"roles").json()["roles"]
+        try:
+            return [x for x in roles if x['name'] == name][0]["quota"]
+        except:
+            return None
+
 
 def _find_task(frameworks, name, exact_match=False):
     parent_container_id = None
