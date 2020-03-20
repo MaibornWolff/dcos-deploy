@@ -152,3 +152,8 @@ def get_auth():
         _init_config()
     return _auth
 
+
+def reset():
+    global _base_url, _auth
+    _base_url = None
+    _auth = None

@@ -33,7 +33,13 @@ class VariableContainerBuilder:
         self.provided_variables = provided_variables
         self.variables = dict()
 
-    def _read_variable_value_from_file(self, base_path, filename):
+    def _read_variable_value_from_file(self, base_path, fileconfig):
+        if isinstance(fileconfig, dict):
+            filename = fileconfig["path"]
+            render = fileconfig.get("render", False)
+        else:
+            filename = fileconfig
+            render = False
         if filename.startswith("vault:"):
             _, key, filename = filename.split(":", 2)
         else:
@@ -45,6 +51,8 @@ class VariableContainerBuilder:
         if key:
             key = self.render_value(key)
             value = decrypt_data(key, value)
+        if render:
+            value = pystache.render(value, self.variables)
         return value
 
     def _encode_value(self, value, encoder):
