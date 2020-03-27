@@ -426,6 +426,7 @@ Example for this is: Uploading configuration files to S3 and triggering a redown
   * `content`: Specifies the content of the request body.
   * `file`: Contents of this file will be used as request body. Is mutually exclusive with `content`. Variables can be used in the filename.
   * `render`: If set to true the request body from `file` or `content` will be rendered using mustache.
+* `headers`: Allows to specify extra headers to send as key-value pairs (e.g. `Content-Type`). Optional. Variables can be used for both keys and values.
 
 If the URL is neither a http nor a https url it wil be treated as a path behind the DC/OS adminrouter. When executing the call dcos-deploy will use its DC/OS credentials to authenticate against the adminrouter. So for example if a DC/OS cluster is reachable under `https://dcos.mycluster` and `url` is defined as `/service/myservice/reload` then dcos-deploy will call the URL `https://dcos.mycluster/service/myservice/reload`.
 

@@ -5,10 +5,11 @@ from ..auth import get_base_url, get_auth
 
 
 class HttpCall(object):
-    def __init__(self, url, method, content, use_adminrouter, ignore_errors):
+    def __init__(self, url, method, content, headers, use_adminrouter, ignore_errors):
         self.url = url
         self.method = method
         self.content = content
+        self.headers = headers
         self.use_adminrouter = use_adminrouter
         self.ignore_errors = ignore_errors
 
@@ -28,6 +29,7 @@ def parse_config(name, config, config_helper):
             url = url[1:]
         url = get_base_url()+"/"+url
 
+    headers = {config_helper.render(k): config_helper.render(v) for k, v in config.get("headers", dict()).items()}
     content = None
     if "file" in body:
         filename = config_helper.render(body["file"])
@@ -37,7 +39,7 @@ def parse_config(name, config, config_helper):
         if body.get("render", False):
             content = config_helper.render(content)
 
-    return HttpCall(url, method, content, use_adminrouter, ignore_errors)
+    return HttpCall(url, method, content, headers, use_adminrouter, ignore_errors)
 
 
 class HttpCallManager(object):
@@ -47,7 +49,7 @@ class HttpCallManager(object):
     def deploy(self, config, dependencies_changed=False, force=False):
         echo("\tDoing HTTP call")
         auth = get_auth() if config.use_adminrouter else None
-        response = requests.request(config.method, config.url, auth=auth, data=config.content, verify=False)
+        response = requests.request(config.method, config.url, auth=auth, data=config.content, headers=config.headers, verify=False)
         if not response.ok and not config.ignore_errors:
             raise Exception("Got response {}: {}".format(response.status_code, response.text))
         echo("\tGot response {}.".format(response.status_code))
