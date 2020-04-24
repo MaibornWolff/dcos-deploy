@@ -1,6 +1,7 @@
 from .config import read_config
 from .adapters.dcos import fail_on_missing_connectivity
 from .util.output import echo
+from .util.script import run_script
 
 
 class DeletionRunner:
@@ -47,7 +48,11 @@ class DeletionRunner:
             echo("Module %s does not yet support deletion. Not deleting entity '%s'" % (config.entity_type, name))
             return False
         echo("Deleting %s:" % name)
+        if config.pre_script and config.pre_script.delete_script:
+            run_script(config.pre_script.delete_script, config.entity)
         deleted = manager.delete(config.entity)
+        if config.post_script and config.post_script.delete_script:
+            run_script(config.post_script.delete_script, config.entity)
         self._already_deleted[name] = deleted
         return deleted
 

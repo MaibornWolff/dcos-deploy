@@ -113,14 +113,32 @@ class StateEnum(enum.Enum):
             raise ConfigurationException("Unknown state value '%s'" % name)
 
 
-class EntityContainer(object):
-    def __init__(self, entity, entity_type, dependencies, when_condition, state):
+class EntityContainer:
+    def __init__(self, entity, entity_type, dependencies, when_condition, state, pre_script, post_script):
         self.entity = entity
         self.entity_type = entity_type
         self.dependencies = dependencies
         self.reverse_dependencies = list()
         self.when_condition = when_condition
         self.state = state
+        self.pre_script = pre_script
+        self.post_script = post_script
+
+
+class EntityScript:
+    def __init__(self, apply_script, delete_script):
+        self.apply_script = apply_script
+        self.delete_script = delete_script
+
+
+def _parse_entity_script(script, config_helper):
+    if not isinstance(script, dict):
+        script = dict(apply=script)
+    if "apply" in script:
+        script["apply"] = config_helper.render(script["apply"])
+    if "delete" in script:
+        script["delete"] = config_helper.render(script["delete"])
+    return EntityScript(script.get("apply"), script.get("delete"))
 
 
 def read_config(filenames, provided_variables):
@@ -231,7 +249,13 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
                 else:
                     dep_type = "create"
                 dependencies.append((dependency, dep_type))
-            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition, state)
+            pre_script = entity_config.get("pre_script")
+            post_script = entity_config.get("post_script")
+            if pre_script:
+                pre_script = _parse_entity_script(pre_script, config_helper)
+            if post_script:
+                post_script =  _parse_entity_script(post_script, config_helper)
+            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition, state, pre_script, post_script)
             deployment_objects[name] = container
     _validate_dependencies(deployment_objects, excluded_entities)
     return deployment_objects

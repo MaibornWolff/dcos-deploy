@@ -226,6 +226,36 @@ See their respective sections below for details.
 
 `loop` is very useful for describing multiple entities that are very similar. The values of the variables defined under `loop` will be extended into a cross product and for each combination an entity with these extra variables will be created. These extra variables can be used like normal variables to parametrize the entity. By default the entity name will be created by concatenating the given name with the values of all loop variables (in the example above these would be `entityname-a` and `entityname-b`). This can be overridden by using an entityname that has template parameters (for example `{{var3}}-myentity`).
 
+### Pre and post script
+
+In case you have need of more complex orchestrations for entities you can use `pre_script` and `post_script`. With these you can specify python scripts for the `apply` and the `delete` operations that will be executed before or respectively after the entitiy has been created/updated or deleted. They can be specified as follows:
+
+```yaml
+variables:
+  post_script:
+    file:
+      path: my_script.py
+      render: True
+
+foobar:
+  pre_script:
+    apply: |
+      print("Hello pre apply")
+    delete: |
+      print("Hello pre delete")
+  post_script:
+    apply: "{{{post_script}}}"
+    delete: |
+      print("Hello post delete")
+```
+
+If it is just a short snippet you can specify it inline, otherwise you can put the script into a file, read the file into a variable and just reference the variable. You can even use moustache templating in the scripts and dcos-deploy will render the template before executing the script.
+
+The scripts are executed in the context of dcos-deploy, so you can import any dcosdeploy library functions that you need. Also during script execution the entity config for the entity in question is provided in the globals variable `entity`.
+
+**Important**: As the script is executed in the context of dcos-deploy it has access to the entire runtime state, including DC/OS authentication and all (encryped) variables. So only use scripts that you wrote yourself or from completely trusted sources.
+
+
 ### Marathon app
 `type: app` defines a marathon app. It has the following specific options:
 * `path`: id of the app. If not specified the `id` field of the marathon app definition is used. Variables can be used.

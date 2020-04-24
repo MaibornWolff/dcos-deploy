@@ -10,3 +10,4 @@ build
 dist
 dcos-deploy.spec
 *.egg-info
+venv

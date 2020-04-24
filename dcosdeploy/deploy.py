@@ -1,6 +1,7 @@
 from .config import read_config, StateEnum
 from .adapters.dcos import fail_on_missing_connectivity
 from .util.output import echo
+from .util.script import run_script
 
 
 class DeploymentRunner(object):
@@ -40,9 +41,17 @@ class DeploymentRunner(object):
         else:
             echo("Deploying %s:" % name)
             if config.state == StateEnum.REMOVED:
+                if config.pre_script and config.pre_script.delete_script:
+                    run_script(config.pre_script.delete_script, config.entity)
                 changed = manager.delete(config.entity, force=force)
+                if config.post_script and config.post_script.delete_script:
+                    run_script(config.post_script.delete_script, config.entity)
             else:
+                if config.pre_script and config.pre_script.apply_script:
+                    run_script(config.pre_script.apply_script, config.entity)
                 changed = manager.deploy(config.entity, dependencies_changed=dependency_changed, force=force)
+                if config.post_script and config.post_script.apply_script:
+                    run_script(config.post_script.apply_script, config.entity)
         self.already_deployed[name] = changed
         return changed
 
