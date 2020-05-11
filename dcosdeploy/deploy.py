@@ -9,7 +9,7 @@ class DeploymentRunner(object):
         fail_on_missing_connectivity()
         self.already_deployed = dict()  # entitiy-name -> changed
         self.dry_deployed = dict()  # entity-name -> changed
-        self.config, self.managers = read_config(config_filenames, provided_variables)
+        self.config, self.managers, self.variables = read_config(config_filenames, provided_variables)
 
     def run_deployment(self, force=False):
         changed = False
@@ -42,16 +42,16 @@ class DeploymentRunner(object):
             echo("Deploying %s:" % name)
             if config.state == StateEnum.REMOVED:
                 if config.pre_script and config.pre_script.delete_script:
-                    run_script(config.pre_script.delete_script, config.entity)
+                    run_script(config.pre_script.delete_script, config.entity, self.variables, config.entity_variables)
                 changed = manager.delete(config.entity, force=force)
                 if config.post_script and config.post_script.delete_script:
-                    run_script(config.post_script.delete_script, config.entity)
+                    run_script(config.post_script.delete_script, config.entity, self.variables, config.entity_variables)
             else:
                 if config.pre_script and config.pre_script.apply_script:
-                    run_script(config.pre_script.apply_script, config.entity)
+                    run_script(config.pre_script.apply_script, config.entity, self.variables, config.entity_variables)
                 changed = manager.deploy(config.entity, dependencies_changed=dependency_changed, force=force)
                 if config.post_script and config.post_script.apply_script:
-                    run_script(config.post_script.apply_script, config.entity)
+                    run_script(config.post_script.apply_script, config.entity, self.variables, config.entity_variables)
         self.already_deployed[name] = changed
         return changed
 

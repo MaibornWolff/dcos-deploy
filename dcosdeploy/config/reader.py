@@ -7,7 +7,7 @@ import os
 import json
 import pystache
 import oyaml as yaml
-from ..util import decrypt_data, update_dict_with_defaults
+from ..util import decrypt_data, update_dict_with_defaults, md5_hash_str
 from ..base import ConfigurationException
 from .variables import VariableContainerBuilder
 from .predefined import calculate_predefined_variables
@@ -114,7 +114,7 @@ class StateEnum(enum.Enum):
 
 
 class EntityContainer:
-    def __init__(self, entity, entity_type, dependencies, when_condition, state, pre_script, post_script):
+    def __init__(self, entity, entity_type, dependencies, when_condition, state, pre_script, post_script, entity_variables):
         self.entity = entity
         self.entity_type = entity_type
         self.dependencies = dependencies
@@ -123,6 +123,7 @@ class EntityContainer:
         self.state = state
         self.pre_script = pre_script
         self.post_script = post_script
+        self.entity_variables = entity_variables
 
 
 class EntityScript:
@@ -209,7 +210,8 @@ def read_config(filenames, provided_variables):
     managers, modules = _init_modules(additional_modules)
     # read config sections
     entities = _read_config_entities(modules, variables, entities, config_helper, global_config)
-    return entities, managers
+    variables.set_extra_vars(dict()) # Reset extra vars
+    return entities, managers, variables
 
 
 def _read_config_entities(modules, variables, config, config_helper, global_config):
@@ -225,7 +227,15 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
         for name, entity_config in entities:
-            config_helper.set_extra_vars(entity_config.get("extra_vars", dict()))
+            pre_script = entity_config.get("pre_script")
+            post_script = entity_config.get("post_script")
+            if pre_script:
+                pre_script = _parse_entity_script(pre_script, config_helper)
+            if post_script:
+                post_script =  _parse_entity_script(post_script, config_helper)
+            entity_vars = _prepare_entity_variables(name, entity_config, pre_script, post_script)
+            extra_vars = entity_config.get("extra_vars", dict())
+            config_helper.set_extra_vars({**extra_vars, **entity_vars})
             if entity_type in global_config:
                 update_dict_with_defaults(entity_config, global_config[entity_type])
             only_restriction = entity_config.get("only", dict())
@@ -249,16 +259,25 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
                 else:
                     dep_type = "create"
                 dependencies.append((dependency, dep_type))
-            pre_script = entity_config.get("pre_script")
-            post_script = entity_config.get("post_script")
-            if pre_script:
-                pre_script = _parse_entity_script(pre_script, config_helper)
-            if post_script:
-                post_script =  _parse_entity_script(post_script, config_helper)
-            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition, state, pre_script, post_script)
+            container = EntityContainer(entity_object, entity_config["type"], dependencies, when_condition, state, pre_script, post_script, entity_vars)
             deployment_objects[name] = container
     _validate_dependencies(deployment_objects, excluded_entities)
     return deployment_objects
+
+
+def _prepare_entity_variables(name, entity_config, pre_script, post_script):
+    entity_vars = dict(_entity_name=name)
+    if pre_script:
+        if pre_script.apply_script:
+            entity_vars["_pre_apply_script_hash"] = md5_hash_str(pre_script.apply_script.encode("utf-8"))
+        if pre_script.delete_script:
+            entity_vars["_pre_delete_script_hash"] = md5_hash_str(pre_script.delete_script.encode("utf-8"))
+    if post_script:
+        if post_script.apply_script:
+            entity_vars["_post_apply_script_hash"] = md5_hash_str(post_script.apply_script.encode("utf-8"))
+        if post_script.delete_script:
+            entity_vars["_post_delete_script_hash"] = md5_hash_str(post_script.delete_script.encode("utf-8"))
+    return entity_vars
 
 
 def _init_modules(additional_modules):

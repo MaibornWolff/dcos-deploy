@@ -109,11 +109,18 @@ Some variables are automatically provided by `dcos-deploy` based on your cluster
 * `_num_public_agents`: The number of public agents in your cluster
 * `_num_all_agents`: The number of public and private agents in your cluster
 
+During rendering of entity configs some entity specific variables are available. These are:
+
+* `_entity_name`: The name of the entity (the key of the yaml definition)
+* `_pre_apply_script_hash`, `_pre_delete_script_hash`, `_post_apply_script_hash` and `_post_delete_script_hash`: md5-hashes of pre and post scripts if defined (see [Pre and post script](#pre-and-post-script))
+
 ### Global config
+
 To specifiy an attribute for all entities of a specific type you can define it in the global config. The config for a specific entity will be merged with the global config for the corresponding type.
 
 Example:
-```
+
+```yaml
 global:
   s3file:
     server:
@@ -251,9 +258,15 @@ foobar:
 
 If it is just a short snippet you can specify it inline, otherwise you can put the script into a file, read the file into a variable and just reference the variable. You can even use moustache templating in the scripts and dcos-deploy will render the template before executing the script.
 
-The scripts are executed in the context of dcos-deploy, so you can import any dcosdeploy library functions that you need. Also during script execution the entity config for the entity in question is provided in the globals variable `entity`.
+The scripts are executed in the context of dcos-deploy, so you can import any dcosdeploy library functions that you need. Additonally during script execution the following globals are provided:
+
+* `entity`: the entity config for the entity in question
+* `entity_variables`: A dict of any entity_specific variables
+* `variables`: An object that allows access to all defined variables (use `variables.get(name)` to get the value for a variable or `variables.render(text)` to render a moustache template)
 
 **Important**: As the script is executed in the context of dcos-deploy it has access to the entire runtime state, including DC/OS authentication and all (encryped) variables. So only use scripts that you wrote yourself or from completely trusted sources.
+
+If an entity has pre or post scripts defined, hash values for those scripts are provided as entity variables (`_pre_apply_script_hash`, `_pre_delete_script_hash`, `_post_apply_script_hash`, `_post_delete_script_hash`). These can be used to force an update with script execution of the entity whenever the script changes. In marathon apps you can e.g. put the variable in an environment variable or in a framework you can put it into an extra unused config option.
 
 
 ### Marathon app

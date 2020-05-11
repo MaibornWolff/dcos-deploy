@@ -160,44 +160,44 @@ modules:
 @mock.patch("dcosdeploy.config.reader.calculate_predefined_variables", lambda: dict())
 class ConfigTest(unittest.TestCase):
     def test_marathon_simple(self):
-        config, _ = read_config_mocked_open(dict(), MARATHON_SIMPLE, "{}")
+        config, _, _ = read_config_mocked_open(dict(), MARATHON_SIMPLE, "{}")
         self.assertTrue("test1" in config)
         self.assertEqual(config["test1"].entity.app_id, "/hello")
         self.assertEqual(config["test1"].entity.app_definition, {})
         self.assertTrue(config["test1"].dependencies == list())
 
     def test_marathon_variables(self):
-        config, _ = read_config_mocked_open(dict(env="test"), MARATHON_VARIABLES, MARATHON_VARIABLES_APP_DEF)
+        config, _, _ = read_config_mocked_open(dict(env="test"), MARATHON_VARIABLES, MARATHON_VARIABLES_APP_DEF)
         self.assertTrue("test1" in config)
         self.assertEqual(config["test1"].entity.app_id, "/hello/test")
         self.assertEqual(config["test1"].entity.app_definition, {"id": "/hello/test", "cmd": "echo test"})
 
     def test_only(self):
-        config, _ = read_config_mocked_open(dict(env="test"), DUMMY_ONLY)
+        config, _, _ = read_config_mocked_open(dict(env="test"), DUMMY_ONLY)
         self.assertTrue("test1" not in config)
-        config, _ = read_config_mocked_open(dict(env="prod"), DUMMY_ONLY)
+        config, _, _ = read_config_mocked_open(dict(env="prod"), DUMMY_ONLY)
         self.assertTrue("test1" in config)
 
     def test_only_list(self):
-        config, _ = read_config_mocked_open(dict(env="test"), DUMMY_ONLY_LIST)
+        config, _, _ = read_config_mocked_open(dict(env="test"), DUMMY_ONLY_LIST)
         self.assertTrue("test1" not in config)
-        config, _ = read_config_mocked_open(dict(env="int"), DUMMY_ONLY_LIST)
+        config, _, _ = read_config_mocked_open(dict(env="int"), DUMMY_ONLY_LIST)
         self.assertTrue("test1" in config)
 
     def test_except(self):
-        config, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT)
+        config, _, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT)
         self.assertTrue("test1" not in config)
-        config, _ = read_config_mocked_open(dict(env="int"), DUMMY_EXCEPT)
+        config, _, _ = read_config_mocked_open(dict(env="int"), DUMMY_EXCEPT)
         self.assertTrue("test1" in config)
 
     def test_except_list(self):
-        config, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT_LIST)
+        config, _, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT_LIST)
         self.assertTrue("test1" not in config)
-        config, _ = read_config_mocked_open(dict(env="prod"), DUMMY_EXCEPT_LIST)
+        config, _, _ = read_config_mocked_open(dict(env="prod"), DUMMY_EXCEPT_LIST)
         self.assertTrue("test1" in config)
 
     def test_except_dependency(self):
-        config, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT_DEPENDENCY)
+        config, _, _ = read_config_mocked_open(dict(env="test"), DUMMY_EXCEPT_DEPENDENCY)
         self.assertTrue("test1" not in config)
         self.assertTrue("test2" in config)
         self.assertTrue("test3" in config)
@@ -205,7 +205,7 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue(("test1", "create") not in config["test3"].dependencies)
 
     def test_custom_module(self):
-        config, managers = read_config_mocked_open(dict(), CUSTOM_MODULE)
+        config, managers, _ = read_config_mocked_open(dict(), CUSTOM_MODULE)
         self.assertTrue("dummy" in managers)
         self.assertTrue("test1" in config)
         self.assertTrue("test2" in config)
@@ -213,18 +213,18 @@ class ConfigTest(unittest.TestCase):
         self.assertCountEqual(("test1", "create"), config["test2"].dependencies[0])
 
     def test_include(self):
-        config, _ = read_config_mocked_open(dict(), INCLUDE, INCLUDE_BLA, "{}")
+        config, _, _ = read_config_mocked_open(dict(), INCLUDE, INCLUDE_BLA, "{}")
         self.assertTrue("test1" in config)
         self.assertEqual(config["test1"].entity.app_id, "/hello")
         self.assertEqual(config["test1"].entity.app_definition, {})
 
     def test_preprocess_func(self):
-        config, _ = read_config_mocked_open(dict(), PREPROCESS)
+        config, _, _ = read_config_mocked_open(dict(), PREPROCESS)
         self.assertTrue("test1" in config)
         self.assertTrue(config["test1"].entity.preprocess, False)
       
     def test_loop(self):
-        config, _ = read_config_mocked_open(dict(), LOOP)
+        config, _, _ = read_config_mocked_open(dict(), LOOP)
         self.assertEqual(len(config), 4)
         self.assertTrue("loop-a-c" in config)
         self.assertTrue("loop-a-d" in config)
@@ -232,7 +232,7 @@ class ConfigTest(unittest.TestCase):
         self.assertTrue("loop-b-d" in config)
 
     def test_loop_template_name(self):
-        config, _ = read_config_mocked_open(dict(), LOOP_TEMPLATE_NAME)
+        config, _, _ = read_config_mocked_open(dict(), LOOP_TEMPLATE_NAME)
         self.assertEqual(len(config), 2)
         self.assertTrue("a-loop" in config)
         self.assertTrue("b-loop" in config)

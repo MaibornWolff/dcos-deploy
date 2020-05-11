@@ -9,7 +9,7 @@ class DeletionRunner:
         fail_on_missing_connectivity()
         self._already_deleted = dict()  # entitiy-name -> newly deleted
         self._dry_deleted = dict()  # entity-name -> newly deleted
-        self._config, self._managers = read_config(config_filenames, provided_variables)
+        self._config, self._managers, self.variables = read_config(config_filenames, provided_variables)
         self._calculate_reserve_dependencies()
 
     def run_deletion(self):
@@ -49,10 +49,10 @@ class DeletionRunner:
             return False
         echo("Deleting %s:" % name)
         if config.pre_script and config.pre_script.delete_script:
-            run_script(config.pre_script.delete_script, config.entity)
+            run_script(config.pre_script.delete_script, config.entity, self.variables, config.entity_variables)
         deleted = manager.delete(config.entity)
         if config.post_script and config.post_script.delete_script:
-            run_script(config.post_script.delete_script, config.entity)
+            run_script(config.post_script.delete_script, config.entity, self.variables, config.entity_variables)
         self._already_deleted[name] = deleted
         return deleted
 
