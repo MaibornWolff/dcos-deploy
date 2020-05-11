@@ -32,6 +32,7 @@ class VariableContainerBuilder:
     def __init__(self, provided_variables):
         self.provided_variables = provided_variables
         self.variables = dict()
+        self._file_variables = list()
 
     def _read_variable_value_from_file(self, base_path, fileconfig):
         if isinstance(fileconfig, dict):
@@ -74,26 +75,34 @@ class VariableContainerBuilder:
         if env_name in os.environ:
             return os.environ[env_name]
         if "file" in config:
-            return self._read_variable_value_from_file(file_base_path, config["file"])
+            self._file_variables.append((name, file_base_path, config))
+            return None
         if "default" in config:
             return config["default"]
         return None
+
+    def _post_render_variable(self, name, config, value):
+        if not value:
+            if config.get("required", False):
+                raise ConfigurationException("Missing required variable %s" % name)
+            return None
+        if isinstance(config, dict):
+            if "values" in config and value not in config["values"]:
+                raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
+                                        % (value, name, ','.join(config["values"])))
+            if "encode" in config:
+                value = self._encode_value(value, config["encode"])
+        return value
+
     
     def add_variables(self, file_base_path, variable_definitions):
         for name, config in variable_definitions.items():
             if not config:
                 config = dict()
             value = self._calculate_variable_value(name, config, file_base_path)
+            value = self._post_render_variable(name, config, value)
             if not value:
-                if config.get("required", False):
-                    raise ConfigurationException("Missing required variable %s" % name)
                 continue
-            if isinstance(config, dict):
-                if "values" in config and value not in config["values"]:
-                    raise ConfigurationException("Value '%s' not allowed for %s. Possible values: %s"
-                                            % (value, name, ','.join(config["values"])))
-                if "encode" in config:
-                    value = self._encode_value(value, config["encode"])
             self.variables[name] = value
         return self
 
@@ -110,9 +119,16 @@ class VariableContainerBuilder:
             variables = self.variables
         return pystache.render(value, variables)
 
+    def _render_file_variables(self):
+        for name, file_base_path, config in self._file_variables:
+            value = self._read_variable_value_from_file(file_base_path, config["file"])
+            value = self._post_render_variable(name, config, value)
+            self.variables[name] = value
+
     def build(self):
         for name, value in self.provided_variables.items():
             if name not in self.variables:
                 self.variables[name] = value
+        self._render_file_variables()
         return VariableContainer(self.variables)
 
