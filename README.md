@@ -447,6 +447,7 @@ Creating and configuring the bucket is outside the scope of this tool.
 To make sure a marathon app that uses s3 files is made aware of changes to the uploaded files, you should set the `s3file` entity as an `update` dependency to the `app` entity. dcos-deploy will restart the app whenever the uploaded file changes.
 
 If you run `apply` with `--debug` dcosdeploy will download already existing files from s3 and print the differences between the local and remote version in the unified diff format. So only use `--debug` for textual files.
+If a configuration key ends with base64, b64 or base_64 its value will be decoded for the diff.
 
 ### Task exec
 `type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload as to avoid restarting a service. It has the following specific options:

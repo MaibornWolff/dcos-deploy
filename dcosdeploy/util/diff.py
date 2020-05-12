@@ -1,10 +1,45 @@
+import base64
 import difflib
 import json
+from copy import deepcopy
+
+BASE64_ENDINGS = ["base64", "b64", "base_64"]
+
+
+def is_base64_key(key):
+    for b64_ending in BASE64_ENDINGS:
+        if key.lower().endswith(b64_ending):
+            return True
+    return False
+
+
+def base64_decoded_copy(dictionary):
+    def _base64_decode_rec(dictionary):
+        for key, value in dictionary.items():
+            if isinstance(value, dict):
+                _base64_decode_rec(value)
+            if isinstance(value, list):
+                for val in value:
+                    if isinstance(val, dict):
+                        _base64_decode_rec(val)
+            if isinstance(value, str) and is_base64_key(key):
+                try:
+                    decoded = base64.b64decode(value.encode('utf-8'), validate=True)
+                    if decoded != value:
+                        dictionary[key] = decoded.decode('utf-8')
+                except Exception as e:
+                    print(f"Error while decoding base64 config value in key '{key}': {str(e)}")
+
+    cp = deepcopy(dictionary)
+    _base64_decode_rec(cp)
+    return cp
 
 
 def compare_dicts(left, right):
-    left_str = json.dumps(left, indent=2, sort_keys=True)
-    right_str = json.dumps(right, indent=2, sort_keys=True)
+    left = base64_decoded_copy(left)
+    right = base64_decoded_copy(right)
+    left_str = json.dumps(left, indent=2, sort_keys=True).replace(r'\n', '\n')
+    right_str = json.dumps(right, indent=2, sort_keys=True).replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
     if diff:
         return "    " + '\n    '.join(diff)
