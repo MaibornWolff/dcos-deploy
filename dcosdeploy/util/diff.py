@@ -3,7 +3,22 @@ import difflib
 import json
 from copy import deepcopy
 
+from colorama import Fore, init
+
+init()
+
 BASE64_ENDINGS = ["base64", "b64", "base_64"]
+
+
+def color_diff_line(line):
+    if line.startswith('+') and not line.startswith('+++'):
+        return Fore.GREEN + line + Fore.RESET
+    elif line.startswith('-') and not line.startswith('---'):
+        return Fore.RED + line + Fore.RESET
+    elif line.startswith('@@'):
+        return Fore.BLUE + line + Fore.RESET
+    else:
+        return line
 
 
 def is_base64_key(key):
@@ -41,8 +56,9 @@ def compare_dicts(left, right):
     left_str = json.dumps(left, indent=2, sort_keys=True).replace(r'\n', '\n')
     right_str = json.dumps(right, indent=2, sort_keys=True).replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
+    colored_diff = [color_diff_line(line) for line in diff]
     if diff:
-        return "    " + '\n    '.join(diff)
+        return "    " + '\n    '.join(colored_diff)
     else:
         return None
 
