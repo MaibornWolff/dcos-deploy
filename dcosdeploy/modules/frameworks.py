@@ -7,12 +7,13 @@ from ..base import ConfigurationException
 
 
 class Framework(object):
-    def __init__(self, name, service_name, app_id, package_name, package_version, options):
+    def __init__(self, name, service_name, app_id, package_name, package_version, options, wait_on_update):
         self.service_name = service_name
         self.app_id = app_id
         self.package_name = package_name
         self.package_version = package_version
         self.options = options
+        self.wait_on_update = wait_on_update
 
 
 def parse_config(name, config, config_helper):
@@ -40,9 +41,10 @@ def parse_config(name, config, config_helper):
             app_id = path + "/api"
         else:
             app_id = path
+    wait_on_update = config.get("wait_on_update", False)
     package_name = config_helper.render(package_name)
     package_version = config_helper.render(package_version)
-    return Framework(name, path, app_id, package_name, package_version, options)
+    return Framework(name, path, app_id, package_name, package_version, options, wait_on_update)
 
 
 class FrameworksManager(object):
@@ -58,7 +60,7 @@ class FrameworksManager(object):
             self.api.install_package(config.service_name, config.package_name, config.package_version, config.options)
             echo("\tWaiting for framework to start")
             self.marathon.wait_for_deployment(config.app_id)
-            time.sleep(5)  # Wait a few seconds for admin-lb to catch up
+            time.sleep(5)  # Wait a few seconds for adminrouter to catch up
             if self.api.has_plans_api(config.app_id):
                 echo("\tWaiting for deployment plan to finish")
                 self.api.wait_for_plan_complete(config.app_id, "deploy")
@@ -74,7 +76,14 @@ class FrameworksManager(object):
                     package_version = None
                 echo("\tUpdating framework")
                 self.api.update_service(config.app_id, package_version, config.options)
-                # Do not wait for completion after update, assume update is done in rolling fashion
+                if config.wait_on_update:
+                    echo("\tWaiting for framework to start")
+                    self.marathon.wait_for_deployment(config.app_id)
+                    time.sleep(5)  # Wait a few seconds for adminrouter to catch up
+                    if self.api.has_plans_api(config.app_id):
+                        plan = "update" if self.api.has_plan(config.app_id, "update") else "deploy"
+                        echo("\tWaiting for deployment plan to finish")
+                        self.api.wait_for_plan_complete(config.app_id, plan)
         echo("\tFinished")
         return True
 

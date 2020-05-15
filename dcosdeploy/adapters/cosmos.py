@@ -117,6 +117,15 @@ class CosmosAdapter(object):
         else:
             return False
 
+    def has_plan(self, service_name, plan):
+        if service_name[0] == "/":
+            service_name = service_name[1:]
+        response = http.get(get_base_url()+"/service/" + service_name + "/v1/plans/%s" % plan)
+        if response.ok:
+            return plan in response.json()
+        else:
+            return False
+
     def _get_plan_status(self, service_name, plan):
         if service_name[0] == "/":
             service_name = service_name[1:]

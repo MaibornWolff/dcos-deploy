@@ -325,16 +325,18 @@ If not defined marathon will add a number of default fields to an app definition
 
 ### Framework
 `type: framework` defines a DC/OS framework. It has the following specific options:
-* `path`: name of the framework. If not specified the `service.name` field of the package options are used. Variables can be used.
+
+* `path`: name of the framework. If not specified the `service.name` field of the package options is used. Variables can be used.
 * `package`:
   * `name`: name of the package in the DC/OS universe. This is the same as used when installing a package via the cli (`dcos package install <packagename>`). Required. Variables can be used.
   * `version`: version of the package. This is the same as used when installing a package via the cli (`dcos package install <packagename> --package-version=<version>`). Required. Variables can be used.
   * `options`: Path to the json options file to configure the package. Required. Variables can be used in the path and in the json file itsself.
+* `wait_on_update`: By default dcos-deploy assumes that frameworks handle updates in a rolling and high available manner (like elastic or kafka) and therefore does not wait for plans to complete during updates. If this option is set to true than dcos-deploy will instead wait for the `update` (if it exists) or `deploy` plan to complete before moving on to the next entity. Optional. Defaults to false.
 
-These options correspond to the parameters provided when installing a package via the dcos-cli: `dcos package install <packagename> --package-version=<version> --options=<options.json>`.
+Most of these options correspond to the parameters provided when installing a package via the dcos-cli: `dcos package install <packagename> --package-version=<version> --options=<options.json>`.
 
 During installation of a package dcos-deploy will wait until the framework is installed. If the framework exposes the standard plan API (like all frameworks based on the [Mesosphere SDK](https://github.com/mesosphere/dcos-commons/), e.g. elastic, hdfs or kafka) dcos-deploy will also wait (with a timeout of 10 minutes) until the deploy-plan is complete.
-Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`). dcos-deploy will not wait for the completion of the update as it assumes that any updates are done in a rolling-restart fashion.
+Any change in the options file or in the package version will trigger an update (the same as doing `dcos <framework> update start --package-version=<version> --options=<options.json>`).
 
 ### Metronome job
 
