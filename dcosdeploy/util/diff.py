@@ -43,7 +43,7 @@ def base64_decoded_copy(dictionary):
                     if decoded != value:
                         dictionary[key] = decoded.decode('utf-8')
                 except Exception as e:
-                    print(f"Error while decoding base64 config value in key '{key}': {str(e)}")
+                    print("Error while decoding base64 config value in key '%s': %s" % (key, str(e)))
 
     cp = deepcopy(dictionary)
     _base64_decode_rec(cp)

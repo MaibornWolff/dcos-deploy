@@ -13,9 +13,7 @@ class S3FileAdapter(object):
         try:
             stat = client.stat_object(bucket, key)
             return hash == self._hash_from_metadata(stat.metadata)
-        except NoSuchKey:
-            return None
-        except NoSuchBucket:
+        except Exception:
             return None
 
     def upload_file(self, server, bucket, key, file_obj, file_size, hash):
@@ -44,8 +42,11 @@ class S3FileAdapter(object):
             return False
 
     def does_bucket_exist(self, server, bucket):
-        client = self._init_client(server)
-        return client.bucket_exists(bucket)
+        try:
+            client = self._init_client(server)
+            return client.bucket_exists(bucket)
+        except Exception:
+            return False
 
     def create_bucket(self, server, bucket):
         client = self._init_client(server)
