@@ -5,7 +5,15 @@ from minio.error import NoSuchKey, NoSuchBucket
 
 class S3FileAdapter(object):
     def __init__(self):
-        pass
+        self._servers = dict()
+
+    def ping(self, server):
+        try:
+            client = self._init_client(server)
+            client.bucket_exists("dcos-deploy-dummy")
+            return True
+        except:
+            return False
 
     def files_equal(self, server, bucket, key, hash):
         """Returns true if the file in the bucket exists and has the same hash as the provided one"""
@@ -63,8 +71,12 @@ class S3FileAdapter(object):
         return ""
 
     def _init_client(self, server):
-        if not server.ssl_verify:
-            pool = PoolManager(cert_reqs='CERT_NONE')
-        else:
-            pool = None
-        return Minio(server.endpoint, server.access_key, server.secret_key, secure=server.secure, http_client=pool)
+        server_id = server.id()
+        if server_id not in self._servers:
+            print("Init minio")
+            if not server.ssl_verify:
+                pool = PoolManager(cert_reqs='CERT_NONE')
+            else:
+                pool = None
+            self._servers[server_id] = Minio(server.endpoint, server.access_key, server.secret_key, secure=server.secure, http_client=pool)
+        return self._servers[server_id]

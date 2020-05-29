@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import time
 from ..adapters.s3 import S3FileAdapter
 from ..base import ConfigurationException
 from ..util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, compare_text
@@ -8,12 +9,16 @@ from ..util import global_config
 
 
 class S3Server(object):
-    def __init__(self, endpoint, access_key, secret_key, ssl_verify, secure):
+    def __init__(self, endpoint, access_key, secret_key, ssl_verify, secure, wait_for_endpoint):
         self.endpoint = endpoint
         self.access_key = access_key
         self.secret_key = secret_key
         self.ssl_verify = ssl_verify
         self.secure = secure
+        self.wait_for_endpoint = wait_for_endpoint
+
+    def id(self):
+        return self.endpoint+self.access_key+self.secret_key
 
 
 class S3File(object):
@@ -76,7 +81,8 @@ def _parse_server_config(name, server, config_helper):
     secret_key = config_helper.render(secret_key)
     ssl_verify = server.get("ssl_verify", True)
     secure = server.get("secure", True)
-    return S3Server(endpoint, access_key, secret_key, ssl_verify, secure)
+    wait_for_endpoint = server.get("wait_for_endpoint", False)
+    return S3Server(endpoint, access_key, secret_key, ssl_verify, secure, wait_for_endpoint)
 
 
 def _collect_files(name, source, key, compress, config_helper):
@@ -120,6 +126,13 @@ class S3FilesManager(object):
         self.api = S3FileAdapter()
 
     def deploy(self, config, dependencies_changed=False, force=False):
+        if config.server.wait_for_endpoint:
+            for i in range(5*6):
+                if self.api.ping(config.server):
+                    break
+                if i == 0:
+                    echo("\tWaiting for s3 endpoint to be reachable")
+                time.sleep(10)
         if config.create_bucket and not self.api.does_bucket_exist(config.server, config.bucket):
             echo("\tCreating bucket %s" % config.bucket)
             self.api.create_bucket(config.server, config.bucket)

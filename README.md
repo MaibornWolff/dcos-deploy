@@ -418,13 +418,16 @@ For this to work you must have the edgelb package installed via the repository U
 At the moment dcos-deploy can not safely detect if the pool config was changed so it will always apply it. Be aware that changing certain options in the pool config (like ports or secrets) will result in a restart of the haproxy instances. Make sure you have a HA setup so that there is no downtime.
 
 ### S3 File
+
 `type: s3file` defines a file to be uploaded to S3-compatible storage. If you are not running on AWS you can use [Minio](https://minio.io/) or any other storage service with an s3-compatible interface. This entitiy is designed to provide files for apps / services (via the fetch mechanism) that are either too big or otherwise not suited for storage as secrets (for example plugins for a service). It has the following specific options:
+
 * `server`:
   * `endpoint`: endpoint of your s3-compatible storage. If you use AWS S3 set this to your region endpoint (e.g. `s3.eu-central-1.amazonaws.com`). Required. Variables can be used.
   * `access_key`: your access key. Required. Variables can be used. For security reasons you should provide the value via environment variable. Make sure the iam user associated with these credentials has all rights for retrieving and uploading objects (`s3:Get*` and `s3:Put*`).
   * `secret_key`: your secret access key. Required. Variables can be used. For security reasons you should provide the value via environment variable.
   * `ssl_verify`: Set to false to disable ssl verifcation for s3 connection. Defaults to true. Optional.
   * `secure`: Set to false to use insecure http connections for s3 connection. Defaults to true. Optional.
+  * `wait_for_endpoint`: if you use minio and deploy it in the same deployment as s3files then there can be situations where minio is deployed but not yet reachable via loadbalancer. Setting this option to true will make dcos-deploy wait until minio is reachable before continuing with the deployment. Defaults to false. Optional.
 * `source`: path to your file or folder to be uploaded to s3. Should be relative to the `dcos.yml` file. Required. Variables can be used.
 * `destination`:
   * `bucket`: name of the bucket to use. Required. Variables can be used.
