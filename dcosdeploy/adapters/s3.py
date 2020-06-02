@@ -73,7 +73,6 @@ class S3FileAdapter(object):
     def _init_client(self, server):
         server_id = server.id()
         if server_id not in self._servers:
-            print("Init minio")
             if not server.ssl_verify:
                 pool = PoolManager(cert_reqs='CERT_NONE')
             else:

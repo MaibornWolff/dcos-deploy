@@ -74,7 +74,7 @@ class MarathonGroupsManager(object):
             if config.enforce_role != group["enforceRole"]:
                 echo("Would set enforce_role of %s to %s" % (config.name, config.enforce_role))
                 changes = True
-            if self._quota_changed(config.name, config.quota):
+            if config.quota and self._quota_changed(config.name, config.quota):
                 echo("Would update quota of %s" % config.name)
                 changes = True
         else:
@@ -99,7 +99,7 @@ class MarathonGroupsManager(object):
         quota = self.mesos_api.get_quota(name)
         if quota:
             limit = quota["limit"]
-            return not (limit["cpus"] == new_quota.cpus and limit["mem"] == new_quota.mem and limit["disk"] == new_quota.disk and limit["gpus"] == new_quota.gpus)
+            return not (limit.get("cpus", 0) == new_quota.cpus and limit.get("mem", 0) == new_quota.mem and limit.get("disk", 0) == new_quota.disk and limit.get("gpus", 0) == new_quota.gpus)
         else:
             return True
 
