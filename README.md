@@ -132,12 +132,14 @@ global:
 ```
 
 ### Encryption
+
 dcos-deploy supports encrypting files so that sensitive information is not stored unencrypted. Files are symmetricly encrypted using [Fernet](https://cryptography.io/en/latest/fernet/) (AES-128) from the python [cryptography](https://cryptography.io/en/latest/) library.
 In most places where you provide a filename (at the moment not possible with `s3file`) you can use encrypted files by using the following syntax as filename: `vault:<encryption-key>:<filename-to-encrypted-file>`.
 You should use a variable for the encryption key.
 
 Example:
-```
+
+```yaml
 variables:
   encryption_key:
     env: ENCRYPTION_KEY
@@ -150,7 +152,8 @@ servicepasswords:
 ```
 
 You can also specify the encryption key in the global config to avoid writing it for every occurence:
-```
+
+```yaml
 variables:
   encryption_key:
     env: ENCRYPTION_KEY
@@ -166,14 +169,17 @@ servicepasswords:
   file: vault::servicepasswords.encrypted
 ```
 
-
 dcos-deploy has several util commands that help you in creating encrypted files:
+
 * `dcos-deploy vault generate-key`: Generates a new key that you can use for encrypting files
 * `dcos-deploy vault encrypt`: Encrypts a file using a given key
 * `dcos-deploy vault decrypt`: Decrypts a file using a given key
+* `dcos-deploy vault view`: Show the decrypted content of an encrypted file
+* `dcos-deploy vault edit`: Edit an encrypted file in-place
 
 Example usage:
-```
+
+```bash
 $ echo "supersecret" > servicepasswords
 $ dcos-deploy vault generate-key
 Your new key: 6htLemxXcEXnahVl1aZI6Aa3TXIHmbE8abtibC2iO6c=
