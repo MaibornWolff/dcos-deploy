@@ -352,6 +352,11 @@ Any change in the options file or in the package version will trigger an update 
 
 * `path`: id of the job. If not specified the `id` field of the job definition is used. Variables can be used.
 * `definition`: path to the metronome job definition json file. Required. Variables can be used in the path and in the json file itsself.
+* `run`: Run the job directly after creating/updating it
+  * `on_create`: If set to true job will be run after it has been created. Optional. Defaults to false.
+  * `on_update`: If set to true job will be run after it has been updated. The run is also triggered if an update dependency has been changed. Optional. Defaults to false.
+  * `wait_for_success`: If set to true dcos-deploy will wait until the job run has completed. If the job run fails the deployment will fail. Optional. Defaults to true.
+  * `timeout`: Time in seconds to wait for job run completion. After that time the deployment will fail. Optional. Defaults to 10 minutes. Variables can be used.
 
 The job definition is expected to be in the format used starting with DC/S 1.13. It is described in the [DC/OS 1.13 release notes](https://docs.d2iq.com/mesosphere/dcos/1.13/release-notes/1.13.0/#using-separate-json-files-for-job-scheduling).
 

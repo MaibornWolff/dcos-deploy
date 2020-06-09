@@ -1,3 +1,4 @@
+import time
 from ..auth import get_base_url, get_auth
 from ..util import http
 from ..util.output import echo_error
@@ -40,10 +41,13 @@ class MetronomeAdapter(object):
         for job in data:
             yield job["id"]
 
-    def get_job(self, job_id):
+    def get_job(self, job_id, embed_history=False):
         if job_id[0] == "/":
             job_id = job_id[1:]
-        response = http.get(self.metronome_url+"v1/jobs/%s" % job_id)
+        params = ""
+        if embed_history:
+            params = "?embed=history"
+        response = http.get(self.metronome_url+"v1/jobs/%s%s" % (job_id, params))
         if response.ok:
             return response.json()
         elif response.status_code == 404:
@@ -110,3 +114,37 @@ class MetronomeAdapter(object):
         else:
             echo_error(response.text)
             raise Exception("Unknown error occured")
+
+    def trigger_job_run(self, job_id):
+        response = http.post(self.metronome_url+"v1/jobs/%s/runs" % job_id)
+        if response.ok:
+            return response.json()["id"]
+        else:
+            echo_error(response.text)
+            raise Exception("Failed to start job")
+
+    def get_job_run_status(self, job_id, run_id):
+        response = http.get(self.metronome_url+"v1/jobs/%s/runs/%s" % (job_id, run_id))
+        if response.ok:
+            return response.json()["status"]
+        elif response.status_code == 404:
+            return None
+        else:
+            echo_error(response.text)
+            raise Exception("Failed to get job status")
+
+    def wait_for_job_run(self, job_id, run_id, timeout=10*60):
+        wait_time = 0
+        status = self.get_job_run_status(job_id, run_id)
+        while status and status not in ("SUCCESS", "FAILED"):
+            if wait_time > timeout:
+                raise Exception("Job %s run %s did not finish after %s seconds" % (job_id, run_id, timeout))
+            time.sleep(10)
+            wait_time += 10
+            status = status = self.get_job_run_status(job_id, run_id)
+        job = self.get_job(job_id, embed_history=True)
+        history = job.get("history", dict())
+        for run in history.get("successfulFinishedRuns", list()):
+            if run["id"] == run_id:
+                return True
+        raise Exception("Job %s run %s failed" % (job_id, run_id))

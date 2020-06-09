@@ -6,11 +6,20 @@ from ..util.output import echo, echo_diff
 
 
 class MetronomeJob(object):
-    def __init__(self, name, job_id, job_definition, schedule_definition):
+    def __init__(self, name, job_id, job_definition, schedule_definition, run):
         self.name = name
         self.job_id = job_id
         self.job_definition = job_definition
         self.schedule_definition = schedule_definition
+        self.run = run
+
+
+class JobRun:
+    def __init__(self, on_create, on_update, wait_for_success, timeout):
+        self.on_create = on_create
+        self.on_update = on_update
+        self.wait_for_success = wait_for_success
+        self.timeout = timeout
 
 
 def parse_config(name, config, config_helper):
@@ -32,7 +41,9 @@ def parse_config(name, config, config_helper):
     else:
         path = job_definition["id"]
     path = path.replace("/", ".")
-    return MetronomeJob(name, path, job_definition, schedule_definition)
+    run_config = config.get("run", dict())
+    run = JobRun(run_config.get("on_create", False), run_config.get("on_update", False), run_config.get("wait_for_success", True), int(run_config.get("timeout", 10*60)))
+    return MetronomeJob(name, path, job_definition, schedule_definition, run)
 
 
 class JobsManager(object):
@@ -43,19 +54,39 @@ class JobsManager(object):
         if self.api.does_job_exist(config.job_id):
             echo("\tUpdating existing job")
             self.api.update_job(config.job_id, config.job_definition)
-            self.api.update_schedule(config.job_id, config.schedule_definition)
+            if config.schedule_definition:
+                echo("\tUpdating schedule")
+                self.api.update_schedule(config.job_id, config.schedule_definition)
             echo("\tUpdated job.")
+            if config.run.on_update:
+                echo("\tRunning job")
+                run_id = self.api.trigger_job_run(config.job_id)
+                if config.run.wait_for_success:
+                    echo("\tWaiting for job to finish")
+                    self.api.wait_for_job_run(config.job_id, run_id, timeout=config.run.timeout)
+                    echo("\tJob finished.")
             return True
         else:
             echo("\tCreating job")
             self.api.create_job(config.job_definition)
-            self.api.create_schedule(config.job_id, config.schedule_definition)
+            if config.schedule_definition:
+                echo("\tCreating schedule")
+                self.api.create_schedule(config.job_id, config.schedule_definition)
             echo("\tCreated job.")
+            if config.run.on_create:
+                echo("\tRunning job")
+                run_id = self.api.trigger_job_run(config.job_id)
+                if config.run.wait_for_success:
+                    echo("\tWaiting for job to finish")
+                    self.api.wait_for_job_run(config.job_id, run_id, timeout=config.run.timeout)
+                    echo("\tJob finished.")
             return True
 
     def dry_run(self, config, dependencies_changed=False):
         if not self.api.does_job_exist(config.job_id):
             echo("Would create job %s" % config.job_id)
+            if config.run.on_create:
+                echo("Would run job %s" % config.job_id)
             return True
         existing_job_definition = self.api.get_job(config.job_id)
         existing_schedule_definition = self.api.get_schedules(config.job_id)
@@ -65,7 +96,14 @@ class JobsManager(object):
         schedule_diff = self._compare_schedule_definitions(config.schedule_definition, existing_schedule_definition)
         if schedule_diff:
             echo_diff("Would update schedule for job %s" % config.job_id, schedule_diff)
-        return job_diff is not None or schedule_diff is not None
+        changed = job_diff is not None or schedule_diff is not None
+        if changed:
+            if config.run.on_update:
+                echo("Would run job %s" % config.job_id)
+        elif dependencies_changed and config.run.on_update:
+            echo("Would run job %s" % config.job_id)
+            return True
+        return changed
 
     def delete(self, config, force=False):
         echo("\tDeleting job")
