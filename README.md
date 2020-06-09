@@ -17,7 +17,7 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
   * secrets
   * serviceaccounts
   * public-private-keypairs (for use in secrets)
-  * [Edge-LB](https://docs.mesosphere.com/services/edge-lb/)
+  * [Edge-LB](https://docs.d2iq.com/mesosphere/dcos/services/edge-lb/)
   * [S3](https://aws.amazon.com/s3/) files
 * For DC/OS packages it supports version updates and configuration changes.
 * Handles install and update dependencies between entities (e.g. a framework is only installed after its serviceaccount is created, an app is restarted if an attached secret changes).
@@ -375,7 +375,7 @@ The job definition is expected to be in the format used starting with DC/S 1.13.
 * `groups`: List of groups the account should be added to. Optional. Variables can be used.
 * `permissions`: Permissions to give to the account. Dictionary. Key is the name of the permission (rid), value is a list of actions to allow. If a permission does not yet exist, it will be created. Variables can be used.
 
-This entity equates to the steps required to create a serviceaccount for a framework as described in the [DC/OS documentation](https://docs.mesosphere.com/1.12/security/ent/service-auth/custom-service-auth/).
+This entity equates to the steps required to create a serviceaccount for a framework as described in the [DC/OS documentation](https://docs.d2iq.com/mesosphere/dcos/2.0/security/ent/service-auth/custom-service-auth/).
 Any groups or permissions not specified in the config are removed from the account during the update process.
 
 Example:
@@ -394,7 +394,7 @@ permissions:
 
 ### X.509 certificate
 
-`type: cert` is a special type that uses the [DC/OS CA API](https://docs.mesosphere.com/1.11/security/ent/tls-ssl/ca-api/) to create a public-private keypair, sign it with the internal DC/OS CA and provide the key and certificate as secrets. This can only be used on EE clusters. It has the following specific options:
+`type: cert` is a special type that uses the [DC/OS CA API](https://docs.d2iq.com/mesosphere/dcos/2.0/security/ent/tls-ssl/ca-api/) to create a public-private keypair, sign it with the internal DC/OS CA and provide the key and certificate as secrets. This can only be used on EE clusters. It has the following specific options:
 
 * `cert_secret`: secret path to store the certificate. Required. Variables can be used.
 * `key_secret`: secret path to store the key. Required. Variables can be used.
@@ -405,7 +405,7 @@ permissions:
 * `algorithm`: Algorithm to use for the private key (RSA, ECDSA), default is RSA. Optional.
 * `key_size`: Key size in bits to use for the private key. Default is 2048 for RSA and 256 for ECDSA. Optional.
 
-One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `cert` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.mesosphere.com/1.11/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
+One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `cert` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.d2iq.com/mesosphere/dcos/2.0/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
 
 ### Package repository
 `type: repository` defines a package repository. It has the following specific options:
@@ -423,10 +423,12 @@ With this type you can add additional package repositories to DC/OS. You can for
 * `name`: name of the pool. Taken from pool config if not present. Variables can be used.
 * `pool`: filename to the yaml file for configuring the pool. Required. The filename itsself and the yaml file can contain variables.
 
-For configuring a pool see the [Edge-LB configuration](https://docs.mesosphere.com/services/edge-lb/1.2/pool-configuration/).
+For configuring a pool see the [Edge-LB pool configuration reference](https://docs.d2iq.com/mesosphere/dcos/services/edge-lb/1.5/reference/pool-configuration-reference/v2-reference/).
 
 For this to work you must have the edgelb package installed via the repository URLs provided by Mesosphere (use the `repository` and `package` types, there is a [complete example](examples/edgelb) available).
 At the moment dcos-deploy can not safely detect if the pool config was changed so it will always apply it. Be aware that changing certain options in the pool config (like ports or secrets) will result in a restart of the haproxy instances. Make sure you have a HA setup so that there is no downtime.
+
+Only Edge-LB 1.5 is supported. If you need support for an older version please open an issue in github.
 
 ### S3 File
 

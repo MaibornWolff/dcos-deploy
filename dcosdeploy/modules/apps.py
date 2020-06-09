@@ -217,6 +217,17 @@ def _normalize_app_definition(local_definition, remote_definition):
         residency.setdefault("relaunchEscalationTimeoutSeconds", 3600)
         residency.setdefault("taskLostBehavior", "WAIT_FOREVER")
 
+    for item in ["cpus", "disk", "mem"]:
+        if not isinstance(local_definition[item], float) and isinstance(remote_definition[item], float):
+            local_definition[item] = float(local_definition[item])
+
+    for group in ["unreachableStrategy", "upgradeStrategy"]:
+        if not isinstance(local_definition[group], dict) or not isinstance(remote_definition[group], dict):
+            continue
+        for item in local_definition[group].keys():
+            if not isinstance(local_definition[group][item], float) and isinstance(remote_definition[group][item], float):
+                local_definition[group][item] = float(local_definition[group][item])
+
     return local_definition, remote_definition
 
 

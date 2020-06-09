@@ -93,7 +93,6 @@ class VariableContainerBuilder:
             if "encode" in config:
                 value = self._encode_value(value, config["encode"])
         return value
-
     
     def add_variables(self, file_base_path, variable_definitions):
         for name, config in variable_definitions.items():
@@ -103,6 +102,8 @@ class VariableContainerBuilder:
             value = self._post_render_variable(name, config, value)
             if not value:
                 continue
+            if name in self.variables:
+                raise ConfigurationException("Variable '%s' is defined more than once" % name)
             self.variables[name] = value
         return self
 
@@ -123,6 +124,8 @@ class VariableContainerBuilder:
         for name, file_base_path, config in self._file_variables:
             value = self._read_variable_value_from_file(file_base_path, config["file"])
             value = self._post_render_variable(name, config, value)
+            if name in self.variables:
+                raise ConfigurationException("Variable '%s' is defined more than once" % name)
             self.variables[name] = value
 
     def build(self):

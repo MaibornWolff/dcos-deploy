@@ -173,7 +173,6 @@ def _normalize_pool_definition(local_pool_config, remote_pool_config):
     if "poolHealthcheckGracePeriod" in remote_pool_config:
         update_dict_with_defaults(local_pool_config, _pool_defaults_123)
 
-
     local_haproxy = local_pool_config["haproxy"]
     # Normalize backends
     for backend in local_haproxy["backends"]:
@@ -184,6 +183,11 @@ def _normalize_pool_definition(local_pool_config, remote_pool_config):
         update_dict_with_defaults(frontend, _frontend_defaults)
         if "name" not in frontend:
             frontend["name"] = "frontend_{}_{}".format(frontend["bindAddress"], frontend["bindPort"])
+
+    # Normalize frontends
+    for frontend in local_haproxy["frontends"]:
+        if "map" not in frontend["linkBackend"]:
+            frontend["linkBackend"]["map"] = list()
     return local_pool_config, remote_pool_config
 
 
