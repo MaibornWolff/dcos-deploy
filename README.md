@@ -28,32 +28,29 @@ For example: To deploy a complete elasticsearch stack on your cluster you would 
 * partial deployment: Choose the entities to be deployed.
 * Can be extended with extra modules (still in development).
 
-
 ### Limitations
+
 * Deleting packages/apps/jobs is not supported: Since dcos-deploy does not keep a state it cannot detect if you remove a service/app/job from its configuration. Therefore you are responsible to delete any no longer wanted entities yourself.
 * Frameworks/packages with more complicated update procedures (like Edge-LB) are at the moment not fully supported.
 
-
 ## Requirements
+
 * A DC/OS cluster with version >= 1.11 (for features like secrets an EE cluster is needed)
 * dcos-cli installed  and connected to your cluster (to verify it works run `dcos node` and it should display a list of nodes in your cluster)
-
-If you want to run it from source, aditionally you need:
-* Python >= 3.5
-* Python modules from `requirements.txt`
+* Python >= 3.5 (if you do not use a binary)
 
 ## Installation
+
 There are several ways to install dcos-deploy:
+
+* Install from pypi (`pip install dcos-deploy`) (Recommended)
+* Or if you want the newest features directly from master: `pip install git+https://github.com/MaibornWolff/dcos-deploy`
 * Binary
   * Download the binary for your system from the Releases page
   * Make the file executable and copy it into a folder inside your path
-* Install from pypi (`pip install dcos-deploy`)
-* Run from source
-  * Clone this github repository to your system (for a stable release checkout a release tag)
-  * Install all requirements from `requirements.txt` (optional: use a virtualenv to keep your system clean)
-  * Optional: Create a symlink of `dcos-deploy` to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
 
 ## Usage
+
 * Create your `dcos.yml` (start from scratch or use one of the examples). You should separate your stack into groups and create a `dcos.yml` for each of them (e.g. one for all hdfs related services, one for all elastic related and so on) to keep the complexity manageable.
 * Run `dcos-deploy apply`.
 * See `dcos-deploy apply --help` for all options.
@@ -548,7 +545,6 @@ The deployment process has some specific restrictions:
 dcos-deploy has support for deleting entities. You can use it to delete one or all entities defined (for example to clean up after tests). Do so use the command `dcos-deploy delete`. It will delete all entities defined in your configuration, honoring the dependencies (e.g. deleting a service before deleting the secret associated with it). If you only want to delete a specific entity use `--only <entity-name>`. All entities that have this entity as a dependency will also be deleted (e.g. if you delete a secret a marathon app depending on it will also be deleted). Check the dry-run output to make sure you don't unintentionally delete the wrong entity. The command is idempotent, so deleting an already deleted entity has no effect.
 The delete command will not modify your configuration files. So to make sure that the deleted entity will not be recreated during the next `apply`-run, remove the entity definition from your yaml files.  
 
-
 ## Roadmap
 
 * Support for creating and configuring kubernetes clusters
@@ -556,6 +552,15 @@ The delete command will not modify your configuration files. So to make sure tha
 * Better and documented plugin support
 * Provide some sort of verification for configurations
 
+## Development
+
+If you want to develop dcos-deploy you need to be able to run it directly from source. This can be done in two ways:
+
+* Clone this github repository to your system and run `pip install -e`
+* Manually install all dependencies from `setup.py` and create a symlink of `dcos-deploy` to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
+
+This project contains unittests. For convenience they can be run using `make test`.
 
 ## Contributing
+
 If you found a bug or have a feature request, please open an issue in Github.

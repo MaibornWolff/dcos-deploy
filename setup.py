@@ -4,13 +4,17 @@ with open("README.md", "r") as f:
     long_description = f.read()
 
 
-def read_requirements():
-    with open("requirements.txt") as req_file:
-        lines = req_file.read().split("\n")
-    for line in lines:
-        if line.startswith("#"):
-            continue
-        yield line.strip()
+install_requires = [
+    "PyYaml==5.3.1",
+    "pystache==0.5.4",
+    "click==7.1.2",
+    "requests==2.22.0",
+    "minio==5.0.10",
+    "cryptography==2.9.2",
+    "PyJWT==1.7.1",
+    "oyaml==0.9",
+    "colorama==0.4.3",
+]
 
 
 setuptools.setup(
@@ -25,7 +29,7 @@ setuptools.setup(
     url="https://github.com/MaibornWolff/dcos-deploy/",
     packages=["dcosdeploy", "dcosdeploy.commands", "dcosdeploy.adapters", "dcosdeploy.modules", "dcosdeploy.config", "dcosdeploy.util"],
     python_requires=">=3.5",
-    install_requires=list(read_requirements()),
+    install_requires=install_requires,
     classifiers=[
         'License :: OSI Approved :: Apache Software License',
         'Environment :: Console',
