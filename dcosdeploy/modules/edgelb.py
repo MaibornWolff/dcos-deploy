@@ -186,7 +186,7 @@ def _normalize_pool_definition(local_pool_config, remote_pool_config):
 
     # Normalize frontends
     for frontend in local_haproxy["frontends"]:
-        if "map" not in frontend["linkBackend"]:
+        if "linkBackend" in frontend and "map" not in frontend["linkBackend"]:
             frontend["linkBackend"]["map"] = list()
     return local_pool_config, remote_pool_config
 

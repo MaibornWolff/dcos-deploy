@@ -4,6 +4,7 @@ import pystache
 from ..base import ConfigurationException
 from ..util import decrypt_data
 from ..util.output import echo
+from ..util.file import check_if_encrypted_is_older
 
 
 class VariableContainer:
@@ -33,6 +34,7 @@ class VariableContainerBuilder:
         self.provided_variables = provided_variables
         self.variables = dict()
         self._file_variables = list()
+        self._vault_key = None
 
     def _read_variable_value_from_file(self, base_path, fileconfig):
         if isinstance(fileconfig, dict):
@@ -43,10 +45,16 @@ class VariableContainerBuilder:
             render = False
         if filename.startswith("vault:"):
             _, key, filename = filename.split(":", 2)
+            if not key:
+                if not self._vault_key:
+                    raise ConfigurationException("vault definition without key but no key is defined in global config: %s" % filename)
+                key = self._vault_key
         else:
             key = None
         filename = self.render_value(filename)
         absolute_path = os.path.abspath(os.path.join(base_path, filename))
+        if key:
+            check_if_encrypted_is_older(absolute_path)
         with open(absolute_path) as var_file:
             value = var_file.read()
         if key:
@@ -93,6 +101,9 @@ class VariableContainerBuilder:
             if "encode" in config:
                 value = self._encode_value(value, config["encode"])
         return value
+
+    def set_global_vault_key(self, key):
+        self._vault_key = key
     
     def add_variables(self, file_base_path, variable_definitions):
         for name, config in variable_definitions.items():

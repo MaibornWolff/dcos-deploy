@@ -8,6 +8,7 @@ import json
 import pystache
 import oyaml as yaml
 from ..util import decrypt_data, update_dict_with_defaults, md5_hash_str
+from ..util.file import check_if_encrypted_is_older
 from ..base import ConfigurationException
 from .variables import VariableContainerBuilder
 from .predefined import calculate_predefined_variables
@@ -66,6 +67,7 @@ class ConfigHelper(object):
         with open(filepath, mode) as file_obj:
             data = file_obj.read()
         if key:
+            check_if_encrypted_is_older(filepath)
             data = decrypt_data(key, data)
         if render_variables:
             data = self.variables_container.render(data)
@@ -156,6 +158,7 @@ def read_config(filenames, provided_variables):
         with open(config_filename) as config_file:
             config = config_file.read()
         if encryption_key:
+            check_if_encrypted_is_older(config_filename)
             if encryption_key == DUMMY_GLOBAL_ENCRYPTION_KEY:
                 if not global_config or "vault" not in global_config or "key" not in global_config["vault"]:
                     raise ConfigurationException("vault definition without key but no key is defined in global config: %s" % config_filename)
@@ -170,6 +173,7 @@ def read_config(filenames, provided_variables):
             if global_config:
                 raise ConfigurationException("Only one global configuration can exist")
             global_config = config["global"]
+            variables.set_global_vault_key(global_config.get("vault", dict()).get("key"))
         # Read includes
         for include in config.get("includes", list()):
             if include.startswith("vault:"):
