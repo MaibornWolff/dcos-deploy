@@ -419,6 +419,7 @@ With this type you can add additional package repositories to DC/OS. You can for
 * `api_server`: path to the edgelb-api server if not installed at default location. Variables can be used. Optional. E.g. if you installed Edge-LB at `infra/edgelb` then use this for `api_server`.
 * `name`: name of the pool. Taken from pool config if not present. Variables can be used.
 * `pool`: filename to the yaml file for configuring the pool. Required. The filename itsself and the yaml file can contain variables.
+* `template`: filename to an haproxy template file that should be used for the pool (see [customizing-templates](https://docs.d2iq.com/mesosphere/dcos/services/edge-lb/1.5/tutorials/customizing-templates/)). Optional. The filename can contain variables, the template cannot.
 
 For configuring a pool see the [Edge-LB pool configuration reference](https://docs.d2iq.com/mesosphere/dcos/services/edge-lb/1.5/reference/pool-configuration-reference/v2-reference/).
 

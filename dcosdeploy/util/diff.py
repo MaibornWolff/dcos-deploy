@@ -53,8 +53,14 @@ def base64_decoded_copy(dictionary):
 def compare_dicts(left, right):
     left = base64_decoded_copy(left)
     right = base64_decoded_copy(right)
-    left_str = json.dumps(left, indent=2, sort_keys=True).replace(r'\n', '\n')
-    right_str = json.dumps(right, indent=2, sort_keys=True).replace(r'\n', '\n')
+    left_str = json.dumps(left, indent=2, sort_keys=True)
+    right_str = json.dumps(right, indent=2, sort_keys=True)
+    compare_strings(left_str, right_str)
+
+
+def compare_strings(left, right):
+    left_str = left.replace(r'\n', '\n')
+    right_str = right.replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
     colored_diff = [color_diff_line(line) for line in diff]
     if diff:

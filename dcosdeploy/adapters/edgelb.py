@@ -56,3 +56,16 @@ class EdgeLbAdapter(object):
             else:
                 raise Exception("Could not get ping from edgelb: %s" % response.text)
         return True
+
+    def update_pool_template(self, api_server, pool_name, template):
+        response = http.put(self.base_url + api_server + "/v2/pools/%s/lbtemplate" % pool_name,
+                            data=template.encode('utf-8'), headers={'Content-Type': 'text/plain'})
+        if not response.ok:
+            raise Exception("Could not update template for pool %s: %s " % (pool_name, response.text))
+
+    def get_pool_template(self, api_server, pool_name):
+        response = http.get(self.base_url + api_server + "/v2/pools/%s/lbtemplate" % pool_name)
+        if not response.ok:
+            echo_error(response.text)
+            raise Exception("Failed to get pool template")
+        return response.text

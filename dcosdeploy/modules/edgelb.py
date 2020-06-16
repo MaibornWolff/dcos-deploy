@@ -1,15 +1,16 @@
 import time
 from ..adapters.edgelb import EdgeLbAdapter
 from ..base import ConfigurationException
-from ..util import compare_dicts, update_dict_with_defaults
+from ..util import compare_dicts, update_dict_with_defaults, compare_strings
 from ..util.output import echo, echo_diff
 
 
 class EdgeLbPool(object):
-    def __init__(self, api_server, name, pool_config):
+    def __init__(self, api_server, name, pool_config, pool_template):
         self.api_server = api_server
         self.name = name
         self.pool_config = pool_config
+        self.pool_template = pool_template
 
 
 def parse_config(name, config, config_helper):
@@ -25,7 +26,16 @@ def parse_config(name, config, config_helper):
     elif pool_filepath.lower().endswith(".json"):
         pool_config = config_helper.read_json(pool_filepath, render_variables=True)
     else:
-        raise ConfigurationException("Unknown file type for Edge-LB pool config file: '%s'. Must be json or yaml" % pool_filepath)
+        raise ConfigurationException(
+            "Unknown file type for Edge-LB pool config file: '%s'. Must be json or yaml" % pool_filepath)
+
+    template_filepath = config.get("template")
+    if template_filepath:
+        template_filepath = config_helper.render(template_filepath)
+        pool_template = config_helper.read_file(template_filepath)
+    else:
+        pool_template = None
+
     if not name:
         name = pool_config["name"]
     api_server = config.get("api_server")
@@ -38,7 +48,8 @@ def parse_config(name, config, config_helper):
         api_server = api_server + "/api"
     if api_server[0] == "/":
         api_server = api_server[1:]
-    return EdgeLbPool(api_server, name, pool_config)
+
+    return EdgeLbPool(api_server, name, pool_config, pool_template)
 
 
 class EdgeLbPoolsManager(object):
@@ -55,34 +66,54 @@ class EdgeLbPoolsManager(object):
                 if waiting > 12:
                     echo("\tCould not reach edgelb api. Giving up")
                     raise Exception("EdgeLB api not available.")
-        exists = config.name in self.api.get_pools(config.api_server)
-        if exists:
+        pool_exists = config.name in self.api.get_pools(config.api_server)
+        if pool_exists:
             echo("\tUpdating pool")
             self.api.update_pool(config.api_server, config.pool_config)
             echo("\tPool updated.")
-            return True
+            pool_created = True
         else:
             echo("\tCreating pool")
             self.api.create_pool(config.api_server, config.pool_config)
             echo("\tPool created.")
+            pool_created = True
+
+        if config.pool_template:
+            echo("\tUpdating pool template.")
+            self.api.update_pool_template(config.api_server, config.name, config.pool_template)
+            echo("\tPool template updated")
             return True
+        else:
+            return pool_created
 
     def dry_run(self, config, dependencies_changed=False):
         if not self.api.ping(config.api_server):
             echo("Could not reach api-server. Would probably create pool %s" % config.name)
             return True
-        exists = config.name in self.api.get_pools(config.api_server)
-        if not exists:
+        pool_exists = config.name in self.api.get_pools(config.api_server)
+        if not pool_exists:
             echo("Would create pool %s" % config.name)
-            return True
+            pool_updated = True
+
         existing_pool_config = self.api.get_pool(config.api_server, config.name)
         local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)
-        diff = compare_dicts(existing_pool_config, local_pool_config)
-        if diff:
-            echo_diff("Would update pool %s" % config.name, diff)
-            return True
+        pool_diff = compare_dicts(existing_pool_config, local_pool_config)
+        if pool_diff:
+            echo_diff("Would update pool %s" % config.name, pool_diff)
+            pool_updated = True
         else:
-            return False
+            pool_updated = False
+        if config.pool_template:
+            remote_pool_template = self.api.get_pool_template(config.api_server, config.name)
+            template_diff = compare_strings(remote_pool_template.strip(), config.pool_template.strip())
+            if template_diff:
+                template_updated = True
+                echo_diff("Would update template for pool %s" % config.name, template_diff)
+            else:
+                template_updated = False
+        else:
+            template_updated = False
+        return pool_updated or template_updated
 
     def delete(self, config, force=False):
         echo("\tDeleting pool")
@@ -121,7 +152,7 @@ _pool_defaults_123 = dict(
     poolHealthcheckTimeout=60
 )
 
-_backend_defaults= dict(
+_backend_defaults = dict(
     balance="roundrobin",
     miscStrs=[],
     protocol="HTTP",
@@ -145,7 +176,7 @@ _service_defaults = dict(
             enabled=True
         ),
         port=-1,
-	    type="AUTO_IP"
+        type="AUTO_IP"
     ),
     marathon={},
     mesos={}
