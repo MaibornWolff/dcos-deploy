@@ -402,7 +402,11 @@ permissions:
 * `algorithm`: Algorithm to use for the private key (RSA, ECDSA), default is RSA. Optional.
 * `key_size`: Key size in bits to use for the private key. Default is 2048 for RSA and 256 for ECDSA. Optional.
 
-One example usecase for this is a service secured with TLS client certificate authentication (e.g. elasticsearch with x-pack or searchguard). You configure the service to accept client certificates signed by the cluster-internal DC/OS CA. Then using the `cert` entity provide appropriate certificates as secrets to your client services. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.d2iq.com/mesosphere/dcos/2.0/security/ent/#spaces-for-secrets) for secrets can only be accessed by authorized services.
+You can use this feature if you want to secure communication between services inside DC/OS. For each service you define a corresponding `cert` entity. The keys and certificates are securely kept inside the cluster and using the [path restrictions](https://docs.d2iq.com/mesosphere/dcos/2.0/security/ent/#spaces-for-secrets) for secrets can only be accessed by the intended services.
+
+All names from the `hostnames` option will be added to the SAN part of the certificate. If your service requires the `CN` to be set you must add it to the `dn` option, otherwise the certificate will not have one.
+
+Once the certificate has been created any changes in any of the options will not be detected and will not trigger the creation of a new certificate unless the secrets for key and cert are deleted beforehand. Also be aware that the created certificates are valid for about 10 years and there is no way to revoke certificates. As such please only use them inside your DC/OS cluster.
 
 ### Package repository
 `type: repository` defines a package repository. It has the following specific options:

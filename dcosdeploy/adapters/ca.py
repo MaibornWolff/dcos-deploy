@@ -17,6 +17,8 @@ class CAAdapter(object):
             "size": size
           }
         }
+        if "CN" in dn:
+            data["CN"] = dn["CN"]
         response = http.post(self.base_url+"newkey", json=data)
         if not response.ok:
             raise Exception("Failed to generate key: %s" % response.text)
