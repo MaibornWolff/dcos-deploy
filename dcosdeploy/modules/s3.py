@@ -8,7 +8,7 @@ from ..util.output import echo, echo_diff
 from ..util import global_config
 
 
-class S3Server(object):
+class S3Server:
     def __init__(self, endpoint, access_key, secret_key, ssl_verify, secure, wait_for_endpoint):
         self.endpoint = endpoint
         self.access_key = access_key
@@ -21,7 +21,7 @@ class S3Server(object):
         return self.endpoint+self.access_key+self.secret_key
 
 
-class S3File(object):
+class S3File:
     def __init__(self, server, bucket, files, compress, create_bucket, bucket_policy):
         self.server = server
         self.bucket = bucket
@@ -121,7 +121,7 @@ def _collect_files(name, source, key, compress, config_helper):
     return files
 
 
-class S3FilesManager(object):
+class S3FilesManager:
     def __init__(self):
         self.api = S3FileAdapter()
 
@@ -236,9 +236,9 @@ class S3FilesManager(object):
             return True
         return False
 
-    def _print_diffs_for_zip(self, remote_file, files):
+    def _print_diffs_for_zip(self, zip_filename, files):
         from zipfile import ZipFile
-        with ZipFile(BytesIO(remote_file), "r") as zip_file:
+        with ZipFile(BytesIO(zip_filename), "r") as zip_file:
             local_files = dict(map(lambda tup: (tup[1], tup[0]), files))
             for name in zip_file.namelist():
                 if name not in local_files:

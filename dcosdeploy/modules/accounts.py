@@ -4,7 +4,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from ..base import ConfigurationException
 from ..util.output import echo
-from ..adapters.bouncer import BouncerAdapter
 from ..adapters.secrets import SecretsAdapter
 from .iam_users import IamUserBaseManager, render_permissions
 
@@ -12,7 +11,7 @@ from .iam_users import IamUserBaseManager, render_permissions
 LOGIN_ENDPOINT = "https://leader.mesos/acs/api/v1/auth/login"
 
 
-class ServiceAccount(object):
+class ServiceAccount:
     def __init__(self, name, secret, groups, permissions):
         self.name = name
         self.secret = secret
@@ -20,11 +19,13 @@ class ServiceAccount(object):
         self.permissions = permissions
 
 
-def parse_config(name, config, config_helper):
+def parse_config(entity_name, config, config_helper):
     name = config.get("name")
     if not name:
-        raise ConfigurationException("name is required for serviceaccounts")
+        raise ConfigurationException("name is required for serviceaccount '%s'" % entity_name)
     secret_path = config.get("secret")
+    if not secret_path:
+        raise ConfigurationException("secret_path is required for serviceaccount '%s'" % entity_name)
     name = config_helper.render(name)
     secret_path = config_helper.render(secret_path)
     groups = config.get("groups", list())
@@ -75,6 +76,8 @@ class AccountsManager(IamUserBaseManager):
         if not self._does_serviceaccount_exist(config.name):
             echo("Would create serviceaccount %s" % config.name)
             return True
+        if not self.secrets.get_secret(config.secret):
+            raise Exception("Serviceaccount '%s' exists but secret '%s' does not" % (config.name, config.secret))
         return self._check_groups_permissions(config.name, config.groups, config.permissions)
 
     def delete(self, config, force=False):

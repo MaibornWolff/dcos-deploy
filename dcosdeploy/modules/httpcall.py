@@ -4,7 +4,7 @@ from ..util.output import echo
 from ..auth import get_base_url, get_auth
 
 
-class HttpCall(object):
+class HttpCall:
     def __init__(self, url, method, content, headers, use_adminrouter, ignore_errors):
         self.url = url
         self.method = method
@@ -42,7 +42,7 @@ def parse_config(name, config, config_helper):
     return HttpCall(url, method, content, headers, use_adminrouter, ignore_errors)
 
 
-class HttpCallManager(object):
+class HttpCallManager:
     def __init__(self):
         pass
 

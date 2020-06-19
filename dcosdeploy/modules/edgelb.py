@@ -5,7 +5,7 @@ from ..util import compare_dicts, update_dict_with_defaults, compare_strings
 from ..util.output import echo, echo_diff
 
 
-class EdgeLbPool(object):
+class EdgeLbPool:
     def __init__(self, api_server, name, pool_config, pool_template):
         self.api_server = api_server
         self.name = name
@@ -52,7 +52,7 @@ def parse_config(name, config, config_helper):
     return EdgeLbPool(api_server, name, pool_config, pool_template)
 
 
-class EdgeLbPoolsManager(object):
+class EdgeLbPoolsManager:
     def __init__(self):
         self.api = EdgeLbAdapter()
 

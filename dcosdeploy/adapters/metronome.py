@@ -1,10 +1,10 @@
 import time
-from ..auth import get_base_url, get_auth
+from ..auth import get_base_url
 from ..util import http
 from ..util.output import echo_error
 
 
-class MetronomeAdapter(object):
+class MetronomeAdapter:
     def __init__(self):
         self.metronome_url = get_base_url() + "/service/metronome/"
 

@@ -3,7 +3,7 @@ from ..util import http
 from ..util.output import echo_error
 
 
-class EdgeLbAdapter(object):
+class EdgeLbAdapter:
     def __init__(self):
         self.base_url = get_base_url() + "/service/"
 

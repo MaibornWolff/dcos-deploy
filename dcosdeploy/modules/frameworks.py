@@ -6,7 +6,7 @@ from ..util.output import echo, echo_diff
 from ..base import ConfigurationException
 
 
-class Framework(object):
+class Framework:
     def __init__(self, name, service_name, app_id, package_name, package_version, options, wait_on_update):
         self.service_name = service_name
         self.app_id = app_id
@@ -47,7 +47,7 @@ def parse_config(name, config, config_helper):
     return Framework(name, path, app_id, package_name, package_version, options, wait_on_update)
 
 
-class FrameworksManager(object):
+class FrameworksManager:
     def __init__(self):
         self.api = CosmosAdapter()
         self.marathon = MarathonAdapter()

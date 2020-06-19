@@ -5,7 +5,7 @@ from ..util import http
 from ..auth import get_base_url
 
 
-class MesosAdapter(object):
+class MesosAdapter:
     def __init__(self):
         self.base_url = get_base_url()
         self.mesos_url = self.base_url + "/mesos/"

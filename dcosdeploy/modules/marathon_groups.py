@@ -1,6 +1,5 @@
 from ..base import ConfigurationException
 from ..util.output import echo
-from ..util import global_config
 from ..adapters.marathon import MarathonAdapter
 from ..adapters.mesos import MesosAdapter
 
@@ -43,7 +42,7 @@ def parse_config(name, config, config_helper):
     return MarathonGroup(group_name, quota, enforce_role)
 
 
-class MarathonGroupsManager(object):
+class MarathonGroupsManager:
     def __init__(self):
         self.marathon_api = MarathonAdapter()
         self.mesos_api = MesosAdapter()

@@ -1,13 +1,10 @@
-import uuid
-import base64
-import json
 import sys
 from ..auth import get_base_url
 from ..util import http
 from ..util.output import echo_error
 
 
-class DcosAdapter(object):
+class DcosAdapter:
     def __init__(self):
         self.base_url = get_base_url()
 

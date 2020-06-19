@@ -4,7 +4,7 @@ from .util.output import echo
 from .util.script import run_script
 
 
-class DeploymentRunner(object):
+class DeploymentRunner:
     def __init__(self, config_filenames, provided_variables):
         fail_on_missing_connectivity()
         self.already_deployed = dict()  # entitiy-name -> changed

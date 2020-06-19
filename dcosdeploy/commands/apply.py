@@ -33,9 +33,9 @@ def apply(config_file, var, only, dry_run, yes, debug, force):
                 echo("Not doing anything")
 
 
-def get_variables(vars):
+def get_variables(variables):
     provided_variables = dict()
-    for variable in vars:
+    for variable in variables:
         if "=" not in variable:
             raise Exception("No value defined for %s" % variable)
         name, value = variable.split("=", 1)

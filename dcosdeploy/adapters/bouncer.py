@@ -3,7 +3,7 @@ from ..util import http
 from ..util.output import echo_error
 
 
-class BouncerAdapter(object):
+class BouncerAdapter:
     def __init__(self):
         self.base_url = get_base_url() + "/acs/api/v1"
 

@@ -2,7 +2,7 @@ from ..auth import get_base_url
 from ..util import http
 
 
-class CAAdapter(object):
+class CAAdapter:
     def __init__(self):
         self.base_url = get_base_url() + "/ca/api/v2/"
 

@@ -35,7 +35,7 @@ STANDARD_MODULES = [
 ]
 
 
-class ConfigHelper(object):
+class ConfigHelper:
     def __init__(self, variables_container, global_config):
         self.variables_container = variables_container
         self.global_config = global_config

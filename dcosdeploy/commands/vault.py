@@ -134,6 +134,7 @@ def _get_key(key_filename, key, env):
     if key_filename:
         with open(key_filename) as key_file:
             key = key_file.read()
+        return key
     elif key:
         return key
     elif env:
@@ -142,3 +143,5 @@ def _get_key(key_filename, key, env):
         return os.environ.get(env)
     elif default_key:
         return default_key
+    else:
+        raise Exception("This should not happen")

@@ -10,7 +10,7 @@ def preprocess_config(name, config, config_helper):
     return [(name, config)]
 
 
-class Dummy(object):
+class Dummy:
     def __init__(self, name, test, preprocess):
         self.name = name
         self.test = test
@@ -25,7 +25,7 @@ class Dummy(object):
         return not self.__eq__(value)
 
 
-class DummiesManager(object):
+class DummiesManager:
     pass
 
 

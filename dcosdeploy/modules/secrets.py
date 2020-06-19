@@ -4,7 +4,7 @@ from ..util import compare_text
 from ..util.output import echo, echo_diff
 
 
-class Secret(object):
+class Secret:
     def __init__(self, name, path, value, file_content):
         self.name = name
         self.path = path
@@ -26,15 +26,19 @@ def parse_config(name, config, config_helper):
     if value:
         value = config_helper.render(value)
         file_content = None
+        if not value:
+            raise ConfigurationException("Value for secret '%s' gets rendered to an empty string" % name)
     elif file_path:
         file_path = config_helper.render(file_path)
         file_content = config_helper.read_file(file_path, render_variables=render, as_binary=not render)
+        if not file_content:
+            raise ConfigurationException("file for secret '%s' is empty" % name)
     else:
         raise ConfigurationException("Either value or file are required for secret '%s'" % name)
     return Secret(name, path, value, file_content)
 
 
-class SecretsManager(object):
+class SecretsManager:
     def __init__(self):
         self.api = SecretsAdapter()
 

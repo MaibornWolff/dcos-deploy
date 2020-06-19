@@ -24,7 +24,8 @@ binary:
 	--hidden-import dcosdeploy.modules.taskexec \
 	--hidden-import dcosdeploy.modules.httpcall \
 	--hidden-import dcosdeploy.modules.iam_groups \
-	--hidden-import dcosdeploy.modules.iam_users 
+	--hidden-import dcosdeploy.modules.iam_users \
+	--hidden-import dcosdeploy.modules.marathon_groups
 
 dist:
 	@python3 setup.py sdist

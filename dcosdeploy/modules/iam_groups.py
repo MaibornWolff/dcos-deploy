@@ -1,4 +1,3 @@
-import json
 from ..base import ConfigurationException
 from ..util import global_config
 from ..util.output import echo
@@ -6,7 +5,7 @@ from ..adapters.bouncer import BouncerAdapter
 from .iam_users import render_permissions
 
 
-class IAMGroup(object):
+class IAMGroup:
     def __init__(self, name, description, provider_type, permissions):
         self.name = name
         self.description = description

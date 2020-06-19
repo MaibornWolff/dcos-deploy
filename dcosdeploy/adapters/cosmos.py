@@ -4,7 +4,7 @@ from ..util import http
 from ..util.output import echo_error
 
 
-class CosmosAdapter(object):
+class CosmosAdapter:
     def __init__(self):
         self.service_url = get_base_url() + "/cosmos/service"
         self.package_url = get_base_url() + "/package"
@@ -112,10 +112,7 @@ class CosmosAdapter(object):
         if service_name[0] == "/":
             service_name = service_name[1:]
         response = http.get(get_base_url()+"/service/" + service_name + "/v1/plans/")
-        if response.ok:
-            return True
-        else:
-            return False
+        return response.ok
 
     def has_plan(self, service_name, plan):
         if service_name[0] == "/":

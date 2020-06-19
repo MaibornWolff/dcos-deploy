@@ -4,7 +4,7 @@ from ..util import global_config
 from ..adapters.cosmos import CosmosAdapter
 
 
-class PackageRepository(object):
+class PackageRepository:
     def __init__(self, name, uri, index):
         self.name = name
         self.uri = uri
@@ -22,7 +22,7 @@ def parse_config(name, config, config_helper):
     return PackageRepository(repo_name, repo_uri, repo_index)
 
 
-class PackageRepositoriesManager(object):
+class PackageRepositoriesManager:
     def __init__(self):
         self.api = CosmosAdapter()
 

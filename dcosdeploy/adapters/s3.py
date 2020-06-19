@@ -3,7 +3,7 @@ from minio import Minio
 from minio.error import NoSuchKey, NoSuchBucket
 
 
-class S3FileAdapter(object):
+class S3FileAdapter:
     def __init__(self):
         self._servers = dict()
 

@@ -3,7 +3,7 @@ from ..util import http
 from ..util.output import echo_error
 
 
-class SecretsAdapter(object):
+class SecretsAdapter:
     def __init__(self):
         self.base_url = get_base_url() + "/secrets/v1/"
         self._cache_secrets_list = None

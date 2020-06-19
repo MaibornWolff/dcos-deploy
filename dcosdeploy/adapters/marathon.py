@@ -4,7 +4,7 @@ from ..util import http
 from ..util.output import echo_error
 
 
-class MarathonAdapter(object):
+class MarathonAdapter:
     def __init__(self):
         self.marathon_url = get_base_url() + "/service/marathon/v2"
 

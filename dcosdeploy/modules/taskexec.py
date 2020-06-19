@@ -3,7 +3,7 @@ from ..base import ConfigurationException
 from ..util.output import echo
 
 
-class TaskExec(object):
+class TaskExec:
     def __init__(self, task, command, print_output):
         self.task = task
         self.command = command
@@ -23,7 +23,7 @@ def parse_config(name, config, config_helper):
     return TaskExec(task, command, print_output)
 
 
-class TaskExecManager(object):
+class TaskExecManager:
     def __init__(self):
         self.api = MesosAdapter()
 

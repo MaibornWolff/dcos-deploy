@@ -56,7 +56,7 @@ jobs:
         --hidden-import dcosdeploy.modules.httpcall
         --hidden-import dcosdeploy.modules.iam_groups
         --hidden-import dcosdeploy.modules.iam_users
-        --hidden-import dcsodeploy.modules.marathon_groups
+        --hidden-import dcosdeploy.modules.marathon_groups
     - name: Upload build artifacts
       uses: actions/upload-artifact@v1
       with:

@@ -1,11 +1,10 @@
-import json
 from ..base import ConfigurationException
 from ..util import global_config
 from ..util.output import echo
 from ..adapters.bouncer import BouncerAdapter
 
 
-class IAMUser(object):
+class IAMUser:
     def __init__(self, name, password, update_password, description, provider_type, provider_id, groups, permissions):
         self.name = name
         self.password = password
@@ -125,6 +124,7 @@ class IamUserBaseManager:
 
 class IAMUsersManager(IamUserBaseManager):
     def __init__(self):
+        super().__init__()
         self.bouncer = BouncerAdapter()
 
     def deploy(self, config, dependencies_changed=False, force=False):

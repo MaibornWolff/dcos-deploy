@@ -6,7 +6,7 @@ from ..adapters.ca import CAAdapter
 from ..adapters.secrets import SecretsAdapter
 
 
-class Cert(object):
+class Cert:
     def __init__(self, name, cert_secret, key_secret, dn, hostnames, encoding, format, algorithm, key_size):
         self.name = name
         self.cert_secret = cert_secret
@@ -62,7 +62,7 @@ def parse_config(name, config, config_helper):
     return Cert(name, cert_secret, key_secret, dn, hostnames, encoding, format, algorithm, key_size)
 
 
-class CertsManager(object):
+class CertsManager:
     def __init__(self):
         self.ca = CAAdapter()
         self.secrets = SecretsAdapter()
@@ -97,10 +97,10 @@ class CertsManager(object):
         if key_secret and cert_secret:
             return False
         elif cert_secret and not key_secret:
-            echo("Would delete existing secret %s for cert %s and recreate" % (config.cert_secret, config.name))
+            echo("Would delete existing secret %s for cert %s and recreate certificate" % (config.cert_secret, config.name))
             return True
         elif not cert_secret and key_secret:
-            echo("Would delete existing secret %s for cert %s and recreate" % (config.key_secret, config.name))
+            echo("Would delete existing secret %s for cert %s and recreate certificate" % (config.key_secret, config.name))
             return True
         else:
             echo("Would create cert %s" % config.name)

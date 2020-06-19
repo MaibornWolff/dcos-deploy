@@ -5,7 +5,7 @@ from ..util import compare_dicts, update_dict_with_defaults
 from ..util.output import echo, echo_diff
 
 
-class MetronomeJob(object):
+class MetronomeJob:
     def __init__(self, name, job_id, job_definition, schedule_definition, run):
         self.name = name
         self.job_id = job_id
@@ -46,7 +46,7 @@ def parse_config(name, config, config_helper):
     return MetronomeJob(name, path, job_definition, schedule_definition, run)
 
 
-class JobsManager(object):
+class JobsManager:
     def __init__(self):
         self.api = MetronomeAdapter()
 

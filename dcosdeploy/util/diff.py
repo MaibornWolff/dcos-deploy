@@ -55,16 +55,15 @@ def compare_dicts(left, right):
     right = base64_decoded_copy(right)
     left_str = json.dumps(left, indent=2, sort_keys=True)
     right_str = json.dumps(right, indent=2, sort_keys=True)
-    compare_strings(left_str, right_str)
+    return compare_strings(left_str, right_str)
 
 
 def compare_strings(left, right):
     left_str = left.replace(r'\n', '\n')
     right_str = right.replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
-    colored_diff = [color_diff_line(line) for line in diff]
     if diff:
-        return "    " + '\n    '.join(colored_diff)
+        return "    " + '\n    '.join([color_diff_line(line) for line in diff])
     else:
         return None
 
@@ -76,7 +75,7 @@ def compare_text(left, right):
         right = right.decode("utf-8")
     diff = list(difflib.unified_diff(left.splitlines(), right.splitlines(), lineterm=''))
     if diff:
-        return "    " + '\n    '.join(diff)
+        return "    " + '\n    '.join([color_diff_line(line) for line in diff])
     else:
         return None
 

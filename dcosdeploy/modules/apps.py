@@ -6,7 +6,7 @@ from ..util import compare_dicts, update_dict_with_defaults
 from ..util.output import echo, echo_diff
 
 
-class MarathonApp(object):
+class MarathonApp:
     def __init__(self, name, app_id, app_definition):
         self.app_id = app_id
         self.app_definition = app_definition
@@ -58,7 +58,7 @@ def parse_config(name, config, config_helper):
     return MarathonApp(name, path, app_definition)
 
 
-class MarathonAppsManager(object):
+class MarathonAppsManager:
     def __init__(self):
         self.api = MarathonAdapter()
 
