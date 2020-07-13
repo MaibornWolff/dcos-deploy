@@ -1,7 +1,7 @@
 import time
 from ..adapters.edgelb import EdgeLbAdapter
 from ..base import ConfigurationException
-from ..util import compare_dicts, update_dict_with_defaults, compare_strings
+from ..util import compare_dicts, update_dict_with_defaults, compare_text
 from ..util.output import echo, echo_diff
 
 
@@ -105,7 +105,8 @@ class EdgeLbPoolsManager:
             pool_updated = False
         if config.pool_template:
             remote_pool_template = self.api.get_pool_template(config.api_server, config.name)
-            template_diff = compare_strings(remote_pool_template.strip(), config.pool_template.strip())
+            remote_pool_template = remote_pool_template.replace(r'\n', '\n')
+            template_diff = compare_text(remote_pool_template.strip(), config.pool_template.strip())
             if template_diff:
                 template_updated = True
                 echo_diff("Would update template for pool %s" % config.name, template_diff)
@@ -217,7 +218,9 @@ def _normalize_pool_definition(local_pool_config, remote_pool_config):
 
     # Normalize frontends
     for frontend in local_haproxy["frontends"]:
-        if "linkBackend" in frontend and "map" not in frontend["linkBackend"]:
+        if "linkBackend" not in frontend:
+            frontend["linkBackend"] = dict(map=list())
+        elif "linkBackend" in frontend and "map" not in frontend["linkBackend"]:
             frontend["linkBackend"]["map"] = list()
     return local_pool_config, remote_pool_config
 

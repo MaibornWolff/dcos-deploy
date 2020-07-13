@@ -52,13 +52,33 @@ class RepositoriesTest(unittest.TestCase):
         mock_cosmosadapter.return_value.add_repository.assert_called_with("foo", "baz", None)
 
     @mock.patch("dcosdeploy.modules.repositories.CosmosAdapter")
-    def test_dry_run_no_change(self, mock_cosmosadapter):
-        # given
+    def test_dry_run(self, mock_cosmosadapter):
         mock_cosmosadapter.return_value.list_repositories.side_effect = lambda: REPO_LIST
-        # when
         from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
-        repo = PackageRepository(name="foo", uri="bar", index=None)
+        repo_exists = PackageRepository(name="foo", uri="bar", index=None)
+        repo_notexists = PackageRepository(name="nada", uri="bar", index=None)
+        repo_changed = PackageRepository(name="foo", uri="baz", index=None)
         manager = PackageRepositoriesManager()
-        result = manager.dry_run(repo)
-        # then
-        self.assertFalse(result)
+        self.assertFalse(manager.dry_run(repo_exists))
+        self.assertTrue(manager.dry_run(repo_changed))
+        self.assertTrue(manager.dry_run(repo_notexists))
+
+    @mock.patch("dcosdeploy.modules.repositories.CosmosAdapter")
+    def test_dry_delete(self, mock_cosmosadapter):
+        mock_cosmosadapter.return_value.list_repositories.side_effect = lambda: REPO_LIST
+        from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
+        repo_exists = PackageRepository(name="foo", uri="bar", index=None)
+        repo_notexists = PackageRepository(name="nada", uri="bar", index=None)
+        manager = PackageRepositoriesManager()
+        self.assertTrue(manager.dry_delete(repo_exists))
+        self.assertFalse(manager.dry_delete(repo_notexists))
+
+    @mock.patch("dcosdeploy.modules.repositories.CosmosAdapter")
+    def test_delete(self, mock_cosmosadapter):
+        mock_cosmosadapter.return_value.delete_repository.side_effect = lambda name: name == "foo"
+        from dcosdeploy.modules.repositories import PackageRepository, PackageRepositoriesManager
+        repo_exists = PackageRepository(name="foo", uri="bar", index=None)
+        repo_notexists = PackageRepository(name="nada", uri="bar", index=None)
+        manager = PackageRepositoriesManager()
+        self.assertTrue(manager.delete(repo_exists))
+        self.assertFalse(manager.delete(repo_notexists))

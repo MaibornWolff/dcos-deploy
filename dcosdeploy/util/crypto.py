@@ -28,22 +28,21 @@ def decrypt_data(key, content):
     return decrypted_data
 
 
-def md5_hash(filename):
-    hash_md5 = hashlib.md5()
+def md5_hash_file(filename):
     with open(filename, "rb") as source_file:
-        for chunk in iter(lambda: source_file.read(512*1024), b""):
-            hash_md5.update(chunk)
-    return hash_md5.hexdigest()
+        return md5_hash_file_object(source_file)
 
 
-def md5_hash_bytes(bytes_obj):
+def md5_hash_file_object(file_obj):
     hash_md5 = hashlib.md5()
-    for chunk in iter(lambda: bytes_obj.read(512*1024), b""):
+    for chunk in iter(lambda: file_obj.read(512*1024), b""):
         hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
 
 def md5_hash_str(string_data):
+    if isinstance(string_data, str):
+        string_data = string_data.encode("utf-8")
     hash_md5 = hashlib.md5()
     hash_md5.update(string_data)
     return hash_md5.hexdigest()

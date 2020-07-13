@@ -3,7 +3,7 @@ from io import BytesIO
 import time
 from ..adapters.s3 import S3FileAdapter
 from ..base import ConfigurationException
-from ..util import md5_hash, md5_hash_bytes, md5_hash_str, list_path_recursive, compare_text
+from ..util import md5_hash_file, md5_hash_file_object, md5_hash_str, list_path_recursive, compare_text
 from ..util.output import echo, echo_diff
 from ..util import global_config
 
@@ -153,7 +153,7 @@ class S3FilesManager:
             changed = False
             for key, filename in config.files:
                 with open(filename, "rb") as source_file:
-                    hash = md5_hash_bytes(source_file)
+                    hash = md5_hash_file_object(source_file)
                     source_file.seek(0)
                     if force or not self.api.files_equal(config.server, config.bucket, key, hash):
                         changed = True
@@ -219,7 +219,7 @@ class S3FilesManager:
             return something_gets_removed
 
     def _dry_run_single_file(self, server, bucket, key, filename, debug):
-        hash = md5_hash(filename)
+        hash = md5_hash_file(filename)
         files_equal = self.api.files_equal(server, bucket, key, hash)
         if files_equal is None:
             echo("Would upload file to %s" % key)
@@ -259,7 +259,7 @@ class S3FilesManager:
     def _hash_for_file_list(self, files):
         hash_list = list()
         for local_path, arcname in sorted(files, key=lambda i: i[1]):
-            hash_list.append("%s %s" % (arcname, md5_hash(local_path)))
+            hash_list.append("%s %s" % (arcname, md5_hash_file(local_path)))
         hash_str = ','.join(hash_list)
         return md5_hash_str(hash_str.encode("utf-8"))
 

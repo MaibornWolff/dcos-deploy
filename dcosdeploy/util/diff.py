@@ -2,15 +2,18 @@ import base64
 import difflib
 import json
 from copy import deepcopy
-
 from colorama import Fore, init
+from . import global_config
+
 
 init()
 
 BASE64_ENDINGS = ["base64", "b64", "base_64"]
 
 
-def color_diff_line(line):
+def _color_diff_line(line):
+    if not global_config.color_diffs:
+        return line
     if line.startswith('+') and not line.startswith('+++'):
         return Fore.GREEN + line + Fore.RESET
     elif line.startswith('-') and not line.startswith('---'):
@@ -21,14 +24,14 @@ def color_diff_line(line):
         return line
 
 
-def is_base64_key(key):
+def _is_base64_key(key):
     for b64_ending in BASE64_ENDINGS:
         if key.lower().endswith(b64_ending):
             return True
     return False
 
 
-def base64_decoded_copy(dictionary):
+def _base64_decoded_copy(dictionary):
     def _base64_decode_rec(dictionary):
         for key, value in dictionary.items():
             if isinstance(value, dict):
@@ -37,7 +40,7 @@ def base64_decoded_copy(dictionary):
                 for val in value:
                     if isinstance(val, dict):
                         _base64_decode_rec(val)
-            if isinstance(value, str) and is_base64_key(key):
+            if isinstance(value, str) and _is_base64_key(key):
                 try:
                     decoded = base64.b64decode(value.encode('utf-8'), validate=True)
                     if decoded != value:
@@ -51,21 +54,11 @@ def base64_decoded_copy(dictionary):
 
 
 def compare_dicts(left, right):
-    left = base64_decoded_copy(left)
-    right = base64_decoded_copy(right)
+    left = _base64_decoded_copy(left)
+    right = _base64_decoded_copy(right)
     left_str = json.dumps(left, indent=2, sort_keys=True)
     right_str = json.dumps(right, indent=2, sort_keys=True)
-    return compare_strings(left_str, right_str)
-
-
-def compare_strings(left, right):
-    left_str = left.replace(r'\n', '\n')
-    right_str = right.replace(r'\n', '\n')
-    diff = list(difflib.unified_diff(left_str.splitlines(), right_str.splitlines(), lineterm=''))
-    if diff:
-        return "    " + '\n    '.join([color_diff_line(line) for line in diff])
-    else:
-        return None
+    return compare_text(left_str, right_str)
 
 
 def compare_text(left, right):
@@ -73,9 +66,11 @@ def compare_text(left, right):
         left = left.decode("utf-8")
     if not isinstance(right, str):
         right = right.decode("utf-8")
+    left = left.replace(r'\n', '\n')
+    right = right.replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left.splitlines(), right.splitlines(), lineterm=''))
     if diff:
-        return "    " + '\n    '.join([color_diff_line(line) for line in diff])
+        return "    " + '\n    '.join([_color_diff_line(line) for line in diff])
     else:
         return None
 

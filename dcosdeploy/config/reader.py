@@ -189,7 +189,7 @@ def read_config(filenames, provided_variables):
             if (absolute_include_path, key) not in config_files:
                 config_files.append((absolute_include_path, key))
         # Read extra modules
-        additional_modules.extend(config.get("modules", list()))
+        additional_modules.extend([config_basepath + ":" + item for item in config.get("modules", list())])
         # Read entities
         for key, values in config.items():
             if key in META_NAMES:
@@ -287,11 +287,11 @@ def _prepare_entity_variables(name, entity_config, pre_script, post_script):
 def _init_modules(additional_modules):
     managers = dict()
     modules = dict()
-    for module_path in STANDARD_MODULES + additional_modules:
-        if ":" in module_path:
-            base_path, module_path = module_path.split(":")
-            sys.path.insert(0, base_path)
-        module = importlib.import_module(module_path)
+    for module_import in STANDARD_MODULES + additional_modules:
+        if ":" in module_import:
+            base_path, module_path, module_import = module_import.split(":")
+            sys.path.insert(0, os.path.join(base_path, module_path))
+        module = importlib.import_module(module_import)
         managers[module.__config_name__] = module.__manager__()
         preprocess_config = None
         if "preprocess_config" in module.__dict__:

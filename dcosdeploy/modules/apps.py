@@ -71,7 +71,7 @@ class MarathonAppsManager:
             echo("\tRestart finished")
         else:
             echo("\tFinished")
-        return changed
+        return changed or dependencies_changed
 
     def dry_run(self, config, dependencies_changed=False):
         app_state = self.api.get_app_state(config.app_id)
@@ -83,7 +83,7 @@ class MarathonAppsManager:
             echo_diff("Would update marathon app %s" % config.app_id, diff)
         elif dependencies_changed:
             echo("Would restart marathon app %s" % config.app_id)
-        return diff or dependencies_changed
+        return bool(diff) or dependencies_changed
 
     def delete(self, config, force=False):
         echo("\tDeleting app")

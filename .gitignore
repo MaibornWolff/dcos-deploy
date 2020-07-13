@@ -11,3 +11,5 @@ dist
 dcos-deploy.spec
 *.egg-info
 venv
+htmlcov
+.coverage

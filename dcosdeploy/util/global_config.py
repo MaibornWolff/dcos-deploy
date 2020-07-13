@@ -3,3 +3,4 @@
 
 silent = False
 debug = False
+color_diffs = True

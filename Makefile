@@ -1,5 +1,5 @@
 
-.PHONY: clean test binary dist release-pypi
+.PHONY: clean test binary dist release-pypi coverage coverage-html
 .DEFAULT_GOAL := test
 
 clean:
@@ -9,6 +9,14 @@ clean:
 
 test:
 	@python3 -m unittest discover -s tests -p "*_test.py"
+
+coverage:
+	@coverage run --source=dcosdeploy -m unittest discover -s tests -p "*_test.py"
+	@coverage report
+
+coverage-html:
+	@coverage run --source=dcosdeploy -m unittest discover -s tests -p "*_test.py"
+	@coverage html
 
 binary:
 	@pyinstaller dcos-deploy -F -n dcos-deploy \
