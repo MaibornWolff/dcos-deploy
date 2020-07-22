@@ -1,4 +1,5 @@
 from ..auth import get_base_url
+from ..base import APIRequestException, ConfigurationException
 from ..util import http
 from ..util.output import echo_error
 
@@ -14,7 +15,7 @@ class SecretsAdapter:
             response = http.get(self.base_url + "secret/default/?list=true")
             if not response.ok:
                 echo_error(response.text)
-                raise Exception("Failed to list secrets")
+                raise APIRequestException("Failed to list secrets", response)
             self._cache_secrets_list = response.json()["array"]
         return self._cache_secrets_list
 
@@ -27,7 +28,7 @@ class SecretsAdapter:
             return None
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to get secret")
+            raise APIRequestException("Failed to get secret", response)
         if response.headers.get("Content-Type") == "application/json":
             return response.json()["value"]
         else:
@@ -48,10 +49,10 @@ class SecretsAdapter:
         elif file_content:
             response = func(path, data=file_content, headers={'Content-Type': 'application/octet-stream'})
         else:
-            raise Exception("You must either specify value or file_content")
+            raise ConfigurationException("You must either specify value or file_content")
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to create secret")
+            raise APIRequestException("Failed to create secret", response)
 
     def delete_secret(self, name):
         response = http.delete(self.base_url + "secret/default/%s" % name)
@@ -60,4 +61,5 @@ class SecretsAdapter:
         elif response.status_code == 404:
             return False
         else:
-            raise Exception("Could not delete secret %s: %s " % (name, response.text))
+            echo_error(response.text)
+            raise APIRequestException("Could not delete secret %s" % name, response)

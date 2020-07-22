@@ -1,6 +1,7 @@
 from urllib3 import PoolManager
 from minio import Minio
 from minio.error import NoSuchKey, NoSuchBucket
+from ..base import APIRequestException
 
 
 class S3FileAdapter:
@@ -32,7 +33,7 @@ class S3FileAdapter:
         client = self._init_client(server)
         response = client.get_object(bucket, key)
         if not response.readable():
-            raise Exception("Could not download file from S3")
+            raise APIRequestException("Could not download file from S3", response)
         return response.read()
     
     def remove_file(self, server, bucket, key):

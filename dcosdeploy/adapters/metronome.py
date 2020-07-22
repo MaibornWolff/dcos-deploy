@@ -1,5 +1,6 @@
 import time
 from ..auth import get_base_url
+from ..base import APIRequestException
 from ..util import http
 from ..util.output import echo_error
 
@@ -14,10 +15,10 @@ class MetronomeAdapter:
             return
         if response.status_code == 422:
             echo_error(response.text)
-            raise Exception("Invalid job definition")
+            raise APIRequestException("Invalid job definition", response)
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def update_job(self, job_id, definition):
         response = http.put(self.metronome_url+"v1/jobs/%s" % job_id, json=definition)
@@ -25,18 +26,18 @@ class MetronomeAdapter:
             return
         if response.status_code == 422:
             echo_error(response.text)
-            raise Exception("Invalid job definition")
+            raise APIRequestException("Invalid job definition", response)
         elif response.status_code == 404:
-            raise Exception("Job does not exist")
+            raise APIRequestException("Job does not exist", response)
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def get_jobs(self):
         response = http.get(self.metronome_url+"v1/jobs")
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
         data = response.json()
         for job in data:
             yield job["id"]
@@ -54,7 +55,7 @@ class MetronomeAdapter:
             return None
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def get_schedules(self, job_id):
         if job_id[0] == "/":
@@ -66,7 +67,7 @@ class MetronomeAdapter:
             return None
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def does_job_exist(self, job_id):
         return job_id in list(self.get_jobs())
@@ -81,7 +82,7 @@ class MetronomeAdapter:
             return False
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def create_schedule(self, job_id, definition):
         response = http.post(self.metronome_url+"v1/jobs/%s/schedules" % job_id, json=definition)
@@ -89,10 +90,10 @@ class MetronomeAdapter:
             return
         if response.status_code == 422:
             echo_error(response.text)
-            raise Exception("Invalid job definition")
+            raise APIRequestException("Invalid job definition", response)
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def update_schedule(self, job_id, definition):
         response = http.put(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, definition["id"]), json=definition)
@@ -100,10 +101,10 @@ class MetronomeAdapter:
             return
         if response.status_code == 422:
             echo_error(response.text)
-            raise Exception("Invalid job definition")
+            raise APIRequestException("Invalid job definition", response)
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def delete_schedule(self, job_id, schedule_id):
         response = http.delete(self.metronome_url+"v1/jobs/%s/schedules/%s" % (job_id, schedule_id))
@@ -113,7 +114,7 @@ class MetronomeAdapter:
             return False
         else:
             echo_error(response.text)
-            raise Exception("Unknown error occured")
+            raise APIRequestException("Unknown error occured", response)
 
     def trigger_job_run(self, job_id):
         response = http.post(self.metronome_url+"v1/jobs/%s/runs" % job_id)
@@ -121,7 +122,7 @@ class MetronomeAdapter:
             return response.json()["id"]
         else:
             echo_error(response.text)
-            raise Exception("Failed to start job")
+            raise APIRequestException("Failed to start job", response)
 
     def get_job_run_status(self, job_id, run_id):
         response = http.get(self.metronome_url+"v1/jobs/%s/runs/%s" % (job_id, run_id))
@@ -131,7 +132,7 @@ class MetronomeAdapter:
             return None
         else:
             echo_error(response.text)
-            raise Exception("Failed to get job status")
+            raise APIRequestException("Failed to get job status", response)
 
     def wait_for_job_run(self, job_id, run_id, timeout=10*60):
         wait_time = 0

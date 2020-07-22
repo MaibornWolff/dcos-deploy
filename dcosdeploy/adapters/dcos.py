@@ -1,5 +1,6 @@
 import sys
 from ..auth import get_base_url
+from ..base import APIRequestException
 from ..util import http
 from ..util.output import echo_error
 
@@ -16,21 +17,24 @@ class DcosAdapter:
     def get_cluster_info(self):
         response = http.get(self.base_url+"/dcos-metadata/dcos-version.json")
         if not response.ok:
-            raise Exception("Unknown error occured: %s" % response.text)
+            echo_error(response.text)
+            raise APIRequestException("Unknown error occured", response)
         info = response.json()
         return dict(version=info["version"], variant=info["dcos-variant"])
 
     def get_cluster_state(self):
         response = http.get(self.base_url+"/mesos/master/state-summary")
         if not response.ok:
-            raise Exception("Unknown error occured: %s" % response.text)
+            echo_error(response.text)
+            raise APIRequestException("Unknown error occured", response)
         info = response.json()
         return dict(cluster=info["cluster"])
     
     def get_nodes(self):
         response = http.get(self.base_url+"/system/health/v1/nodes")
         if not response.ok:
-            raise Exception("Unknown error occured: %s" % response.text)
+            echo_error(response.text)
+            raise APIRequestException("Unknown error occured", response)
         return response.json()["nodes"]
 
     def get_node_counts(self):

@@ -1,5 +1,6 @@
 import time
 from ..auth import get_base_url
+from ..base import APIRequestException
 from ..util import http
 from ..util.output import echo_error
 
@@ -16,14 +17,14 @@ class MarathonAdapter:
             if response.status_code == 404:
                 return None
             echo_error(response.text)
-            raise Exception("Failed to get state for %s" % app_id)
+            raise APIRequestException("Failed to get state for %s" % app_id, response)
         return response.json()["app"]
 
     def get_deployments(self):
         response = http.get(self.marathon_url+"/deployments")
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to get deployments")
+            raise APIRequestException("Failed to get deployments", response)
         return response.json()
 
     def get_deployment(self, deployment_id):
@@ -67,7 +68,7 @@ class MarathonAdapter:
         response = http.put(self.marathon_url + "/apps?force=%s" % force, json=[app_definition])
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to deploy app %s" % app_definition["id"])
+            raise APIRequestException("Failed to deploy app %s" % app_definition["id"], response)
         deployment_id = response.json()["deploymentId"]
         deployment = self.get_deployment(deployment_id)
         if not deployment:
@@ -80,7 +81,7 @@ class MarathonAdapter:
         response = http.post(self.marathon_url + "/apps/%s/restart?force=%s" % (app_id, force))
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to restart app %s" % app_id)
+            raise APIRequestException("Failed to restart app %s" % app_id, response)
         deployment_id = response.json()["deploymentId"]
         if wait_for_deployment:
             self.wait_for_specific_deployment(deployment_id)
@@ -91,7 +92,7 @@ class MarathonAdapter:
             if response.status_code == 404:
                 return False
             echo_error(response.text)
-            raise Exception("Failed to delete app %s" % app_id)
+            raise APIRequestException("Failed to delete app %s" % app_id, response)
         deployment_id = response.json()["deploymentId"]
         if wait_for_deployment:
             self.wait_for_specific_deployment(deployment_id)
@@ -103,23 +104,23 @@ class MarathonAdapter:
             if response.status_code == 404:
                 return None
             echo_error(response.text)
-            raise Exception("Failed to get marathon group %s" % name)
+            raise APIRequestException("Failed to get marathon group %s" % name, response)
         return response.json()
 
     def update_group(self, name, enforce_role):
         response = http.put(self.marathon_url+"/groups/%s" % name, json={'enforceRole': enforce_role})
         if not response.ok:
-            raise Exception("Error while updating marathon group: %s" % response.text)
+            raise APIRequestException("Error while updating marathon group %s" % name, response)
         return response.json()
 
     def add_group(self, name, enforce_role=False):
         response = http.post(self.marathon_url+"/groups/", json={'id': name, 'enforceRole': enforce_role})
         if not response.ok:
-            raise Exception("Error while creating marathon group: %s" % response.text)
+            raise APIRequestException("Error while creating marathon group %s" % name, response)
         return response.json()
 
     def delete_group(self, name):
         response = http.delete(self.marathon_url+"/groups/%s" % name)
         if not response.ok:
-            raise Exception("Error while removing marathon group: %s" % response.text)
+            raise APIRequestException("Error while removing marathon group %s" % name, response)
         return response.json()

@@ -18,10 +18,16 @@ class IAMUser:
 
 def render_permissions(config_helper, permissions):
     result = dict()
-    for rid, actions in permissions.items():
-        rid = config_helper.render(rid)
-        actions = list(map(lambda action: config_helper.render(action), actions))
-        result[rid] = actions
+    if isinstance(permissions, list):
+        for rid in permissions:
+            rid = config_helper.render(rid)
+            rid, action = rid.split(" ")
+            result[rid] = [action]
+    else:
+        for rid, actions in permissions.items():
+            rid = config_helper.render(rid)
+            actions = list(map(lambda action: config_helper.render(action), actions))
+            result[rid] = actions
     return result
 
 

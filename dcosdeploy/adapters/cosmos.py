@@ -1,5 +1,6 @@
 import time
 from ..auth import get_base_url
+from ..base import APIRequestException
 from ..util import http
 from ..util.output import echo_error
 
@@ -17,7 +18,7 @@ class CosmosAdapter:
         response = http.post(self.package_url+"/repository/list", json={}, headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to get list of package repositories")
+            raise APIRequestException("Failed to get list of package repositories", response)
         return response.json()["repositories"]
 
     def add_repository(self, name, uri, index=None):
@@ -31,7 +32,7 @@ class CosmosAdapter:
         response = http.post(self.package_url+"/repository/add", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to add package repository %s" % name)
+            raise APIRequestException("Failed to add package repository %s" % name, response)
         return True
 
     def delete_repository(self, name):
@@ -42,7 +43,7 @@ class CosmosAdapter:
         response = http.post(self.package_url+"/repository/delete", json=dict(name=name), headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to delete package repository %s" % name)
+            raise APIRequestException("Failed to delete package repository %s" % name, response)
         return True
 
     def describe_service(self, service_name):
@@ -55,7 +56,7 @@ class CosmosAdapter:
             if response.json()["type"] == "MarathonAppNotFound":
                 return None
             echo_error(response.text)
-            raise Exception("Failed to get describe for %s" % service_name)
+            raise APIRequestException("Failed to get describe for %s" % service_name, response)
         return response.json()
 
     def install_package(self, service_name, package_name, version, options):
@@ -67,7 +68,7 @@ class CosmosAdapter:
         response = http.post(self.package_url+"/install", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to install service %s" % service_name)
+            raise APIRequestException("Failed to install service %s" % service_name, response)
 
     def update_service(self, service_name, version, options):
         headers = {
@@ -80,7 +81,7 @@ class CosmosAdapter:
         response = http.post(self.service_url+"/update", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to update service %s" % service_name)
+            raise APIRequestException("Failed to update service %s" % service_name, response)
 
     def uninstall_package(self, service_name, package_name):
         headers = {
@@ -91,7 +92,7 @@ class CosmosAdapter:
         response = http.post(self.package_url+"/uninstall", json=data, headers=headers)
         if not response.ok:
             echo_error(response.text)
-            raise Exception("Failed to uninstall service %s" % service_name)
+            raise APIRequestException("Failed to uninstall service %s" % service_name, response)
 
     def wait_for_plan_complete(self, service_name, plan, timeout=10*60):
         wait_time = 0

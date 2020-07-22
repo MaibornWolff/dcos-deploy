@@ -1,8 +1,10 @@
 import uuid
 import base64
 import json
-from ..util import http
 from ..auth import get_base_url
+from ..base import APIRequestException
+from ..util import http
+from ..util.output import echo_error
 
 
 class MesosAdapter:
@@ -42,7 +44,8 @@ class MesosAdapter:
                 idx += 1
             return result_text
         else:
-            raise Exception("Unknown error occured: %s" % response.text)
+            echo_error(response.text)
+            raise APIRequestException("Unknown error occured", response)
 
     def get_container_id_and_slave_id_for_task(self, name):
         state = self._get_master_state()
@@ -56,7 +59,7 @@ class MesosAdapter:
         if response.ok:
             return response.json()
         else:
-            raise Exception("Failed to get mesos master state: %s" % response.text)
+            raise APIRequestException("Failed to get mesos master state", response)
 
     def update_quota(self, name, quota, force=True):
         request_body = {
@@ -85,7 +88,7 @@ class MesosAdapter:
         }
         response = http.post(self.mesos_url+"/api/v1", json=request_body)
         if not response.ok:
-            raise Exception("Error while updating quota: %s" % response.text)
+            raise APIRequestException("Error while updating quota", response)
         return response.status_code
 
     def get_quota(self, name):
