@@ -144,8 +144,15 @@ def _parse_entity_script(script, config_helper):
     return EntityScript(script.get("apply"), script.get("delete"))
 
 
+def _already_in_list(path, config_files):
+    for config_filename, _, _, _ in config_files:
+        if config_filename == path:
+            return True
+    return False
+
+
 def read_config(filenames, provided_variables):
-    config_files = [(os.path.abspath(filename), None) for filename in filenames]
+    config_files = [(os.path.abspath(filename), None, None, None) for filename in filenames]
     idx = 0
     entities = dict()
     global_config = dict()
@@ -153,7 +160,7 @@ def read_config(filenames, provided_variables):
     additional_modules = list()
 
     while idx < len(config_files):
-        config_filename, encryption_key = config_files[idx]
+        config_filename, encryption_key, only_restriction, except_restriction = config_files[idx]
         config_basepath = os.path.dirname(config_filename)
         with open(config_filename) as config_file:
             config = config_file.read()
@@ -176,20 +183,28 @@ def read_config(filenames, provided_variables):
             variables.set_global_vault_key(global_config.get("vault", dict()).get("key"))
         # Read includes
         for include in config.get("includes", list()):
-            if include.startswith("vault:"):
-                if include.startswith("vault::"):
-                    _, include = include.split("::", 1)
+            if isinstance(include, dict):
+                filename = include["file"]
+                include_only_restriction = include.get("only", None)
+                include_except_restriction = include.get("except", None)
+            else:
+                filename = include
+                include_only_restriction = None
+                include_except_restriction = None
+            if filename.startswith("vault:"):
+                if filename.startswith("vault::"):
+                    _, filename = filename.split("::", 1)
                     key = DUMMY_GLOBAL_ENCRYPTION_KEY
                 else:
-                    _, key, include = include.split(":", 2)
+                    _, key, filename = filename.split(":", 2)
             else:
                 key = None
-            include = variables.render_value(include)
-            absolute_include_path = os.path.abspath(os.path.join(config_basepath, include))
-            if (absolute_include_path, key) not in config_files:
-                config_files.append((absolute_include_path, key))
+            filename = variables.render_value(filename)
+            absolute_include_path = os.path.abspath(os.path.join(config_basepath, filename))
+            if not _already_in_list(absolute_include_path, config_files):
+                config_files.append((absolute_include_path, key, include_only_restriction, include_except_restriction))
         # Read extra modules
-        additional_modules.extend([config_basepath + ":" + item for item in config.get("modules", list())])
+        additional_modules.extend([(config_basepath, item) for item in config.get("modules", list())])
         # Read entities
         for key, values in config.items():
             if key in META_NAMES:
@@ -202,9 +217,17 @@ def read_config(filenames, provided_variables):
                         raise ConfigurationException("%s found in several files" % name)
                     entities[name] = value
                     entities[name]["_basepath"] = config_basepath
+                    if only_restriction:
+                        entities[name]["_include_only"] = only_restriction
+                    if except_restriction:
+                        entities[name]["_include_except"] = except_restriction
             else:
                 entities[key] = values
                 entities[key]["_basepath"] = config_basepath
+                if only_restriction:
+                    entities[key]["_include_only"] = only_restriction
+                if except_restriction:
+                    entities[key]["_include_except"] = except_restriction
         idx += 1
 
     variables.add_direct_variables(calculate_predefined_variables())
@@ -227,6 +250,8 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
         parse_config_func = module["parser"]
         preprocess_config_func = module["preprocesser"]
         config_helper.set_base_path(entity_config["_basepath"])
+        include_only = entity_config.get("_include_only")
+        include_except = entity_config.get("_include_except")
         entities = [(name, entity_config)]
         if preprocess_config_func:
             entities = preprocess_config_func(name, entity_config, config_helper)
@@ -244,6 +269,10 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
                 update_dict_with_defaults(entity_config, global_config[entity_type])
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
+            if include_only:
+                merge_restriction(only_restriction, include_only)
+            if include_except:
+                merge_restriction(except_restriction, include_except)
             when_condition = entity_config.get("when")
             state = entity_config.get("state")
             if when_condition and when_condition not in ["dependencies-changed"]:
@@ -287,16 +316,22 @@ def _prepare_entity_variables(name, entity_config, pre_script, post_script):
 def _init_modules(additional_modules):
     managers = dict()
     modules = dict()
-    for module_import in STANDARD_MODULES + additional_modules:
+    def _init_module(base_path, module_import):
         if ":" in module_import:
-            base_path, module_path, module_import = module_import.split(":")
-            sys.path.insert(0, os.path.join(base_path, module_path))
+            module_path, module_import = module_import.split(":")
+            if base_path:
+                module_path = os.path.join(base_path, module_path)
+            sys.path.insert(0, module_path)
         module = importlib.import_module(module_import)
         managers[module.__config_name__] = module.__manager__()
         preprocess_config = None
         if "preprocess_config" in module.__dict__:
             preprocess_config = module.preprocess_config
         modules[module.__config_name__] = dict(parser=module.parse_config, preprocesser=preprocess_config)
+    for module_import in STANDARD_MODULES:
+        _init_module(None, module_import)
+    for base_path, module_import in additional_modules:
+        _init_module(base_path, module_import)
     return managers, modules
 
 
@@ -328,6 +363,20 @@ def _entity_should_be_excluded(variables, restriction_only, restriction_except):
                 elif variables.get(var) == value:
                     return True
     return False
+
+
+def merge_restriction(left, right):
+    for key, value in right.items():
+        if key in left:
+            if isinstance(value, list) and isinstance(left[key], list):
+                left[key].extend(value)
+            elif isinstance(left[key], list):
+                left[key].append(value)
+            elif isinstance(value, list):
+                value.append(left[key])
+                left[key] = value
+        else:
+            left[key] = value
 
 
 def _expand_loop(key, values):
