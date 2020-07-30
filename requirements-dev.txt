@@ -1,3 +1,4 @@
 pyinstaller==3.6
 twine==1.12.1
 coverage==5.1
+requests-mock==1.8.0

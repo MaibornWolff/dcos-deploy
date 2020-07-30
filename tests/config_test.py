@@ -1,7 +1,6 @@
 import unittest
 from unittest import mock
 from dcosdeploy import config
-from dcosdeploy.config.reader import merge_restriction
 from dcosdeploy.util import global_config
 import dummy_module
 
@@ -242,32 +241,6 @@ class ConfigTest(unittest.TestCase):
         helper = config.ConfigHelper(dict(foo="bar"), dict())
         vars = helper.prepare_extra_vars({"a": "b", "foo:bar": {"abc": "xyz"}, "foo:baz": {"abc": "abc"}})
         self.assertEqual(vars, dict(abc="xyz", a="b"))
-
-    def test_merge_restriction(self):
-        left = dict(foo="bar")
-        right = dict(bar="baz")
-        merge_restriction(left, right)
-        self.assertEqual(left, dict(foo="bar", bar="baz"))
-
-        left = dict(foo=[1])
-        right = dict(foo=[2])
-        merge_restriction(left, right)
-        self.assertEqual(left, dict(foo=[1, 2]))
-
-        left = dict(foo=[1])
-        right = dict(foo=2)
-        merge_restriction(left, right)
-        self.assertEqual(left, dict(foo=[1, 2]))
-
-        left = dict(foo=1)
-        right = dict(foo=[2])
-        merge_restriction(left, right)
-        self.assertEqual(left, dict(foo=[2, 1]))
-
-        left = dict(foo=1)
-        right = dict(foo=2)
-        merge_restriction(left, right)
-        self.assertEqual(left["foo"], 1)
 
 
 def read_config_mocked_open(provided_variables, *input_texts):

@@ -1,4 +1,5 @@
 from ..adapters.dcos import DcosAdapter
+from ..auth import get_base_url
 
 
 def calculate_predefined_variables():
@@ -10,6 +11,7 @@ def calculate_predefined_variables():
         _cluster_version=cluster_info["version"],
         _cluster_variant=cluster_info["variant"],
         _cluster_name=cluster_state["cluster"],
+        _cluster_base_url=get_base_url(),
         _num_masters=counts["master"],
         _num_private_agents=counts["agent"], 
         _num_public_agents=counts["public_agent"],

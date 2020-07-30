@@ -269,14 +269,13 @@ def _read_config_entities(modules, variables, config, config_helper, global_conf
                 update_dict_with_defaults(entity_config, global_config[entity_type])
             only_restriction = entity_config.get("only", dict())
             except_restriction = entity_config.get("except", dict())
-            if include_only:
-                merge_restriction(only_restriction, include_only)
-            if include_except:
-                merge_restriction(except_restriction, include_except)
             when_condition = entity_config.get("when")
             state = entity_config.get("state")
             if when_condition and when_condition not in ["dependencies-changed"]:
                 raise ConfigurationException("Unknown when '%s' for '%s'" % (when_condition, name))
+            if _entity_should_be_excluded(variables, include_only, include_except):
+                excluded_entities.append(name)
+                continue
             if _entity_should_be_excluded(variables, only_restriction, except_restriction):
                 excluded_entities.append(name)
                 continue
@@ -363,20 +362,6 @@ def _entity_should_be_excluded(variables, restriction_only, restriction_except):
                 elif variables.get(var) == value:
                     return True
     return False
-
-
-def merge_restriction(left, right):
-    for key, value in right.items():
-        if key in left:
-            if isinstance(value, list) and isinstance(left[key], list):
-                left[key].extend(value)
-            elif isinstance(left[key], list):
-                left[key].append(value)
-            elif isinstance(value, list):
-                value.append(left[key])
-                left[key] = value
-        else:
-            left[key] = value
 
 
 def _expand_loop(key, values):
