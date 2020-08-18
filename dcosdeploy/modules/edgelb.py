@@ -3,14 +3,19 @@ from ..adapters.edgelb import EdgeLbAdapter
 from ..base import ConfigurationException
 from ..util import compare_dicts, update_dict_with_defaults, compare_text
 from ..util.output import echo, echo_diff
-
+BASIC_AUTH_ANCHOR="<%|BASIC_AUTH_ANCHOR|%>"
 
 class EdgeLbPool:
-    def __init__(self, api_server, name, pool_config, pool_template):
+    def __init__(self, api_server, name, pool_config, pool_template, basic_auth):
         self.api_server = api_server
         self.name = name
         self.pool_config = pool_config
         self.pool_template = pool_template
+        self.basic_auth = basic_auth
+
+
+def create_password_hash(password):
+    pass
 
 
 def parse_config(name, config, config_helper):
@@ -27,12 +32,19 @@ def parse_config(name, config, config_helper):
         pool_config = config_helper.read_json(pool_filepath, render_variables=True)
     else:
         raise ConfigurationException(
-            "Unknown file type for Edge-LB pool config file: '%s'. Must be json or yaml" % pool_filepath)
+            "Unknown file type for Edge-LB pool config file: '%s'. Must backend json or yaml" % pool_filepath)
 
     template_filepath = config.get("template")
     if template_filepath:
         template_filepath = config_helper.render(template_filepath)
         pool_template = config_helper.read_file(template_filepath)
+    basic_auth = config.get("basic_auth")
+    if basic_auth:
+        if not template_filepath:
+            raise ConfigurationException(f'You need to provide a haproxy pool template and place the anchor with the value {BASIC_AUTH_ANCHOR}\n'
+                                         f'where the basic auth config for haproxy should be pasted.')
+        generate_basic_auth_config(basic_auth, config_helper, pool_config, template_filepath)
+
     else:
         pool_template = None
 
@@ -50,6 +62,26 @@ def parse_config(name, config, config_helper):
         api_server = api_server[1:]
 
     return EdgeLbPool(api_server, name, pool_config, pool_template)
+
+
+def generate_basic_auth_config(basic_auth, config_helper, pool_config, template_filepath):
+    basic_auth = config_helper.render(basic_auth)
+    haproxy_basic_auth_lists = ""
+    for backend_name, userlist in basic_auth.items():
+        userlist_entry = f"userlist {backend_name}-userlist\n"
+        for entry in userlist:
+            user = entry.get('user')
+            password_hash = create_password_hash(entry.get('password'))
+            entry = f"  user {user} password {password_hash}\n"
+            userlist_entry += entry
+        userlist_entry += "\n"
+        haproxy_basic_auth_lists += userlist_entry
+        concerned_backend = [backend for backend in pool_config["haproxy"]["backends"] if backend.get("name ") == backend_name][0]
+        string_params = concerned_backend.get("miscStrs", [])
+        string_params.append(f"acl user-allowed http_auth({backend_name}-userlist)")
+        string_params.append("http-request auth realm allowed-users unless user-allowed")
+        concerned_backend["miscStrs"] = string_params
+    template_filepath.replace(BASIC_AUTH_ANCHOR, haproxy_basic_auth_lists)
 
 
 class EdgeLbPoolsManager:
