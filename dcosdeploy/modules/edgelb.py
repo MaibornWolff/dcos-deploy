@@ -61,7 +61,7 @@ def parse_config(name, config, config_helper):
     if api_server[0] == "/":
         api_server = api_server[1:]
 
-    return EdgeLbPool(api_server, name, pool_config, pool_template)
+    return EdgeLbPool(api_server, name, pool_config, pool_template, basic_auth)
 
 
 def generate_basic_auth_config(basic_auth, config_helper, pool_config, template_filepath):
