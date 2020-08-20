@@ -72,21 +72,30 @@ class VariableContainerBuilder:
         else:
             raise ConfigurationException("Unknown variable encoder: %s" % encoder)
 
-    def _calculate_variable_value(self, name, config, file_base_path):
+    def _calculate_variable_value(self, name, embeded_data, file_base_path):
+        # resolution from externally provided value
         if name in self.provided_variables:
             return self.provided_variables[name]
-        if not isinstance(config, dict):
-            return config
-        env_name = config.get("env")
+        # direct value resolution
+        if not isinstance(embeded_data, dict):
+            return embeded_data
+        env_name = embeded_data.get("env")
+        # resolution from environment
         if not env_name:
             env_name = "VAR_" + name.replace("-", "_").upper()
         if env_name in os.environ:
             return os.environ[env_name]
-        if "file" in config:
-            self._file_variables.append((name, file_base_path, config))
+        # resolution from file
+        if "file" in embeded_data:
+            self._file_variables.append((name, file_base_path, embeded_data))
             return None
-        if "default" in config:
-            return config["default"]
+        # resolution from default value
+        if "default" in embeded_data:
+            return embeded_data["default"]
+        # resolve nested variables recursively
+        if isinstance(embeded_data, dict):
+            builder = VariableContainerBuilder(self.provided_variables)
+            return builder.add_variables(file_base_path,embeded_data).variables
         return None
 
     def _post_render_variable(self, name, config, value):
