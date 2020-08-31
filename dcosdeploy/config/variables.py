@@ -2,7 +2,7 @@ import os
 import base64
 import pystache
 from ..base import ConfigurationException
-from ..util import decrypt_data
+from ..util import decrypt_data, global_config
 from ..util.output import echo
 from ..util.file import check_if_encrypted_is_older
 
@@ -19,7 +19,11 @@ class VariableContainer:
         variables = {**self.variables, **self.extra_vars}
         result_text = pystache.render(text, variables)
         if result_text.count("{{"):
-            raise ConfigurationException("Unresolved variable")
+            if global_config.debug:
+                missing_vars = [line[line.find("{{")+2:line.find("}}")] for line in result_text.split('\n') if "{{" in line]
+                raise ConfigurationException(f"Unresolved variable(s): {missing_vars}")
+            else:
+                raise ConfigurationException(f"Unresolved variable(s).")
         return result_text
 
     def get(self, name):
