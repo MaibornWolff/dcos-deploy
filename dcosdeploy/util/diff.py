@@ -62,10 +62,22 @@ def compare_dicts(left, right):
 
 
 def compare_text(left, right):
+    is_binary = False
     if not isinstance(left, str):
-        left = left.decode("utf-8")
-    if not isinstance(right, str):
-        right = right.decode("utf-8")
+        try:
+            left = left.decode("utf-8")
+        except UnicodeDecodeError:
+            is_binary = True
+    if not is_binary and not isinstance(right, str):
+        try:
+            right = right.decode("utf-8")
+        except UnicodeDecodeError:
+            is_binary = True
+    if is_binary:
+        if left != right:
+            return "    <no diff for binary content>"
+        else:
+            return None
     left = left.replace(r'\n', '\n')
     right = right.replace(r'\n', '\n')
     diff = list(difflib.unified_diff(left.splitlines(), right.splitlines(), lineterm=''))

@@ -93,7 +93,7 @@ class EdgeLbPoolsManager:
         pool_exists = config.name in self.api.get_pools(config.api_server)
         if not pool_exists:
             echo("Would create pool %s" % config.name)
-            pool_updated = True
+            return True
 
         existing_pool_config = self.api.get_pool(config.api_server, config.name)
         local_pool_config, existing_pool_config = _normalize_pool_definition(config.pool_config, existing_pool_config)

@@ -65,6 +65,10 @@ class DiffTest(unittest.TestCase):
         # not equal
         result = diff.compare_text(TEXT, TEXT.replace("baz", "bar"))
         self.assertEqual(result, TEXT_DIFF)
+        # non-utf8 binary
+        self.assertIsNone(diff.compare_text(b'\x9c\x00', b'\x9c\x00'))
+        self.assertEqual(diff.compare_text(b'\x9c\x00', b'\x9c\x01'), "    <no diff for binary content>")
+
 
     def test_update_dict_with_defaults(self):
         my_dict = dict(a=1, b=2, c=dict(d=1, e=[1, 2, 3]))
