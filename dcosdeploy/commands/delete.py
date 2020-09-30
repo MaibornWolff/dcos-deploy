@@ -1,8 +1,9 @@
 import click
 from . import maingroup
 from ..delete import DeletionRunner
-from ..util import detect_yml_file
+from ..util import detect_yml_file, read_yaml
 from ..util.output import echo
+from ..util.vars import get_variables
 
 
 @maingroup.command()
@@ -28,13 +29,3 @@ def delete(config_file, var, only, dry_run, yes):
                 runner.run_deletion()
             else:
                 echo("Not doing anything")
-
-
-def get_variables(variables):
-    provided_variables = dict()
-    for variable in variables:
-        if "=" not in variable:
-            raise Exception("No value defined for %s" % variable)
-        name, value = variable.split("=", 1)
-        provided_variables[name] = value
-    return provided_variables

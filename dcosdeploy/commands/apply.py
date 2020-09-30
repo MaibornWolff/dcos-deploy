@@ -1,8 +1,9 @@
 import click
 from . import maingroup
 from ..deploy import DeploymentRunner
-from ..util import detect_yml_file, global_config
+from ..util import detect_yml_file, read_yaml, global_config
 from ..util.output import echo
+from ..util.vars import get_variables
 
 
 @maingroup.command()
@@ -31,13 +32,3 @@ def apply(config_file, var, only, dry_run, yes, debug, force):
                 runner.run_deployment(force=force)
             else:
                 echo("Not doing anything")
-
-
-def get_variables(variables):
-    provided_variables = dict()
-    for variable in variables:
-        if "=" not in variable:
-            raise Exception("No value defined for %s" % variable)
-        name, value = variable.split("=", 1)
-        provided_variables[name] = value
-    return provided_variables
