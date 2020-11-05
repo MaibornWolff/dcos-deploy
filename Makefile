@@ -38,5 +38,5 @@ binary:
 dist:
 	@python3 setup.py sdist
 
-release-pypi:
+release-pypi: dist
 	@twine upload -r pypi dist/dcos-deploy-*.tar.gz

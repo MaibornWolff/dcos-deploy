@@ -3,23 +3,26 @@ import setuptools
 with open("README.md", "r") as f:
     long_description = f.read()
 
+# Read __version__
+with open('dcosdeploy/__init__.py') as f:
+    exec(f.read())
 
 install_requires = [
     "PyYaml==5.3.1",
     "pystache==0.5.4",
     "click==7.1.2",
-    "requests==2.22.0",
-    "minio==5.0.10",
-    "cryptography==2.9.2",
+    "requests==2.24.0",
+    "minio==6.0.0",
+    "cryptography==3.2.1",
     "PyJWT==1.7.1",
-    "oyaml==0.9",
-    "colorama==0.4.3",
+    "oyaml==1.0",
+    "colorama==0.4.4",
 ]
 
 
 setuptools.setup(
     name="dcos-deploy",
-    version="0.3.0",
+    version=__version__,
     author="MaibornWolff",
     description="Deploy and orchestrate DC/OS services and apps",
     long_description=long_description,
@@ -38,6 +41,7 @@ setuptools.setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
     entry_points={
         'console_scripts': [

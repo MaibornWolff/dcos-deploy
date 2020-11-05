@@ -48,6 +48,7 @@ There are several ways to install dcos-deploy:
 * Binary
   * Download the binary for your system from the Releases page
   * Make the file executable and copy it into a folder inside your path
+  * Note: The binaries have not been specifically tested and might not support all features. Only use them if you do not have python on your system
 
 ## Usage
 
@@ -65,17 +66,22 @@ dcos-deploy has several ways to retrieve connection credentials for your DC/OS c
 * Username and Password via environment variables: `DCOS_BASE_URL` (set this to the public URL of your master), `DCOS_USERNAME` (username of a DC/OS admin user) and `DCOS_PASSWORD` (password of a DC/OS admin user).
 
 ## Config file syntax
+
 The config file is written as a yaml file. The root level consists of key/value-pairs (a dictionary). Each key represents the unique name for one entity, the value is again a dictionary with all the options for that entity.
 
 ### Meta fields
+
 There are some meta fields for further configuation:
+
 * `variables`: Define variables to be used in the rest of the file and in app definitions and package options. See the [Variables](#variables) section for more info.
 * `includes`: Structure your config further by separating parts into different files and including them. Provide a list of filenames. The include files must be structured the same way as the main file. Each entity name must be unique over the base file and all included files.
 * `modules`: Extend the features of dcos-deploy using external modules (still in development, not documented yet).
 
 ### Variables
+
 To be more generic with your services you can use variables in certain places. All variables must be defined in the `variables` section of your config file.
-```
+
+```yaml
 variables:
   var1:
     required: True  # Required variables must be provided when calling dcos-deploy using the -e option (e.g. -e var1=foo)
@@ -273,9 +279,10 @@ The scripts are executed in the context of dcos-deploy, so you can import any dc
 
 If an entity has pre or post scripts defined, hash values for those scripts are provided as entity variables (`_pre_apply_script_hash`, `_pre_delete_script_hash`, `_post_apply_script_hash`, `_post_delete_script_hash`). These can be used to force an update with script execution of the entity whenever the script changes. In marathon apps you can e.g. put the variable in an environment variable or in a framework you can put it into an extra unused config option.
 
-
 ### Marathon app
+
 `type: app` defines a marathon app. It has the following specific options:
+
 * `path`: id of the app. If not specified the `id` field of the marathon app definition is used. Variables can be used.
 * `marathon`: path to the marathon app definition json file. Required. Variables can be used in the path and in the json file itsself.
 * `extra_vars`: key/value-pairs of of extra variables and values to be used when rendering the app definition file.
@@ -329,6 +336,7 @@ If `env` has value `test`, the variable `foo` will have value `bar`, if `env` ha
 If not defined marathon will add a number of default fields to an app definition. dcos-deploy tries to detect these defaults and exclude them when checking for changes between the local definition and the one known to marathon. This is rather complex as these default values partly depend on several modes (network, container type, etc.). If you find a case where dcos-deploy falesly reports a change please open an issue at the github project and attach your app definition and the definition reported by marathon (via `dcos marathon app show <app-id>`).
 
 ### Framework
+
 `type: framework` defines a DC/OS framework. It has the following specific options:
 
 * `path`: name of the framework. If not specified the `service.name` field of the package options is used. Variables can be used.
@@ -358,13 +366,16 @@ Any change in the options file or in the package version will trigger an update 
 The job definition is expected to be in the format used starting with DC/S 1.13. It is described in the [DC/OS 1.13 release notes](https://docs.d2iq.com/mesosphere/dcos/1.13/release-notes/1.13.0/#using-separate-json-files-for-job-scheduling).
 
 ### Secret
+
 `type: secret` defines a secret. This can only be used on EE clusters. It has the following specific options:
+
 * `path`: path for the secret. Required. Variables can be used.
 * `value`: Value for the secret. Variables can be used. Either this or `file` is required.
 * `file`: Path to a file. The content of the file will be used as value for the secret. Either this or `value` is required.
 * `render`: Wether to render the file content with mustache. Use if your file contains variables. Boolean. Defaults to False.
 
 ### Serviceaccount
+
 `type: serviceaccount` defines a serviceaccount. This can only be used on EE clusters. It has the following specific options:
 
 * `name`: Name of the serviceaccount. Required. Variables can be used.
@@ -409,9 +420,11 @@ All names from the `hostnames` option will be added to the SAN part of the certi
 Once the certificate has been created any changes in any of the options will not be detected and will not trigger the creation of a new certificate unless the secrets for key and cert are deleted beforehand. Also be aware that the created certificates are valid for about 10 years and there is no way to revoke certificates. As such please only use them inside your DC/OS cluster.
 
 ### Package repository
+
 `type: repository` defines a package repository. It has the following specific options:
+
 * `name`: name of the repository. Required. Variables can be used.
-* `uri`: uri for the repositroy. Required. Variables can be used.
+* `uri`: uri for the repository. Required. Variables can be used.
 * `index`: at what index to place the repository in the repository list. 0 for beginning. Do not set for end of list.
 
 With this type you can add additional package repositories to DC/OS. You can for example use it to add the Edge-LB repositories to your EE cluster. Set the repository as a dependency for any frameworks/packages installed from it.
@@ -470,7 +483,9 @@ If you run `apply` with `--debug` dcosdeploy will download already existing file
 If a configuration key ends with base64, b64 or base_64 its value will be decoded for the diff.
 
 ### Task exec
+
 `type: taskexec` allows to execute commands inside tasks. This is primarily meant to trigger configuration reloads on services that can do some sort of hot-reload as to avoid restarting a service. It has the following specific options:
+
 * `task`: task identifier to uniquely identify the task. Can be part of a task name. Required. Variables can be used.
 * `command`: command to execute in the task. Required. Variables can be used.
 * `print`: boolean. Wether to print the output of the executed command. Optional. Defaults to false.
@@ -535,10 +550,12 @@ Restrictions:
 * Quotas are only supported for DC/OS `>=2.0`.
 
 ## Deployment process
+
 When running the `apply` command dcos-deploy will first check all entities if they have changed. To do this it will first render all options and files using the provided variables, retrieve the currently running configurations from the DC/OS cluster using the specific APIs (e.g. get the app definition from marathon) and compare them. It will print a list of changes and ask for confirmation (unless `--yes` is used). If an entity needs to be created it will first recursively create any dependencies.
 There is no guaranteed order of execution. Only that any defined dependencies will be created before the entity itsself is created.
 
 The deployment process has some specific restrictions:
+
 * Names/paths/ids may not be changed.
 * Options files for frameworks, apps and jobs are not verified for structural correctness. If the new file is not accepted by the API an error will be thrown.
 * For frameworks dcos-deploy does not verify beforehand if a version update is supported by the framework. If the framework does not accept the new version an error will be thrown.
@@ -565,6 +582,19 @@ If you want to develop dcos-deploy you need to be able to run it directly from s
 * Manually install all dependencies from `setup.py` and create a symlink of `dcos-deploy` to a folder in your exectuable path (e.g. `ln -s $(pwd)/dcos-deploy ~/usr/bin/dcos-deploy`)
 
 This project contains unittests. For convenience they can be run using `make test`.
+
+### Release process
+
+1. Check if any of the dependencies in `setup.py` need to be updated
+2. Set the correct version in `dcosdeploy/__init__.py`
+3. Push changes and download the built binaries from the github actions pipeline
+4. Push the new release to pypi by running `make release-pypi`
+   * You need the dependencies from `requirements-dev.txt` to run this command
+   * You need to have credentials configured for pypi (under linux at `~/.pypirc`)
+5. Create a new release with a tag corresponding to the version in the format `vX.Y.Z`
+   * Collect notable new features and write a release text
+   * Attach binaries
+6. Change the version in `dcosdeploy/__init__.py` to `<next-version>-dev` and push
 
 ## Contributing
 
