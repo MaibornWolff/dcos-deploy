@@ -157,6 +157,7 @@ def read_config(filenames, provided_variables):
     entities = dict()
     global_config = dict()
     variables = VariableContainerBuilder(provided_variables)
+    variables.add_direct_variables(calculate_predefined_variables())
     additional_modules = list()
 
     while idx < len(config_files):
@@ -230,7 +231,6 @@ def read_config(filenames, provided_variables):
                     entities[key]["_include_except"] = except_restriction
         idx += 1
 
-    variables.add_direct_variables(calculate_predefined_variables())
     variables = variables.build()
     config_helper = ConfigHelper(variables, global_config)
     # init managers
